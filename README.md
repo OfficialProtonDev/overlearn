@@ -82,6 +82,12 @@ decks keep most of their real content in pictures that extract as nothing —
 proposes a topic breakdown, asks you per topic how deep to go, generates the
 pack, and validates it.
 
+**Generation runs on your own agent.** Overlearn ships no model, no API key and
+no backend. `/study-pack` is a skill for the coding agent you already have — it's
+written for Claude Code — so the reading and the question writing happen on your
+machine, under your own subscription. The app only ever reads the JSON that comes
+out the other end.
+
 Format reference: [`docs/pack-format.md`](docs/pack-format.md).
 Skill: [`.claude/skills/study-pack/`](.claude/skills/study-pack/) (also installed
 to `~/.claude/skills/` so it works from any folder).
