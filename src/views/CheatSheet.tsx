@@ -276,6 +276,7 @@ export function CheatSheet({ pack }: { pack: Pack }) {
                   fill={fill}
                   fontPt={resolvedFontPt}
                   autoFit={settings.autoFit}
+                  sheetWidth={pageWidthPx * zoom}
                 />
               )}
               <Pages
@@ -295,6 +296,7 @@ export function CheatSheet({ pack }: { pack: Pack }) {
                   fill={fill}
                   fontPt={resolvedFontPt}
                   autoFit={settings.autoFit}
+                  sheetWidth={pageWidthPx * zoom}
                 />
               )}
             </>
@@ -358,6 +360,7 @@ function SheetStatus({
   fill,
   fontPt,
   autoFit,
+  sheetWidth,
 }: {
   pageCount: number
   targetPages: number
@@ -365,20 +368,27 @@ function SheetStatus({
   fill: number
   fontPt: number
   autoFit: boolean
+  /** On-screen width of the sheet, so the line stays aligned with it. */
+  sheetWidth: number
 }) {
   const over = pageCount > targetPages || !fits
   const roomy = !over && fill < 0.75
 
   return (
-    <p className={`sheet-status no-print ${over ? 'is-over' : ''}`}>
+    <p
+      className={`sheet-status no-print ${over ? 'is-over' : ''}`}
+      style={{ maxWidth: `max(360px, ${Math.round(sheetWidth)}px)` }}
+    >
       {over ? (
         <>
           <strong>
-            {pageCount} page{pageCount === 1 ? '' : 's'}, budget is {targetPages}.
+            Needs {pageCount} page{pageCount === 1 ? '' : 's'}, budget is {targetPages}.
           </strong>{' '}
           {fits
             ? 'Allow another page, or cut something.'
-            : `Won't fit even at ${MIN_FONT_PT}pt — drop a section, add a column, or allow another page.`}
+            : `${pageCount} is the fewest this content fits into at these settings, shown at the
+               largest size that achieves it. Cut a section, add a column, narrow the margins, or
+               allow ${pageCount} page${pageCount === 1 ? '' : 's'}.`}
         </>
       ) : (
         <>

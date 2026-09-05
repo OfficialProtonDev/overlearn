@@ -39,15 +39,18 @@
 
 .sheet-status {
   align-self: center;
-  max-width: 60ch;
+  width: 100%;
   text-align: center;
   font-size: 12.5px;
   color: var(--ink-3);
 }
 
+/* The warning sits above the sheet and is sized to read, not stretched to
+   the full stage — a full-width banner over a narrower, centred page looks
+   like it belongs to something else. */
 .sheet-status.is-over {
-  align-self: stretch;
-  max-width: none;
+  align-self: center;
+  width: 100%;
   text-align: left;
   color: var(--bad);
   background: var(--bad-soft);
@@ -55,6 +58,7 @@
   border-radius: var(--radius-sm);
   padding: var(--s3) var(--s4);
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .sheet-status strong {

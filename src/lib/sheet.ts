@@ -369,9 +369,34 @@ export function fitToPages(
     return { fontPt: sizes[bestIndex], layout: bestLayout, fits: true }
   }
 
-  // Even the smallest size overflows — show it at the smallest and say so.
-  const smallest = sizes[0]
-  return { fontPt: smallest, layout: layoutAt(smallest), fits: false }
+  // The budget cannot be met at any size.
+  //
+  // Rendering at the smallest size would be the worst of both worlds: still
+  // over budget, and now illegible. Since the page count is going to be
+  // exceeded either way, spend the surplus on readability — find the fewest
+  // pages actually achievable, then the largest size that still achieves it.
+  const floorLayout = layoutAt(sizes[0])
+  const minPages = floorLayout.pages.length
+
+  let readableLow = 0
+  let readableHigh = sizes.length - 1
+  let readableIndex = 0
+  let readableLayout = floorLayout
+
+  while (readableLow <= readableHigh) {
+    const mid = (readableLow + readableHigh) >> 1
+    const layout = layoutAt(sizes[mid])
+
+    if (layout.pages.length <= minPages) {
+      readableIndex = mid
+      readableLayout = layout
+      readableLow = mid + 1
+    } else {
+      readableHigh = mid - 1
+    }
+  }
+
+  return { fontPt: sizes[readableIndex], layout: readableLayout, fits: false }
 }
 
 /* ------------------------------------------------------------------ *
