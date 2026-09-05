@@ -1,0 +1,31 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Study packs.
+# Packs are generated from your own course material and are deliberately not
+# committed — the app is public, the derived content stays local. To ship a
+# pack with a deployment, delete the two lines below and commit it.
+public/packs/*
+!public/packs/README.md

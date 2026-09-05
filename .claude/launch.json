@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "overlearn",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/billy/dev/overlearn", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

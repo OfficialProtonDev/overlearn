@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Theme tokens — the entire look of the app lives in this file.
+   Light  = "Ledger"   : cool exam-booklet paper, serif questions, ruled
+                         lines, examiner's red reserved for what you got wrong.
+   Dark   = "Nocturne" : warm charcoal rather than black, ivory serif set
+                         loose, brass used once. Built for hour six.
+
+   Three theme states are handled, because the viewer has three:
+     :root                             -> Ledger (light), the base
+     @media (prefers-color-scheme:dark) -> Nocturne, unless light is pinned
+     :root[data-theme="dark"|"light"]  -> an explicit choice wins either way
+   ========================================================================== */
+
+:root {
+  /* -- surfaces ---------------------------------------------------------- */
+  --bg: #edf0f2;
+  --bg-sunken: #e3e8eb;
+  --surface: #ffffff;
+  --surface-2: #f6f8f9;
+  --surface-raised: #ffffff;
+
+  /* -- ink --------------------------------------------------------------- */
+  --ink: #16232e;
+  --ink-2: #5c6e7b;
+  --ink-3: #7b8b97;
+  --ink-inverse: #ffffff;
+
+  /* -- lines ------------------------------------------------------------- */
+  --rule: #c9d3da;
+  --rule-soft: #dde4e9;
+  --rule-strong: #16232e;
+
+  /* -- accent: the pack's own colour, used for interactive things -------- */
+  --accent: #1f4a6b;
+  --accent-hover: #163852;
+  --accent-soft: #e2ecf3;
+  --accent-ink: #ffffff;
+
+  /* -- semantic state: separate from accent, never decorative ------------ */
+  --good: #46745b;
+  --good-soft: #e4ede7;
+  --warn: #b8863a;
+  --warn-soft: #f5ecdd;
+  --bad: #b23a2e;
+  --bad-soft: #f6e3e1;
+  --untouched: #9aa8b2;
+
+  /* -- form controls ----------------------------------------------------- */
+  --field-bg: #ffffff;
+  --field-border: #b8c4cd;
+  --field-focus: #1f4a6b;
+
+  /* -- typography -------------------------------------------------------- */
+  --font-display: 'Newsreader', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Questions are set in the display face at light weight in both themes,
+     but Nocturne wants it airier. These absorb that difference. */
+  --question-weight: 400;
+  --question-leading: 1.42;
+  --prose-leading: 1.62;
+
+  /* -- shape ------------------------------------------------------------- */
+  /* Ledger is a printed document: near-square corners, hairline rules. */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --card-border-width: 1px;
+  --shadow-card: none;
+  --shadow-pop: 0 2px 4px rgba(22, 35, 46, 0.08), 0 12px 32px -14px rgba(22, 35, 46, 0.28);
+
+  /* The rule under a question card. Ledger stamps a heavy top rule the way
+     an exam paper does; Nocturne drops it. */
+  --card-crown: 3px solid var(--rule-strong);
+
+  /* Ruled answer lines, drawn as a repeating gradient. */
+  --ruled-line: repeating-linear-gradient(
+    90deg,
+    var(--rule-soft) 0 26px,
+    transparent 26px 34px
+  );
+
+  /* -- control sizing ---------------------------------------------------- *
+     Every interactive control in a row — button, segmented group, stepper,
+     select, readout — resolves to one of these three heights, so toolbars
+     line up without per-component padding fiddling. */
+  --control-h: 34px;
+  --control-h-sm: 28px;
+  --control-h-lg: 42px;
+
+  /* -- spacing scale ----------------------------------------------------- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 22px;
+  --s6: 30px;
+  --s7: 42px;
+  --s8: 60px;
+
+  /* -- motion ------------------------------------------------------------ */
+  --ease: cubic-bezier(0.2, 0, 0.13, 1);
+  --dur: 150ms;
+
+  color-scheme: light;
+}
+
+/* -- Nocturne ------------------------------------------------------------ */
+/* Applied to the un-stamped document when the OS prefers dark. Guarded so an
+   explicit light choice still beats a dark OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #1a1618;
+    --bg-sunken: #151113;
+    --surface: #221d20;
+    --surface-2: #272124;
+    --surface-raised: #2b2427;
+
+    --ink: #ede6dd;
+    --ink-2: #a2948a;
+    --ink-3: #8a7d72;
+    --ink-inverse: #1a1618;
+
+    --rule: #362e31;
+    --rule-soft: #2c2528;
+    --rule-strong: #453b3f;
+
+    --accent: #c2a14d;
+    --accent-hover: #d2b25e;
+    --accent-soft: #2d2620;
+    --accent-ink: #1a1618;
+
+    --good: #8fa98a;
+    --good-soft: #24261f;
+    --warn: #c2a14d;
+    --warn-soft: #2d2620;
+    --bad: #c97b7b;
+    --bad-soft: #2e2021;
+    --untouched: #6b6058;
+
+    --field-bg: #1a1618;
+    --field-border: #3d3437;
+    --field-focus: #c2a14d;
+
+    --font-display: 'Spectral', 'Iowan Old Style', Georgia, serif;
+    --question-weight: 300;
+    --question-leading: 1.55;
+    --prose-leading: 1.7;
+
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px -18px rgba(0, 0, 0, 0.8);
+    --card-crown: 1px solid var(--rule);
+
+    --ruled-line: repeating-linear-gradient(
+      90deg,
+      var(--rule) 0 26px,
+      transparent 26px 34px
+    );
+
+    color-scheme: dark;
+  }
+}
+
+/* -- Nocturne, chosen explicitly ---------------------------------------- */
+:root[data-theme='dark'] {
+  --bg: #1a1618;
+  --bg-sunken: #151113;
+  --surface: #221d20;
+  --surface-2: #272124;
+  --surface-raised: #2b2427;
+
+  --ink: #ede6dd;
+  --ink-2: #a2948a;
+  --ink-3: #8a7d72;
+  --ink-inverse: #1a1618;
+
+  --rule: #362e31;
+  --rule-soft: #2c2528;
+  --rule-strong: #453b3f;
+
+  --accent: #c2a14d;
+  --accent-hover: #d2b25e;
+  --accent-soft: #2d2620;
+  --accent-ink: #1a1618;
+
+  --good: #8fa98a;
+  --good-soft: #24261f;
+  --warn: #c2a14d;
+  --warn-soft: #2d2620;
+  --bad: #c97b7b;
+  --bad-soft: #2e2021;
+  --untouched: #6b6058;
+
+  --field-bg: #1a1618;
+  --field-border: #3d3437;
+  --field-focus: #c2a14d;
+
+  --font-display: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  --question-weight: 300;
+  --question-leading: 1.55;
+  --prose-leading: 1.7;
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px -18px rgba(0, 0, 0, 0.8);
+  --card-crown: 1px solid var(--rule);
+
+  --ruled-line: repeating-linear-gradient(90deg, var(--rule) 0 26px, transparent 26px 34px);
+
+  color-scheme: dark;
+}
+
+/* -- Ledger, chosen explicitly ------------------------------------------ */
+/* Only needs to restore what the dark blocks change; everything else is
+   already correct from :root. Listed in full anyway so the two themes stay
+   visibly symmetrical when someone edits them. */
+:root[data-theme='light'] {
+  --bg: #edf0f2;
+  --bg-sunken: #e3e8eb;
+  --surface: #ffffff;
+  --surface-2: #f6f8f9;
+  --surface-raised: #ffffff;
+
+  --ink: #16232e;
+  --ink-2: #5c6e7b;
+  --ink-3: #7b8b97;
+  --ink-inverse: #ffffff;
+
+  --rule: #c9d3da;
+  --rule-soft: #dde4e9;
+  --rule-strong: #16232e;
+
+  --accent: #1f4a6b;
+  --accent-hover: #163852;
+  --accent-soft: #e2ecf3;
+  --accent-ink: #ffffff;
+
+  --good: #46745b;
+  --good-soft: #e4ede7;
+  --warn: #b8863a;
+  --warn-soft: #f5ecdd;
+  --bad: #b23a2e;
+  --bad-soft: #f6e3e1;
+  --untouched: #9aa8b2;
+
+  --field-bg: #ffffff;
+  --field-border: #b8c4cd;
+  --field-focus: #1f4a6b;
+
+  --font-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --question-weight: 400;
+  --question-leading: 1.42;
+  --prose-leading: 1.62;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --shadow-pop: 0 2px 4px rgba(22, 35, 46, 0.08), 0 12px 32px -14px rgba(22, 35, 46, 0.28);
+  --card-crown: 3px solid var(--rule-strong);
+
+  --ruled-line: repeating-linear-gradient(90deg, var(--rule-soft) 0 26px, transparent 26px 34px);
+
+  color-scheme: light;
+}
