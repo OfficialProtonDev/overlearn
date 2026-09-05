@@ -211,6 +211,11 @@ export function CheatSheet({ pack }: { pack: Pack }) {
 
   /* -- readouts -------------------------------------------------------- */
 
+  // How tall the rendered sheet actually is on screen, used to keep the
+  // settings drawer from outgrowing it.
+  const stageContentHeight =
+    layout.pages.length * pageHeightPx * zoom + Math.max(0, layout.pages.length - 1) * 22
+
   const counts = countByKind(items)
   const pageCount = layout.pages.length
   const fill = lastPageFill(layout, geometry.columnHeightPx, settings.columns)
@@ -304,6 +309,7 @@ export function CheatSheet({ pack }: { pack: Pack }) {
             allTopicIds={allTopicIds}
             update={update}
             resolvedFontPt={resolvedFontPt}
+            stageHeight={stageContentHeight}
             onClose={() => setDrawerOpen(false)}
           />
         )}
@@ -420,6 +426,7 @@ function Controls({
   allTopicIds,
   update,
   resolvedFontPt,
+  stageHeight,
   onClose,
 }: {
   pack: Pack
@@ -428,6 +435,8 @@ function Controls({
   allTopicIds: string[]
   update: (patch: Partial<SheetSettings>) => void
   resolvedFontPt: number
+  /** Height of the rendered sheet, so the drawer never outgrows it. */
+  stageHeight: number
   onClose: () => void
 }) {
   const toggleTopic = (topicId: string) => {
@@ -438,7 +447,17 @@ function Controls({
   }
 
   return (
-    <aside className="sheet-drawer no-print" aria-label="Cheat sheet settings">
+    <aside
+      className="sheet-drawer no-print"
+      aria-label="Cheat sheet settings"
+      // Never taller than the sheet beside it, so a short one-page sheet
+      // doesn't leave the drawer hanging past the bottom of the page and
+      // scrolling the document on its own account. Floored so it stays
+      // usable when the sheet is very short, and capped to the viewport.
+      style={{
+        maxHeight: `min(calc(100vh - 88px), max(360px, ${Math.round(stageHeight)}px))`,
+      }}
+    >
       <header className="sheet-drawer-head">
         <h2 className="t-h3">Adjust</h2>
         <span className="spacer" />

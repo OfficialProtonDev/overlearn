@@ -101,7 +101,7 @@
   top: 68px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 88px);
+  /* max-height is set inline, from the measured sheet height. */
   background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
@@ -123,12 +123,15 @@
   gap: var(--s5);
   padding: var(--s4);
   overflow-y: auto;
+  /* Without this a flex child refuses to shrink below its content height,
+     and the drawer would overflow its max-height instead of scrolling. */
+  min-height: 0;
 }
 
 @media (max-width: 900px) {
   .sheet-drawer {
     position: static;
-    max-height: none;
+    max-height: none !important;
   }
 
   .sheet-drawer-body {
