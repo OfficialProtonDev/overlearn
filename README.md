@@ -116,10 +116,12 @@ Pushing to `main` deploys via
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) once Pages is
 enabled with **Source: GitHub Actions**.
 
-**Packs are gitignored.** `public/packs/` is excluded so questions derived from
-course material stay on your machine while the app itself is public. Anyone you
-share the link with loads their own packs with the folder picker. To ship a pack
-with a deployment, see [`public/packs/README.md`](public/packs/README.md).
+**One pack ships; the rest are gitignored.** `compx310-test1` is committed as a
+worked example, so the deployed app opens on real material. Everything else in
+`public/packs/` is excluded, so questions derived from your own course material
+stay on your machine while the app itself is public — anyone you share the link
+with loads their own packs with the folder picker. To ship another, see
+[`public/packs/README.md`](public/packs/README.md).
 
 ---
 

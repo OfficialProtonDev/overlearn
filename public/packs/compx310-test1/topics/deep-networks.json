@@ -1,0 +1,1217 @@
+{
+  "id": "deep-networks",
+  "title": "Deep Neural Networks",
+  "summary": "Four problems with training deep networks — vanishing gradients, too little labelled data, slow training and overfitting — and a solution for each. Then convolutions and pooling, the two layer types that make image networks tractable.",
+  "keyFacts": [
+    {
+      "term": "The four DNN training issues",
+      "definition": "**Vanishing gradients**, **not enough labelled training data**, **very slow training times**, **high risk of overfitting**. There are solutions for all of these nowadays.",
+      "source": "c6b · slide 2"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "dn-vanishing-batchnorm",
+      "title": "Vanishing gradients and BatchNorm",
+      "emphasis": "core",
+      "summary": "Saturating activations shrink the gradient at every layer until nothing reaches the front of the network. Batch normalisation keeps activations in the useful range.",
+      "questions": [
+        {
+          "id": "dn-four-issues",
+          "kind": "recall",
+          "prompt": "List the four issues with training deep neural networks.",
+          "answer": "1. **Vanishing gradients**\n2. **Not enough (labelled) training data**\n3. **Very slow training times**\n4. **High risk of overfitting**\n\nThe course adds that there are solutions for all of these nowadays.",
+          "source": "c6b · slide 2"
+        },
+        {
+          "id": "dn-vanishing-opposite",
+          "kind": "mcq",
+          "prompt": "What is the opposite of vanishing gradients, and what does a zero gradient do?",
+          "options": [
+            "Exploding gradients; a zero gradient stops learning",
+            "Saturating gradients; a zero gradient speeds up learning",
+            "Diverging gradients; a zero gradient has no effect",
+            "Sparse gradients; a zero gradient resets the weights"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 3"
+        },
+        {
+          "id": "dn-saturating-sigmoid",
+          "kind": "recall",
+          "prompt": "Using the sigmoid plot, explain how vanishing gradients arise.",
+          "answer": "The sigmoid is **linear near the middle** but **saturates** at both ends, where the curve flattens toward 0 and 1.\n\nIn a saturated region the derivative is close to **zero**. Backpropagation multiplies these derivatives together layer by layer, so a chain of small factors shrinks the gradient toward nothing — and a zero gradient **stops learning** in the early layers.",
+          "source": "c6b · slide 3"
+        },
+        {
+          "id": "dn-batchnorm-analogy",
+          "kind": "mcq",
+          "prompt": "How does the course describe Batch Normalization?",
+          "options": [
+            "Like an incremental, trainable StandardScaler inside the network",
+            "Like a dropout layer applied to the inputs",
+            "Like min-max scaling applied once before training",
+            "Like an extra Dense layer with no activation"
+          ],
+          "answerIndex": 0,
+          "explanation": "Scaling the *inputs* is standard practice; BatchNorm applies the same idea to the activations *between* layers, and learns its parameters.",
+          "source": "c6b · slide 4"
+        },
+        {
+          "id": "dn-batchnorm-keras",
+          "kind": "recall",
+          "prompt": "Where do BatchNormalization layers go in the Keras example?",
+          "answer": "Interleaved with the Dense layers, starting right after Flatten:\n\n```python\nSequential([\n  Flatten(input_shape=[28, 28]),\n  BatchNormalization(),\n  Dense(300, activation=\"elu\", kernel_initializer=\"he_normal\"),\n  BatchNormalization(),\n  Dense(100, activation=\"elu\", kernel_initializer=\"he_normal\"),\n  BatchNormalization(),\n  Dense(10, activation=\"softmax\")\n])\n```",
+          "source": "c6b · slide 4"
+        },
+        {
+          "id": "dn-batchnorm-trainable",
+          "kind": "mcq",
+          "prompt": "What makes BatchNorm different from applying StandardScaler to the inputs?",
+          "options": [
+            "It is trainable and applied incrementally inside the network",
+            "It uses the median rather than the mean",
+            "It only runs at prediction time",
+            "It scales to [0,1] rather than mean 0"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 4"
+        },
+        {
+          "id": "dn-relu-vs-sigmoid-vanishing",
+          "kind": "recall",
+          "prompt": "Why does using ReLU help with vanishing gradients?",
+          "answer": "ReLU's derivative is **1 for any positive input** rather than a small number. The gradient passes through active units **undiminished**, so it survives many layers.\n\nSigmoid's derivative peaks at 0.25 and is far smaller in the saturating tails — through ten layers that is a factor of 0.25¹⁰ or worse.",
+          "source": "c6a · slide 7; c6b · slides 3, 15"
+        },
+        {
+          "id": "dn-deep-consensus",
+          "kind": "mcq",
+          "prompt": "What does the course say about the definition of 'deep'?",
+          "options": [
+            "There is no consensus on what counts as deep",
+            "Deep means more than 3 hidden layers",
+            "Deep means more than 100 layers",
+            "Deep means any network with convolutions"
+          ],
+          "answerIndex": 0,
+          "explanation": "It also calls DNN training 'rather tricky, often seen as a black art rather than science'.",
+          "source": "c6b · slide 2"
+        },
+        {
+          "id": "dn-black-art",
+          "kind": "short",
+          "prompt": "What phrase does the course use for how DNN training is often seen, as opposed to science?",
+          "answers": [
+            "black art",
+            "a black art"
+          ],
+          "tier": 1,
+          "source": "c6b · slide 2"
+        },
+        {
+          "id": "dn-he-normal",
+          "kind": "mcq",
+          "prompt": "The BatchNorm example uses `kernel_initializer=\"he_normal\"`. What is that concerned with?",
+          "options": [
+            "How the weights are randomly initialised",
+            "How the biases are set",
+            "The learning rate schedule",
+            "The regularization strength"
+          ],
+          "answerIndex": 0,
+          "explanation": "Initialisation scale matters for the same reason BatchNorm does — badly scaled initial weights push activations straight into the saturating regions.",
+          "source": "c6a · slide 11; c6b · slide 4"
+        }
+      ]
+    },
+    {
+      "id": "dn-optimizers",
+      "title": "Optimizers faster than SGD",
+      "emphasis": "core",
+      "summary": "A lineage of improvements on plain gradient descent, ending in Adam. Each fixes something the previous one left.",
+      "keyFacts": [
+        {
+          "term": "The optimizer lineage",
+          "definition": "**Momentum** → **Nesterov momentum** → **AdaGrad** → **RMSProp** → **Adam** (RMSProp + Momentum) → **Nadam** (Adam + Nesterov).",
+          "source": "c6b · slide 5"
+        }
+      ],
+      "questions": [
+        {
+          "id": "dn-optimizer-list",
+          "kind": "recall",
+          "prompt": "List the SGD improvements and what each adds.",
+          "answer": "**Momentum** — physics idea; escape local minima, push across plateaus.\n**Nesterov momentum** (accelerated gradient) — a smarter variant.\n**AdaGrad** — adaptive gradient, adjusting the learning rate per dimension.\n**RMSProp** — a smarter AdaGrad.\n**Adam** — adaptive momentum estimate; combines **RMSProp + Momentum**.\n**Nadam** — **Adam + Nesterov**.",
+          "source": "c6b · slide 5"
+        },
+        {
+          "id": "dn-adam-components",
+          "kind": "mcq",
+          "prompt": "Adam combines which two ideas?",
+          "options": [
+            "RMSProp and Momentum",
+            "AdaGrad and Nesterov",
+            "Momentum and Nesterov",
+            "RMSProp and AdaGrad"
+          ],
+          "answerIndex": 0,
+          "explanation": "And Nadam is then Adam plus Nesterov.",
+          "source": "c6b · slide 5"
+        },
+        {
+          "id": "dn-current-best-practice",
+          "kind": "mcq",
+          "prompt": "What is the course's current best practice for choosing an optimizer?",
+          "options": [
+            "Use Adam first, but be open to alternatives",
+            "Always use plain SGD",
+            "Always use Nadam",
+            "Try every optimizer by grid search"
+          ],
+          "answerIndex": 0,
+          "explanation": "The 2020s defaults table repeats it, overriding the book's Nadam with **Adam / AdamW** in red.",
+          "source": "c6b · slides 5, 15"
+        },
+        {
+          "id": "dn-momentum-purpose",
+          "kind": "recall",
+          "prompt": "What is momentum's physics idea, and what two problems does it solve?",
+          "answer": "It carries **velocity** from previous steps rather than following only the current gradient.\n\nIt helps **escape local minima** — the accumulated momentum can carry the search out of a shallow dip — and **push across plateaus**, where the gradient is nearly zero and plain descent would stall.\n\nBoth are the non-convex hazards from c5.",
+          "source": "c5 · slide 16; c6b · slide 5"
+        },
+        {
+          "id": "dn-adagrad-what",
+          "kind": "mcq",
+          "prompt": "What does AdaGrad adapt?",
+          "options": [
+            "The learning rate, per dimension",
+            "The batch size",
+            "The activation function",
+            "The number of layers"
+          ],
+          "answerIndex": 0,
+          "explanation": "'adaptive gradient adjusting learning rate/dimension'. RMSProp is described as a smarter version of the same idea.",
+          "source": "c6b · slide 5"
+        },
+        {
+          "id": "dn-rmsprop-relation",
+          "kind": "short",
+          "prompt": "RMSProp is described as a smarter version of which optimizer?",
+          "answers": [
+            "adagrad",
+            "ada grad"
+          ],
+          "tier": 2,
+          "source": "c6b · slide 5"
+        },
+        {
+          "id": "dn-nadam-components",
+          "kind": "cloze",
+          "prompt": "Adam = {{1}} + Momentum, and Nadam = Adam + {{2}}.",
+          "blanks": [
+            [
+              "RMSProp",
+              "rmsprop"
+            ],
+            [
+              "Nesterov",
+              "nesterov momentum"
+            ]
+          ],
+          "tier": 2,
+          "source": "c6b · slide 5"
+        },
+        {
+          "id": "dn-optimizer-vs-backprop",
+          "kind": "recall",
+          "prompt": "Do these optimizers replace backpropagation?",
+          "answer": "No. **Backpropagation computes the gradients**; the optimizer decides **what step to take** given them.\n\nEvery optimizer here — SGD, Momentum, Adam, Nadam — consumes the same gradients backprop produces. They differ only in how those gradients turn into a weight update.",
+          "source": "c6a · slide 11; c6b · slide 5"
+        },
+        {
+          "id": "dn-adam-name",
+          "kind": "short",
+          "prompt": "What does the name Adam stand for?",
+          "answers": [
+            "adaptive momentum estimate",
+            "adaptive moment estimate",
+            "adaptive momentum estimation"
+          ],
+          "tier": 2,
+          "source": "c6b · slide 5"
+        }
+      ]
+    },
+    {
+      "id": "dn-learning-rate-schedules",
+      "title": "Learning rate schedules",
+      "emphasis": "standard",
+      "summary": "A fixed learning rate is rarely right for the whole of training. Four schedules, of which two are recommended.",
+      "questions": [
+        {
+          "id": "dn-lr-four-outcomes",
+          "kind": "recall",
+          "prompt": "Describe the four learning-rate curves in the loss-versus-epoch figure.",
+          "answer": "**η way too high** — the loss **diverges**, curving upward.\n**η too high** — converges, but to a **suboptimal** level.\n**η too small** — descends far too **slowly**.\n**η just right** — reaches a low loss efficiently.\n\nThe caption adds: **start with a high learning rate then reduce it — perfect.**",
+          "source": "c6b · slide 6"
+        },
+        {
+          "id": "dn-four-schedules",
+          "kind": "recall",
+          "prompt": "Name the four learning rate schedules and how each behaves.",
+          "answer": "**Power scheduling** — r, r/2, r/3, r/4, …\n**Exponential scheduling** — r, 0.1r, 0.01r, …\n**Piecewise constant** — e.g. 0.1 for 5 epochs, then 0.001 for 50 epochs.\n**Performance scheduling** — monitor the validation set and reduce the rate when validation error stalls.",
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-best-schedules",
+          "kind": "mcq",
+          "prompt": "Which two schedules does the course say seem to be the best choice?",
+          "options": [
+            "Performance and exponential scheduling",
+            "Power and piecewise constant",
+            "Exponential and power",
+            "Piecewise constant and performance"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-lr-callback",
+          "kind": "mcq",
+          "prompt": "Which Keras callback implements learning rate scheduling?",
+          "options": [
+            "LearningRateScheduler",
+            "ReduceLROnPlateau",
+            "EarlyStopping",
+            "ModelCheckpoint"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-performance-scheduling",
+          "kind": "mcq",
+          "prompt": "How does performance scheduling decide when to reduce the learning rate?",
+          "options": [
+            "It monitors the validation set and reduces when validation error stalls",
+            "It reduces every epoch by a fixed factor",
+            "It reduces after a fixed number of epochs",
+            "It reduces when training loss reaches zero"
+          ],
+          "answerIndex": 0,
+          "explanation": "It is reactive rather than pre-planned, which is presumably why it is one of the two recommended.",
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-power-schedule-compute",
+          "kind": "computation",
+          "prompt": "Power scheduling starts at r = {{r}} and follows r, r/2, r/3, r/4 … What is the learning rate at step {{k}}?",
+          "vars": {
+            "r": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.2,
+                0.5,
+                1
+              ]
+            },
+            "k": {
+              "type": "choice",
+              "values": [
+                2,
+                4,
+                5,
+                8,
+                10
+              ]
+            }
+          },
+          "derived": {
+            "out": "r / k"
+          },
+          "steps": [
+            {
+              "text": "Power scheduling divides the initial rate by the step number."
+            },
+            {
+              "text": "`{{r}} / {{k}}`"
+            },
+            {
+              "text": "`= {{out | 4}}`"
+            }
+          ],
+          "answer": {
+            "expr": "r / k",
+            "tolerance": 0.0005,
+            "decimals": 4
+          },
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-exponential-schedule-compute",
+          "kind": "computation",
+          "prompt": "Exponential scheduling starts at r = {{r}} and follows r, 0.1r, 0.01r … What is the rate after {{k}} reductions?",
+          "vars": {
+            "r": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.5,
+                1
+              ]
+            },
+            "k": {
+              "type": "int",
+              "min": 1,
+              "max": 4
+            }
+          },
+          "derived": {
+            "out": "r * 0.1^k"
+          },
+          "steps": [
+            {
+              "text": "Each reduction multiplies the rate by 0.1."
+            },
+            {
+              "text": "After `{{k}}` reductions the factor is `0.1^{{k}} = {{0.1^k | 8}}`."
+            },
+            {
+              "text": "`= {{out | 5}}`"
+            }
+          ],
+          "answer": {
+            "expr": "r * 0.1^k",
+            "tolerance": 5e-7,
+            "decimals": 5
+          },
+          "explanation": "Exponential drops far faster than power scheduling — after 3 steps power gives r/3, exponential gives r/1000.",
+          "source": "c6b · slide 7"
+        },
+        {
+          "id": "dn-why-schedule",
+          "kind": "recall",
+          "prompt": "Why reduce the learning rate over the course of training?",
+          "answer": "**Early on** you are far from the minimum, so large steps cover ground fast.\n\n**Later** you are close, and large steps overshoot and bounce around rather than settling. Smaller steps let the parameters converge.\n\nThe figure's caption puts it exactly: 'start with a high learning rate then reduce it: perfect'. It is the same reasoning as c5's `learning_schedule` for SGD.",
+          "source": "c5 · slide 22; c6b · slide 6"
+        },
+        {
+          "id": "dn-schedule-vs-adaptive",
+          "kind": "recall",
+          "prompt": "How does a learning rate schedule differ from an adaptive optimizer like Adam?",
+          "answer": "A **schedule** changes the **global** learning rate over time according to a rule you set — the same factor for every parameter.\n\nAn **adaptive optimizer** adjusts the effective step **per parameter**, based on the gradients it has seen for that parameter.\n\nThey are complementary, and are commonly used together.",
+          "source": "c6b · slides 5, 7"
+        }
+      ]
+    },
+    {
+      "id": "dn-transfer-learning",
+      "title": "Transfer learning",
+      "emphasis": "core",
+      "summary": "Not enough labelled data? Reuse a network trained on something similar. Freeze most of it, train, then unfreeze and train some more.",
+      "questions": [
+        {
+          "id": "dn-transfer-idea",
+          "kind": "mcq",
+          "prompt": "What is the answer to 'not enough data'?",
+          "options": [
+            "Re-use a network trained on similar data",
+            "Increase the learning rate",
+            "Add more layers",
+            "Switch to a linear model"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 8"
+        },
+        {
+          "id": "dn-transfer-procedure",
+          "kind": "recall",
+          "prompt": "Describe the transfer learning procedure from the Keras example.",
+          "answer": "**A** is trained on 8 FashionMNIST classes; **B** is shirts vs sandals.\n\n1. **Copy the model structure**: `model_B_on_A = Sequential(model_A.layers[:-1])`, then add a new `Dense(1, activation=\"sigmoid\")` head.\n2. **Keep a copy of the old A** — training B will also modify A — via `clone_model` and `set_weights`.\n3. **Freeze** most weights: `for layer in model_B_on_A.layers[:-1]: layer.trainable = False`.\n4. **Train a bit**, then **unfreeze all** (`layer.trainable = True`) and **train some more**, with a smaller learning rate.",
+          "source": "c6b · slides 9–10"
+        },
+        {
+          "id": "dn-why-freeze-first",
+          "kind": "recall",
+          "prompt": "Why freeze the copied layers before training?",
+          "answer": "Because **large errors from the new last layer might also damage the 'good' weights from the copied layers**.\n\nThe new head starts random, so its initial gradients are large and essentially arbitrary. Freezing lets the head settle first; only then is it safe to let those gradients reach the pretrained layers.",
+          "source": "c6b · slide 10"
+        },
+        {
+          "id": "dn-unfreeze-lr",
+          "kind": "mcq",
+          "prompt": "When unfreezing, the example uses `keras.optimizers.SGD(lr=1e-4)` with a comment that the default is 1e-3. Why the smaller rate?",
+          "options": [
+            "To avoid large updates destroying the pretrained weights",
+            "To train faster",
+            "Because sigmoid outputs need smaller rates",
+            "To compensate for the frozen layers"
+          ],
+          "answerIndex": 0,
+          "explanation": "The pretrained weights are already good. A tenth of the default nudges them rather than overwriting them.",
+          "source": "c6b · slide 10"
+        },
+        {
+          "id": "dn-clone-model-why",
+          "kind": "recall",
+          "prompt": "Why does the example clone model A before training B?",
+          "answer": "Because **training B will also modify A** — `Sequential(model_A.layers[:-1])` reuses the *same layer objects*, not copies of them, so updates propagate back to A.\n\n`clone_model` plus `set_weights` preserves an independent snapshot of A.",
+          "source": "c6b · slide 9"
+        },
+        {
+          "id": "dn-transfer-freeze-code",
+          "kind": "mcq",
+          "prompt": "Which line freezes the copied layers?",
+          "options": [
+            "for layer in model_B_on_A.layers[:-1]: layer.trainable = False",
+            "model_B_on_A.freeze()",
+            "model_B_on_A.compile(trainable=False)",
+            "for layer in model_B_on_A.layers: layer.frozen = True"
+          ],
+          "answerIndex": 0,
+          "explanation": "`[:-1]` leaves the new output layer trainable — the only part that should be learning at that stage.",
+          "source": "c6b · slide 9"
+        },
+        {
+          "id": "dn-no-similar-net",
+          "kind": "recall",
+          "prompt": "What if nothing similar enough exists to transfer from?",
+          "answer": "Two options:\n\n**Unsupervised pretraining** — train the layers on unlabeled data first, then fine-tune on the labeled data.\n\n**Invent an auxiliary task** for pretraining — e.g. predict the 'missing' word in a tweet first, then try sentiment analysis (happy/sad).\n\nThe course notes this as the **new trend: self-supervised learning**.",
+          "source": "c6b · slide 11"
+        },
+        {
+          "id": "dn-self-supervised",
+          "kind": "short",
+          "prompt": "What does the course call the new trend of inventing an auxiliary pretraining task?",
+          "answers": [
+            "self-supervised learning",
+            "self supervised learning",
+            "self-supervised"
+          ],
+          "tier": 2,
+          "source": "c6b · slide 11"
+        },
+        {
+          "id": "dn-keras-applications",
+          "kind": "recall",
+          "prompt": "Describe the transfer learning pattern using keras.applications.",
+          "answer": "```python\nbase_model = keras.applications.resnet18(include_top=False, weights='imagenet', pooling='avg')\npretrained_model = tf.keras.models.clone_model(base_model)\npretrained_model.set_weights(base_model.get_weights())\nfor layers in pretrained_model.layers:\n    layers.trainable = False\npredictor_head = tf.keras.layers.Dense(no_classes, activation='softmax')(pretrained_model.output)\nmodel = tf.keras.Model(inputs=pretrained_model.input, outputs=predictor_head)\n```\n\n`include_top=False` drops the original classifier head; `weights='imagenet'` loads the pretrained weights; a new head is attached for your classes.",
+          "source": "c6b · slide 34"
+        },
+        {
+          "id": "dn-include-top-false",
+          "kind": "mcq",
+          "prompt": "What does `include_top=False` do when loading a pretrained model?",
+          "options": [
+            "Omits the original classifier head, keeping the feature extractor",
+            "Omits the input layer",
+            "Loads the model without weights",
+            "Disables training entirely"
+          ],
+          "answerIndex": 0,
+          "explanation": "The original head predicts ImageNet's 1000 classes, which are not yours. The layers beneath it — the learned visual features — are the transferable part.",
+          "source": "c6b · slide 34"
+        },
+        {
+          "id": "dn-data-augmentation",
+          "kind": "recall",
+          "prompt": "What is data augmentation?",
+          "answer": "**Generating more data by slightly corrupting examples** — small rotations, shifts, flips and similar.\n\nIt is a response to the same problem as transfer learning: not enough labelled training data.",
+          "source": "c6b · slide 33"
+        },
+        {
+          "id": "dn-augmentation-why-works",
+          "kind": "recall",
+          "prompt": "Why does slightly corrupting training images help?",
+          "answer": "It teaches the network the **invariances that should hold**: a shifted, rotated or flipped cat is still a cat.\n\nWithout it, the network can latch onto accidental properties of the training images — exact position, exact orientation — that will not hold on new data. Augmentation enlarges the effective training set and forces the features to be more general.",
+          "source": "c6b · slide 33"
+        }
+      ]
+    },
+    {
+      "id": "dn-regularization-dropout",
+      "title": "Regularization and dropout",
+      "emphasis": "core",
+      "summary": "The usual L1/L2 penalties are available, plus dropout — a distinctly computational trick that randomly ignores units during training.",
+      "questions": [
+        {
+          "id": "dn-keras-regularizers",
+          "kind": "mcq",
+          "prompt": "Which regularizers does Keras provide for a layer's kernel?",
+          "options": [
+            "l1(), l2() and l1_l2()",
+            "l1() and l2() only",
+            "ridge() and lasso()",
+            "dropout() and l2()"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same L1, L2 and combined penalties as c3, applied via `kernel_regularizer=keras.regularizers.l2(0.01)`.",
+          "source": "c6b · slide 12"
+        },
+        {
+          "id": "dn-dropout-definition",
+          "kind": "recall",
+          "prompt": "What is dropout, and how does the course characterise it?",
+          "answer": "**During training, for each mini-batch, ignore some units at random.**\n\nIt is described as regularization **'the computer science way'** — like early stopping — as opposed to the mathematical penalty terms of L1 and L2.",
+          "source": "c6b · slide 13"
+        },
+        {
+          "id": "dn-dropout-cs-way",
+          "kind": "mcq",
+          "prompt": "What other technique does the course group with dropout as regularization 'the computer science way'?",
+          "options": [
+            "Early stopping",
+            "Ridge regression",
+            "Batch normalization",
+            "Data augmentation"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 13"
+        },
+        {
+          "id": "dn-dropout-keras",
+          "kind": "mcq",
+          "prompt": "How is dropout added in Keras?",
+          "options": [
+            "keras.layers.Dropout(rate=0.2) between the Dense layers",
+            "Dense(300, dropout=0.2)",
+            "model.compile(dropout=0.2)",
+            "model.fit(..., dropout=0.2)"
+          ],
+          "answerIndex": 0,
+          "explanation": "A layer like any other — the 'everything is a layer' principle again. The example places one before each Dense layer.",
+          "source": "c6b · slide 14"
+        },
+        {
+          "id": "dn-dropout-rate-compute",
+          "kind": "computation",
+          "prompt": "A layer has {{u}} units with `Dropout(rate={{r}})`. Roughly how many units are ignored in a given mini-batch?",
+          "vars": {
+            "u": {
+              "type": "choice",
+              "values": [
+                100,
+                200,
+                300,
+                400,
+                500
+              ]
+            },
+            "r": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.2,
+                0.25,
+                0.5
+              ]
+            }
+          },
+          "derived": {
+            "d": "u * r"
+          },
+          "steps": [
+            {
+              "text": "The rate is the proportion of units dropped."
+            },
+            {
+              "text": "`{{u}} × {{r}}`"
+            },
+            {
+              "text": "`= {{d}}` units ignored, leaving `{{u - d}}` active."
+            }
+          ],
+          "answer": {
+            "expr": "u * r",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Which units get dropped is redrawn for every mini-batch, so no unit can rely on any other being present.",
+          "source": "c6b · slides 13–14"
+        },
+        {
+          "id": "dn-dropout-training-only",
+          "kind": "recall",
+          "prompt": "Does dropout apply at prediction time?",
+          "answer": "No — the slide says **during training**. At prediction time the full network is used.\n\nThat is the point: dropout stops units co-adapting *while learning*, but you want the whole trained network available when actually predicting.",
+          "source": "c6b · slide 13"
+        },
+        {
+          "id": "dn-defaults-2020s",
+          "kind": "recall",
+          "prompt": "Give the course's 'good defaults in the 2020s' for training from scratch, including the lecturer's overrides.",
+          "answer": "Scale the input, then:\n\n- **Activation:** the book says SELU — the lecturer overrides this in red with **ReLU**\n- **Normalization:** the book says None (self-normalization) — overridden with **BatchNorm / LayerNorm**\n- **Optimizer:** the book says Nadam — overridden with **Adam / AdamW**\n- **Kernel initializer:** LeCun initialization\n- **Regularization:** early stopping\n- **Learning rate schedule:** performance scheduling",
+          "source": "c6b · slide 15"
+        },
+        {
+          "id": "dn-defaults-overrides",
+          "kind": "multi",
+          "prompt": "Which three rows of the defaults table did the lecturer override in red?",
+          "options": [
+            "Activation function",
+            "Normalization",
+            "Optimizer",
+            "Kernel initializer"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "SELU → ReLU, None → BatchNorm/LayerNorm, Nadam → Adam/AdamW. The initializer, regularization and schedule rows are left as printed.",
+          "source": "c6b · slide 15"
+        },
+        {
+          "id": "dn-default-activation-override",
+          "kind": "mcq",
+          "prompt": "The defaults table prints SELU as the activation. What did the lecturer write instead?",
+          "options": [
+            "ReLU",
+            "Tanh",
+            "Sigmoid",
+            "ELU"
+          ],
+          "answerIndex": 0,
+          "explanation": "Worth remembering as the lecturer's answer rather than the book's — the two differ here.",
+          "source": "c6b · slide 15"
+        },
+        {
+          "id": "dn-regularizer-code",
+          "kind": "mcq",
+          "prompt": "Which argument applies an L2 penalty to a Dense layer's weights?",
+          "options": [
+            "kernel_regularizer=keras.regularizers.l2(0.01)",
+            "kernel_initializer=keras.regularizers.l2(0.01)",
+            "activity_regularizer=0.01",
+            "penalty=\"l2\""
+          ],
+          "answerIndex": 0,
+          "explanation": "`kernel_initializer` is a different argument entirely — it controls the starting weights, not the penalty.",
+          "source": "c6b · slide 12"
+        }
+      ]
+    },
+    {
+      "id": "dn-convolutions",
+      "title": "Convolutions",
+      "emphasis": "core",
+      "summary": "A weighted sum over each pixel's small neighbourhood. Far fewer weights than a Dense layer, and the same filter applies everywhere in the image.",
+      "formulas": [
+        {
+          "name": "Convolution output size (no padding)",
+          "expression": "out = (in − filter) / stride + 1",
+          "note": "Per dimension. With zero padding the output can keep the input size.",
+          "source": "c6b · slides 19–21"
+        }
+      ],
+      "questions": [
+        {
+          "id": "dn-conv-definition",
+          "kind": "mcq",
+          "prompt": "What does a convolution compute?",
+          "options": [
+            "A weighted sum over each pixel's small neighbourhood",
+            "The maximum over each neighbourhood",
+            "A fully connected sum over the whole image",
+            "The difference between adjacent pixels"
+          ],
+          "answerIndex": 0,
+          "explanation": "Max pooling is the maximum version, and it is explicitly non-linear; convolution is a linear weighted sum.",
+          "source": "c6b · slides 18, 24"
+        },
+        {
+          "id": "dn-why-cnn-weights",
+          "kind": "recall",
+          "prompt": "Use the 100×100 image figure to explain why CNNs are needed.",
+          "answer": "A **100×100 image with 3 colour channels** connected to **1000 units** in a Dense layer needs **30 million weights** — for one layer, on a small image.\n\nHumans have evolved **specialised hardware for vision**, and CNNs borrow the idea: two new layer types, **convolutions** and **max-pooling**, that exploit spatial structure instead of connecting everything to everything.",
+          "source": "c6b · slide 17"
+        },
+        {
+          "id": "dn-conv-worked",
+          "kind": "recall",
+          "prompt": "Work through the 3×3 convolution example from the slides.",
+          "answer": "Image `[[1,3,6],[1,5,9],[1,7,11]]`, kernel `[[1,−1],[0,1]]`, stride 1, **no** zero-padding — so the output is 2×2.\n\n- `1×1 + 3×−1 + 1×0 + 5×1 = 1 − 3 + 0 + 5 = 3`\n- `3×1 + 6×−1 + 5×0 + 9×1 = 3 − 6 + 0 + 9 = 6`\n- `1×1 + 5×−1 + 1×0 + 7×1 = 1 − 5 + 0 + 7 = 3`\n- `5×1 + 9×−1 + 7×0 + 11×1 = 5 − 9 + 0 + 11 = 7`\n\nResult: `[[3, 6], [3, 7]]`",
+          "source": "c6b · slide 21"
+        },
+        {
+          "id": "dn-conv-worked-mcq",
+          "kind": "mcq",
+          "prompt": "For image `[[1,3,6],[1,5,9],[1,7,11]]` with kernel `[[1,−1],[0,1]]`, stride 1, no padding, what is the output?",
+          "options": [
+            "[[3, 6], [3, 7]]",
+            "[[5, 9], [7, 11]]",
+            "[[3, 3], [6, 7]]",
+            "[[1, 3], [1, 5]]"
+          ],
+          "answerIndex": 0,
+          "explanation": "The second option is the max-pooling answer for the same image — a useful pair to keep straight.",
+          "source": "c6b · slides 21, 28"
+        },
+        {
+          "id": "dn-conv-border",
+          "kind": "recall",
+          "prompt": "What happens at the border of an image during convolution?",
+          "answer": "Either **add 0s** (zero padding), which lets the output keep the input's size, or accept a **smaller output**.",
+          "source": "c6b · slide 19"
+        },
+        {
+          "id": "dn-stride-term",
+          "kind": "mcq",
+          "prompt": "What is the step size of a convolution called, and what does stride > 1 do?",
+          "options": [
+            "Stride; the output will be smaller",
+            "Padding; the output will be larger",
+            "Kernel size; the output is unchanged",
+            "Pooling; the output is smoothed"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 20"
+        },
+        {
+          "id": "dn-conv-output-size-compute",
+          "kind": "computation",
+          "prompt": "A {{n}}×{{n}} image is convolved with a {{f}}×{{f}} filter, stride 1, no zero padding. What is the output width?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 5,
+              "max": 30
+            },
+            "f": {
+              "type": "choice",
+              "values": [
+                2,
+                3,
+                5,
+                7
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "With no padding, the filter can only be placed where it fits entirely inside the image."
+            },
+            {
+              "text": "`out = (in − filter)/stride + 1 = ({{n}} − {{f}})/1 + 1`"
+            },
+            {
+              "text": "`= {{n - f + 1}}`"
+            }
+          ],
+          "answer": {
+            "expr": "n - f + 1",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "The slide's example: a 3×3 image with a 2×2 filter gives 3 − 2 + 1 = 2, so a 2×2 output.",
+          "source": "c6b · slides 19, 21"
+        },
+        {
+          "id": "dn-conv-stride-size-compute",
+          "kind": "computation",
+          "prompt": "A {{f + s*k}}×{{f + s*k}} image is convolved with a {{f}}×{{f}} filter at stride {{s}}, no padding. What is the output width?",
+          "vars": {
+            "f": {
+              "type": "choice",
+              "values": [
+                2,
+                3,
+                4
+              ]
+            },
+            "s": {
+              "type": "choice",
+              "values": [
+                2,
+                3,
+                4
+              ]
+            },
+            "k": {
+              "type": "int",
+              "min": 2,
+              "max": 8
+            }
+          },
+          "steps": [
+            {
+              "text": "`out = floor((in − filter)/stride) + 1`."
+            },
+            {
+              "text": "`({{n}} − {{f}})/{{s}} + 1 = {{n - f}}/{{s}} + 1`"
+            },
+            {
+              "text": "`= {{k + 1}}`"
+            }
+          ],
+          "answer": {
+            "expr": "k + 1",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Stride > 1 shrinks the output — the second of the two ways a CNN reduces spatial size, alongside pooling. When the stride does not divide `in − filter` evenly the window simply stops early, so the count is **floored**: a 10×10 image with a 4×4 filter at stride 4 gives floor(6/4) + 1 = **2**, not 2.5.",
+          "source": "c6b · slides 19–20",
+          "derived": {
+            "n": "f + s*k"
+          }
+        },
+        {
+          "id": "dn-conv-as-filters",
+          "kind": "recall",
+          "prompt": "What do convolutions act as, and what do the early and later layers learn?",
+          "answer": "They act as **filters**, extracting **low-level features** — the figure shows a vertical filter and a horizontal filter producing two different feature maps from the same input.\n\n**Early layers:** low-level features.\n**Later layers:** combinations of low-level features, giving **high-level** features.\n\nThe promise of DNNs: features are **learned automatically**, so no feature engineering is needed.",
+          "source": "c6b · slides 22, 24"
+        },
+        {
+          "id": "dn-conv-linear",
+          "kind": "mcq",
+          "prompt": "Convolutions are described as which kind of operation?",
+          "options": [
+            "Linear — a weighted sum",
+            "Non-linear, like max pooling",
+            "A thresholding operation",
+            "A sampling operation"
+          ],
+          "answerIndex": 0,
+          "explanation": "Which is why an activation function is still needed after a convolutional layer.",
+          "source": "c6b · slide 24"
+        },
+        {
+          "id": "dn-conv-channels",
+          "kind": "mcq",
+          "prompt": "How do convolutions handle multiple colour channels or feature maps?",
+          "options": [
+            "They usually go across all channels / feature maps",
+            "They process each channel independently and never combine them",
+            "They average the channels first",
+            "They only ever use the first channel"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 24"
+        },
+        {
+          "id": "dn-conv-memory",
+          "kind": "recall",
+          "prompt": "What is the memory situation for convolutional layers, and what can be done about it?",
+          "answer": "Convolutional layers need **less memory than Dense** ones, **but must store ALL intermediate results for backpropagation**. For reasonably sized images at mini-batch 100, that can be **12 GB of GPU RAM**.\n\nIf you run out:\n- **Reduce batch size**\n- **Simplify the network**: higher strides, fewer layers\n- **Quantize**: use 16 or 8 bits instead of 32\n- **Use multiple GPUs / computers**",
+          "source": "c6b · slide 25"
+        },
+        {
+          "id": "dn-memory-fixes",
+          "kind": "multi",
+          "prompt": "Which are listed as responses to running out of GPU memory?",
+          "options": [
+            "Reduce batch size",
+            "Higher strides or fewer layers",
+            "Quantize to 16 or 8 bits",
+            "Increase the learning rate"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "The learning rate has no bearing on memory. The fourth listed option is using multiple GPUs or computers.",
+          "source": "c6b · slide 25"
+        },
+        {
+          "id": "dn-no-feature-engineering",
+          "kind": "mcq",
+          "prompt": "What does the course call 'the promise of DNN'?",
+          "options": [
+            "Features are learned automatically — no feature engineering needed",
+            "Training is faster than for shallow models",
+            "No labelled data is required",
+            "The model is fully explainable"
+          ],
+          "answerIndex": 0,
+          "explanation": "Set against the intro deck's emphasis on manual feature engineering — this is what changed.",
+          "source": "intro · slide 32; c6b · slide 24"
+        }
+      ]
+    },
+    {
+      "id": "dn-pooling",
+      "title": "Max pooling",
+      "emphasis": "core",
+      "summary": "A non-linear shrinking operation that takes the maximum over each window, giving invariance to small translations.",
+      "questions": [
+        {
+          "id": "dn-maxpool-definition",
+          "kind": "mcq",
+          "prompt": "How is max pooling described?",
+          "options": [
+            "A non-linear operation, usually used for shrinking",
+            "A linear operation used for smoothing",
+            "A trainable layer with weights",
+            "A normalisation step"
+          ],
+          "answerIndex": 0,
+          "explanation": "Note the contrast with convolution, which is explicitly linear. Pooling also has no learnable parameters.",
+          "source": "c6b · slide 26"
+        },
+        {
+          "id": "dn-maxpool-worked",
+          "kind": "recall",
+          "prompt": "Work through the max-pooling example from the slides.",
+          "answer": "Image `[[1,3,6],[1,5,9],[1,7,11]]`, 2×2 max-pooling, stride 1, **no** zero-padding.\n\n- `Max(1,3,1,5) = 5`\n- `Max(3,6,5,9) = 9`\n- `Max(1,5,1,7) = 7`\n- `Max(5,9,7,11) = 11`\n\nResult: `[[5, 9], [7, 11]]`",
+          "source": "c6b · slide 28"
+        },
+        {
+          "id": "dn-maxpool-worked-mcq",
+          "kind": "mcq",
+          "prompt": "For image `[[1,3,6],[1,5,9],[1,7,11]]` with 2×2 max-pooling, stride 1, no padding, what is the output?",
+          "options": [
+            "[[5, 9], [7, 11]]",
+            "[[3, 6], [3, 7]]",
+            "[[1, 3], [1, 5]]",
+            "[[5, 6], [7, 9]]"
+          ],
+          "answerIndex": 0,
+          "explanation": "The second option is the convolution answer for the same image — the pair is worth keeping straight, since the slides use the identical input for both.",
+          "source": "c6b · slides 21, 28"
+        },
+        {
+          "id": "dn-maxpool-invariance",
+          "kind": "mcq",
+          "prompt": "What property does max pooling provide?",
+          "options": [
+            "Invariance to small translations",
+            "Invariance to rotation",
+            "Invariance to scale",
+            "Invariance to colour changes"
+          ],
+          "answerIndex": 0,
+          "explanation": "The figure shows three slightly shifted inputs A, B and C producing the same pooled output.",
+          "source": "c6b · slide 27"
+        },
+        {
+          "id": "dn-maxpool-window-compute",
+          "kind": "computation",
+          "prompt": "A {{n}}×{{n}} feature map is max-pooled with a {{p}}×{{p}} window at stride {{p}} (non-overlapping). What is the output width?",
+          "vars": {
+            "n": {
+              "type": "choice",
+              "values": [
+                8,
+                12,
+                16,
+                24,
+                28,
+                32
+              ]
+            },
+            "p": {
+              "type": "choice",
+              "values": [
+                2,
+                4
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "With stride equal to the window size, the windows tile the map without overlapping."
+            },
+            {
+              "text": "`{{n}} / {{p}}`"
+            },
+            {
+              "text": "`= {{n / p}}`"
+            }
+          ],
+          "answer": {
+            "expr": "n / p",
+            "tolerance": 0.02,
+            "decimals": 2
+          },
+          "explanation": "`MaxPooling2D(pool_size=2)` therefore halves each spatial dimension, quartering the number of values.",
+          "source": "c6b · slides 26, 30"
+        },
+        {
+          "id": "dn-maxpool-no-params",
+          "kind": "recall",
+          "prompt": "Does a max-pooling layer have trainable parameters?",
+          "answer": "No. It just takes the maximum over each window — there is nothing to learn.\n\nThis is why it is cheap and why it appears repeatedly between convolutional layers to reduce spatial size without adding to the parameter count.",
+          "source": "c6b · slides 26, 30"
+        },
+        {
+          "id": "dn-maxpool-vs-conv",
+          "kind": "recall",
+          "prompt": "Contrast convolution and max pooling.",
+          "answer": "| | Convolution | Max pooling |\n|---|---|---|\n| **Operation** | Weighted sum — **linear** | Maximum — **non-linear** |\n| **Parameters** | Learned weights | None |\n| **Purpose** | Extract features | Shrink, and give translation invariance |\n\nBoth are applied over a small window sliding across the input, which is why they are easy to confuse.",
+          "source": "c6b · slides 18, 24, 26"
+        },
+        {
+          "id": "dn-pooling-invariance-figure",
+          "kind": "mcq",
+          "prompt": "In the invariance figure, three inputs A, B and C differ by small shifts. What do their MaxPool2D outputs show?",
+          "options": [
+            "The same output despite the shifts",
+            "Three completely different outputs",
+            "Outputs shifted by the same amount",
+            "Outputs of different sizes"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 27"
+        },
+        {
+          "id": "dn-shrinking-two-ways",
+          "kind": "recall",
+          "prompt": "What are the two ways a CNN reduces spatial size?",
+          "answer": "**Max pooling** — take the maximum over each window, typically halving each dimension.\n\n**Stride > 1** in a convolution — stepping the filter more than one pixel at a time produces a smaller output directly.\n\nThe memory advice mentions higher strides as a way to shrink a network that will not fit in GPU memory.",
+          "source": "c6b · slides 20, 25–26"
+        }
+      ]
+    },
+    {
+      "id": "dn-cnn-architectures",
+      "title": "CNN architectures",
+      "emphasis": "standard",
+      "summary": "The standard shape: convolutions and pooling first, Dense layers at the end. Plus the two historical architectures the course names.",
+      "questions": [
+        {
+          "id": "dn-cnn-shape",
+          "kind": "mcq",
+          "prompt": "What is the standard shape of a CNN?",
+          "options": [
+            "Convolutions and poolings first, then Dense layers",
+            "Dense layers first, then convolutions",
+            "Alternating Dense and convolutional layers throughout",
+            "Convolutions only, with no Dense layers"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 29"
+        },
+        {
+          "id": "dn-conv-defaults",
+          "kind": "recall",
+          "prompt": "What are the default convolution settings the course gives?",
+          "answer": "**3×3** convolutions, **except for the first layer**, which might use larger ones and might also use **stride > 1**.\n\nThe MNIST example follows this: `kernel_size=7` on the first layer, then `kernel_size=3` throughout via the `DefaultConv2D` partial.",
+          "source": "c6b · slides 29–30"
+        },
+        {
+          "id": "dn-cnn-mnist-structure",
+          "kind": "recall",
+          "prompt": "Describe the CNN for MNIST from the slides.",
+          "answer": "```python\nDefaultConv2D = partial(keras.layers.Conv2D, kernel_size=3,\n                        activation='relu', padding=\"SAME\")\n\nmodel = Sequential([\n  DefaultConv2D(filters=64, kernel_size=7, input_shape=[28,28,1]),\n  MaxPooling2D(pool_size=2),\n  DefaultConv2D(filters=128),\n  DefaultConv2D(filters=128),\n  MaxPooling2D(pool_size=2),\n  DefaultConv2D(filters=256),\n  DefaultConv2D(filters=256),\n  MaxPooling2D(pool_size=2),\n  Flatten(),\n  Dense(units=128, activation='relu'),\n  Dropout(0.5),\n  Dense(units=64, activation='relu'),\n  Dropout(0.5),\n  Dense(units=10, activation='softmax'),\n])\n```\n\nFilter counts **double** after each pooling step (64 → 128 → 256) as the spatial size halves.",
+          "source": "c6b · slide 30"
+        },
+        {
+          "id": "dn-filters-double",
+          "kind": "recall",
+          "prompt": "Why do filter counts typically double after each pooling layer?",
+          "answer": "Pooling **halves each spatial dimension**, cutting the number of positions to a quarter. Doubling the filters recovers some of that capacity, so the layer can represent more feature *types* as it loses spatial *resolution*.\n\nIt is a trade of where-things-are for what-things-are — appropriate as the network moves from low-level to high-level features.",
+          "source": "c6b · slides 24, 30"
+        },
+        {
+          "id": "dn-lenet5",
+          "kind": "mcq",
+          "prompt": "What was LeNet5 originally invented for?",
+          "options": [
+            "MNIST",
+            "ImageNet",
+            "CIFAR-10",
+            "FashionMNIST"
+          ],
+          "answerIndex": 0,
+          "explanation": "Its table shows alternating Convolution and Avg Pooling layers with tanh activations and an RBF output — the pattern predates ReLU and max pooling.",
+          "source": "c6b · slide 31"
+        },
+        {
+          "id": "dn-lenet-pooling-type",
+          "kind": "mcq",
+          "prompt": "What kind of pooling does the LeNet5 table use?",
+          "options": [
+            "Avg Pooling",
+            "Max Pooling",
+            "No pooling",
+            "Global pooling"
+          ],
+          "answerIndex": 0,
+          "explanation": "Average, not max — a visible difference from modern practice, alongside its use of tanh rather than ReLU.",
+          "source": "c6b · slide 31"
+        },
+        {
+          "id": "dn-alexnet",
+          "kind": "mcq",
+          "prompt": "What is AlexNet associated with?",
+          "options": [
+            "The ImageNet 2012 classification breakthrough",
+            "The invention of backpropagation",
+            "The first use of MNIST",
+            "The introduction of dropout"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 32"
+        },
+        {
+          "id": "dn-alexnet-first-layer",
+          "kind": "mcq",
+          "prompt": "AlexNet's first convolutional layer uses an 11×11 kernel with stride 4. Which piece of course advice does that illustrate?",
+          "options": [
+            "The first layer might use larger kernels and stride > 1",
+            "All layers should use large kernels",
+            "Stride should always be 1",
+            "The first layer should always be 3×3"
+          ],
+          "answerIndex": 0,
+          "explanation": "A large strided first layer cuts the 227×227 input down quickly before the expensive layers run.",
+          "source": "c6b · slides 29, 32"
+        },
+        {
+          "id": "dn-cnn-vs-rnn",
+          "kind": "recall",
+          "prompt": "What are CNNs and RNNs each for?",
+          "answer": "**Convolutional** neural networks — for **images**, and other applications with **spatial** relationships.\n\n**Recurrent** neural networks — for **sequences**, and other applications with **temporal** relationships.",
+          "source": "c6b · slide 16"
+        },
+        {
+          "id": "dn-rnn-purpose",
+          "kind": "mcq",
+          "prompt": "Recurrent neural networks are for applications with which kind of relationship?",
+          "options": [
+            "Temporal",
+            "Spatial",
+            "Hierarchical",
+            "Categorical"
+          ],
+          "answerIndex": 0,
+          "source": "c6b · slide 16"
+        },
+        {
+          "id": "dn-cnn-vis-link",
+          "kind": "mcq",
+          "prompt": "Which link does the course give for visualising a CNN?",
+          "options": [
+            "adamharley.com/nn_vis/cnn/2d.html",
+            "playground.tensorflow.org",
+            "distill.pub/2017/momentum",
+            "analyticsvidhya.com"
+          ],
+          "answerIndex": 0,
+          "explanation": "playground.tensorflow.org is the c6a link for toy problems; the analyticsvidhya and towardsdatascience links accompany the convolution slide.",
+          "source": "c6b · slide 30"
+        },
+        {
+          "id": "dn-dropout-in-cnn",
+          "kind": "mcq",
+          "prompt": "Where does the MNIST CNN place its Dropout layers?",
+          "options": [
+            "After the Dense layers at the end, at rate 0.5",
+            "After every convolution",
+            "Immediately after the input",
+            "It uses no dropout"
+          ],
+          "answerIndex": 0,
+          "explanation": "The Dense layers hold most of the parameters and so carry most of the overfitting risk — that is where dropout earns its place.",
+          "source": "c6b · slide 30"
+        }
+      ]
+    }
+  ]
+}

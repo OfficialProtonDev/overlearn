@@ -1,0 +1,1997 @@
+{
+  "id": "performance",
+  "title": "Model Performance",
+  "summary": "How to tell whether a model is any good. Cross-validation for honest estimates, the confusion matrix and everything derived from it, and the two curves — precision-recall and ROC — that describe a classifier across all thresholds rather than at one.",
+  "formulas": [
+    {
+      "name": "Precision",
+      "expression": "precision = TP / (TP + FP)",
+      "note": "Of everything predicted positive, how much really was. Denominator is a column of the confusion matrix.",
+      "source": "c4 · slide 12"
+    },
+    {
+      "name": "Recall",
+      "expression": "recall = TP / (TP + FN)",
+      "note": "Of everything actually positive, how much was found. Denominator is a row of the confusion matrix.",
+      "source": "c4 · slide 12"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "mp-error-types",
+      "title": "Training vs test error",
+      "emphasis": "core",
+      "summary": "Training error falls monotonically with complexity; test error turns back up. The distance between them is the generalization gap.",
+      "keyFacts": [
+        {
+          "term": "Generalization gap",
+          "definition": "The gap between the test error and the training error.",
+          "source": "c4 · slide 2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-gap-definition",
+          "kind": "short",
+          "prompt": "What is the gap between test error and training error called?",
+          "answers": [
+            "generalization gap",
+            "generalisation gap",
+            "the generalization gap"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 2"
+        },
+        {
+          "id": "mp-complexity-curve",
+          "kind": "recall",
+          "prompt": "Describe how training and test error behave as model complexity increases.",
+          "answer": "**Training error** falls steadily — a more complex model can always fit the data it has seen better.\n\n**Test error** falls at first, then **turns back up** past some point of complexity.\n\nThe region left of the turning point is **underfitting**; the region right of it is **overfitting**. The widening distance between the curves is the generalization gap.",
+          "source": "c4 · slide 2"
+        },
+        {
+          "id": "mp-curve-regions",
+          "kind": "mcq",
+          "prompt": "On the error-versus-complexity plot, the region to the **left** of the minimum test error is labelled:",
+          "options": [
+            "Underfitting",
+            "Overfitting",
+            "The generalization gap",
+            "Irreducible error"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 2"
+        },
+        {
+          "id": "mp-validation-estimates-test",
+          "kind": "mcq",
+          "prompt": "Under what condition is validation error a good estimate of test accuracy?",
+          "options": [
+            "When training and test data are drawn from the same distribution",
+            "When the validation set is at least half the data",
+            "When the model is linear",
+            "Always — that is what validation is for"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide's own gloss: 'a fancy way of saying if the training data and the test data are similar'.",
+          "source": "c4 · slide 3"
+        },
+        {
+          "id": "mp-same-distribution",
+          "kind": "short",
+          "prompt": "Complete the phrase: the error on the validation set estimates test accuracy well if the data are drawn from the same ___.",
+          "answers": [
+            "distribution"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 3"
+        },
+        {
+          "id": "mp-gap-compute",
+          "kind": "computation",
+          "prompt": "A model scores {{tr}}% accuracy on the training set and {{te}}% on the test set. How large is the generalization gap, in percentage points?",
+          "vars": {
+            "tr": {
+              "type": "int",
+              "min": 88,
+              "max": 100
+            },
+            "te": {
+              "type": "int",
+              "min": 60,
+              "max": 87
+            }
+          },
+          "steps": [
+            {
+              "text": "The gap is the difference between training and test performance."
+            },
+            {
+              "text": "`{{tr}} − {{te}}`"
+            },
+            {
+              "text": "`= {{tr - te}}` percentage points."
+            }
+          ],
+          "answer": {
+            "expr": "tr - te",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "A large gap points to overfitting. A small gap at a poor absolute score points to underfitting instead.",
+          "source": "c4 · slide 2"
+        },
+        {
+          "id": "mp-error-decomposition-recall",
+          "kind": "recall",
+          "prompt": "State the error decomposition and which parts can be traded off.",
+          "answer": "`Generalization error = Bias + Variance + Irreducible error`\n\n**Bias and variance** can be traded against each other by moving along the complexity axis. **Irreducible error** is noise and cannot be traded at all — it is the floor.",
+          "source": "c4 · slide 5"
+        },
+        {
+          "id": "mp-most-performant",
+          "kind": "mcq",
+          "prompt": "According to the error decomposition slide, the most performant model on new data is the one with:",
+          "options": [
+            "The best tradeoff between bias and variance",
+            "The lowest training error",
+            "The lowest bias",
+            "The most parameters that still converge"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 4"
+        },
+        {
+          "id": "mp-e-new-notation",
+          "kind": "mcq",
+          "prompt": "In the c4 diagrams, what does Ē_new denote?",
+          "options": [
+            "The expected error on new data",
+            "The training error",
+            "The number of new examples",
+            "The irreducible error alone"
+          ],
+          "answerIndex": 0,
+          "explanation": "It is plotted against Ē_train, and the vertical distance between them is the generalization gap.",
+          "source": "c4 · slides 2, 4"
+        },
+        {
+          "id": "mp-hold-out-name",
+          "kind": "short",
+          "prompt": "What other name does c4 give the validation set?",
+          "answers": [
+            "hold-out",
+            "holdout",
+            "hold out",
+            "hold-out set"
+          ],
+          "tier": 1,
+          "source": "c4 · slide 3"
+        },
+        {
+          "id": "mp-low-train-high-test",
+          "kind": "recall",
+          "prompt": "Training error is very low but test error is high. Diagnose it and give two remedies.",
+          "answer": "**Overfitting** — a large generalization gap.\n\nRemedies: **more training data**, or a **less complex / more constrained model** (fewer parameters, fewer features, stronger regularization).",
+          "source": "c4 · slides 2, 5"
+        },
+        {
+          "id": "mp-both-errors-high",
+          "kind": "mcq",
+          "prompt": "Training error and test error are both high and close together. What is the problem?",
+          "options": [
+            "Underfitting — the model is too simple",
+            "Overfitting — the model memorised the data",
+            "The test set is too small",
+            "The learning rate is too high"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slides 2, 4"
+        },
+        {
+          "id": "mp-lab-reference",
+          "kind": "mcq",
+          "prompt": "The validation-vs-test scatter plot in c4 refers you to which practical work?",
+          "options": [
+            "Lab 2",
+            "Lab 1",
+            "Lab 3",
+            "The assignment"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 3"
+        },
+        {
+          "id": "mp-complexity-cloze",
+          "kind": "cloze",
+          "prompt": "As the model becomes more complex, training error generally {{1}}, while at some point test error starts to {{2}}.",
+          "blanks": [
+            [
+              "decreases",
+              "falls",
+              "goes down",
+              "lowers"
+            ],
+            [
+              "increase",
+              "rise",
+              "go up"
+            ]
+          ],
+          "tier": 2,
+          "source": "c4 · slide 2"
+        },
+        {
+          "id": "mp-why-not-train-error",
+          "kind": "recall",
+          "prompt": "Why can training error never be used to choose model complexity?",
+          "answer": "Because it **decreases monotonically** with complexity. Selecting on it would always pick the most complex model available — the most overfitted one.\n\nThe turning point that matters only exists on the **test or validation** curve, so selection must happen on held-out data.",
+          "source": "c4 · slide 2"
+        }
+      ]
+    },
+    {
+      "id": "mp-cross-validation",
+      "title": "Cross-validation",
+      "emphasis": "core",
+      "summary": "An alternative to a single train/validation split: k folds, k fits, k results, then mean and standard deviation. It uses all the data for both purposes without ever testing on what it trained on.",
+      "keyFacts": [
+        {
+          "term": "k-fold cross-validation",
+          "definition": "Split train into k equal-sized folds (default 10). Use k−1 together as the new train, validate on the remaining fold. Repeat k times, always choosing another fold, giving k results. Report mean + standard deviation.",
+          "source": "c4 · slide 6"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-cv-procedure",
+          "kind": "recall",
+          "prompt": "Describe k-fold cross-validation, including what is reported at the end.",
+          "answer": "1. Split **train** into **k equal-sized folds** (default 10).\n2. Use **k−1 folds** together as the new training set, validate on the **remaining fold**.\n3. **Repeat k times**, each time holding out a different fold — giving k results.\n4. Compute the **mean and standard deviation** of those k results.\n\nIt can be repeated with different random seeds to reduce the variance of the result further.",
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-default-folds",
+          "kind": "mcq",
+          "prompt": "What does c4 give as the default number of folds?",
+          "options": [
+            "10",
+            "3",
+            "5",
+            "k = n, leave-one-out"
+          ],
+          "answerIndex": 0,
+          "explanation": "Note the code examples use `cv=3`, which is a speed compromise on MNIST, not the stated default.",
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-alternative-to",
+          "kind": "mcq",
+          "prompt": "Cross-validation is described as an alternative to what?",
+          "options": [
+            "A single train + validation split",
+            "The test set",
+            "Regularization",
+            "Hyperparameter search"
+          ],
+          "answerIndex": 0,
+          "explanation": "The test set is still held out separately. Cross-validation replaces the *validation* split, not the test set.",
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-repeat-seeds",
+          "kind": "mcq",
+          "prompt": "Why repeat cross-validation with different random seeds?",
+          "options": [
+            "To further reduce the variance of the result",
+            "To increase the size of the training set",
+            "To avoid overfitting the test set",
+            "Because sklearn requires it"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-fold-size",
+          "kind": "computation",
+          "prompt": "A training set of {{k * per}} examples is split into {{k}} folds. How many examples are in each fold?",
+          "vars": {
+            "k": {
+              "type": "choice",
+              "values": [
+                3,
+                5,
+                6,
+                10
+              ]
+            },
+            "per": {
+              "type": "choice",
+              "values": [
+                100,
+                150,
+                200,
+                300,
+                500
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "The folds are equal-sized, so each holds `n / k` examples."
+            },
+            {
+              "text": "`{{n}} / {{k}} = {{per}}` examples per fold."
+            }
+          ],
+          "answer": {
+            "expr": "per",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c4 · slide 6",
+          "derived": {
+            "n": "k * per"
+          }
+        },
+        {
+          "id": "mp-cv-train-size",
+          "kind": "computation",
+          "prompt": "A training set of {{k * per}} examples is split into {{k}} folds. In each round, how many examples are used for **training**?",
+          "vars": {
+            "k": {
+              "type": "choice",
+              "values": [
+                3,
+                5,
+                6,
+                10
+              ]
+            },
+            "per": {
+              "type": "choice",
+              "values": [
+                100,
+                150,
+                200,
+                300,
+                500
+              ]
+            }
+          },
+          "derived": {
+            "n": "k * per"
+          },
+          "steps": [
+            {
+              "text": "Each fold holds `{{n}} / {{k}} = {{per}}` examples, and one fold is held out to validate on."
+            },
+            {
+              "text": "So `k − 1 = {{k - 1}}` folds are used for training."
+            },
+            {
+              "text": "`{{k - 1}} × {{per}} = {{(k-1) * per}}` examples."
+            }
+          ],
+          "answer": {
+            "expr": "(k - 1) * per",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-fit-count",
+          "kind": "computation",
+          "prompt": "You cross-validate {{m}} candidate models with {{k}}-fold cross-validation. How many model fits are performed in total?",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 2,
+              "max": 12
+            },
+            "k": {
+              "type": "choice",
+              "values": [
+                3,
+                5,
+                10
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "Each model is fitted once per fold, so k fits per model."
+            },
+            {
+              "text": "`{{m}} models × {{k}} folds`"
+            },
+            {
+              "text": "`= {{m * k}}` fits."
+            }
+          ],
+          "answer": {
+            "expr": "m * k",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "This is why cross-validation is expensive, and why `cv=3` shows up in the MNIST examples instead of the stated default of 10.",
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cross-val-score",
+          "kind": "mcq",
+          "prompt": "What does `cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring=\"accuracy\")` return?",
+          "options": [
+            "An array of three accuracy scores, one per fold",
+            "A single averaged accuracy",
+            "The predictions for every training example",
+            "A fitted model"
+          ],
+          "answerIndex": 0,
+          "explanation": "The output shown is `array([0.9532, 0.95125, 0.9625])` — one score per fold.",
+          "source": "c4 · slide 9"
+        },
+        {
+          "id": "mp-cross-val-predict",
+          "kind": "mcq",
+          "prompt": "How does `cross_val_predict` differ from `cross_val_score`?",
+          "options": [
+            "It returns the predictions themselves rather than scores",
+            "It fits on the test set instead of the train set",
+            "It uses a fixed split rather than folds",
+            "It returns probabilities rather than labels"
+          ],
+          "answerIndex": 0,
+          "explanation": "Every prediction comes from a model that did not see that example, which is what makes it safe to build a confusion matrix from.",
+          "source": "c4 · slide 10"
+        },
+        {
+          "id": "mp-stratified-kfold",
+          "kind": "mcq",
+          "prompt": "Which class does the long-form cross-validation example use?",
+          "options": [
+            "StratifiedKFold",
+            "KFold",
+            "ShuffleSplit",
+            "GroupKFold"
+          ],
+          "answerIndex": 0,
+          "explanation": "Stratified folds preserve the class balance in each fold, which matters when the positive class is rare — as it is in the 5-vs-rest MNIST task.",
+          "source": "c4 · slide 8"
+        },
+        {
+          "id": "mp-cv-clone",
+          "kind": "recall",
+          "prompt": "In the long-form cross-validation code, why is `clone(sgd_clf)` called inside the loop?",
+          "answer": "To get a **fresh, unfitted copy** of the classifier for each fold.\n\nWithout it, each iteration would continue training the same fitted object, so later folds would be evaluated by a model that had already seen their data — destroying the independence cross-validation exists to provide.",
+          "source": "c4 · slide 8"
+        },
+        {
+          "id": "mp-mnist-description",
+          "kind": "mcq",
+          "prompt": "How is the MNIST dataset described in c4?",
+          "options": [
+            "50000 + 10000 grey-scale 28×28 noisy images of digits 0 to 9",
+            "60000 colour 32×32 images in 10 classes",
+            "70000 grey-scale 32×32 images of letters",
+            "50000 binary images of handwritten fives"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 9"
+        },
+        {
+          "id": "mp-cv-vs-holdout",
+          "kind": "recall",
+          "prompt": "Give the main advantage and the main cost of cross-validation over a single hold-out split.",
+          "answer": "**Advantage:** every example is used for both training and validation across the rounds, so the estimate uses all the data and comes with a **standard deviation** as well as a mean — you learn how stable the result is.\n\n**Cost:** k times the computation, since the model is fitted k times instead of once.",
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-report",
+          "kind": "cloze",
+          "prompt": "After k rounds, cross-validation reports the {{1}} and the {{2}} of the k results.",
+          "blanks": [
+            [
+              "mean",
+              "average"
+            ],
+            [
+              "standard deviation",
+              "sdev",
+              "std",
+              "std deviation"
+            ]
+          ],
+          "tier": 2,
+          "source": "c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-on-train-only",
+          "kind": "recall",
+          "prompt": "Why is cross-validation run on the training data rather than the whole dataset?",
+          "answer": "Because the **test set must stay untouched** until the very end. Cross-validation is used for **model selection and hyperparameter tuning**, and anything used for selection stops being an honest estimate of final performance.\n\nThe recommended setup is: split into train + test, then cross-validate **within** train.",
+          "source": "intro · slide 30; c4 · slide 6"
+        },
+        {
+          "id": "mp-cv-k-tradeoff",
+          "kind": "recall",
+          "prompt": "What changes as k increases in k-fold cross-validation?",
+          "answer": "Each round trains on **more data** (k−1 out of k folds), so each fitted model is closer to one trained on the full set — a **less pessimistic** estimate.\n\nBut there are **more rounds**, so the cost rises linearly with k, and each validation fold is smaller, making each individual score noisier.",
+          "source": "c4 · slide 6"
+        }
+      ]
+    },
+    {
+      "id": "mp-confusion-matrix",
+      "title": "The confusion matrix",
+      "emphasis": "core",
+      "summary": "Rows are actual classes, columns are predictions. Getting that orientation right is what makes every derived metric come out correctly.",
+      "keyFacts": [
+        {
+          "term": "Confusion matrix layout",
+          "definition": "**Rows** carry information about the actual class — row 0 is class 0. **Columns** carry information about the prediction — column 0 is predicted-as-0.",
+          "source": "c4 · slide 13"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-cm-orientation",
+          "kind": "recall",
+          "prompt": "What do the rows and columns of a confusion matrix represent?",
+          "answer": "**Rows** — the **actual** class. Row 0 holds information about class 0.\n**Columns** — the **predicted** class. Column 0 holds information about what was predicted as 0.\n\nSo the entry at [row i, column j] counts examples that really were class i and were predicted as class j.",
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-read-example",
+          "kind": "mcq",
+          "prompt": "For the matrix `[[5, 1], [2, 3]]`, what are TN, FP, FN and TP?",
+          "options": [
+            "TN=5, FP=1, FN=2, TP=3",
+            "TN=5, FP=2, FN=1, TP=3",
+            "TN=3, FP=1, FN=2, TP=5",
+            "TN=5, FP=1, FN=3, TP=2"
+          ],
+          "answerIndex": 0,
+          "explanation": "Top-left is TN, top-right FP, bottom-left FN, bottom-right TP. Swapping FP and FN is the standard slip, and it comes from reading the matrix column-first.",
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-positions",
+          "kind": "recall",
+          "prompt": "Give the position of each of TN, FP, FN and TP in a 2×2 confusion matrix.",
+          "answer": "```\n[[TN, FP],\n [FN, TP]]\n```\n\n**TN** top-left — actually 0, predicted 0.\n**FP** top-right — actually 0, predicted 1.\n**FN** bottom-left — actually 1, predicted 0.\n**TP** bottom-right — actually 1, predicted 1.\n\nThe diagonal is correct; the off-diagonal is the two kinds of mistake.",
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-perfect",
+          "kind": "mcq",
+          "prompt": "A perfect classifier's confusion matrix has what shape?",
+          "options": [
+            "Non-zero only on the diagonal",
+            "Non-zero only off the diagonal",
+            "All entries equal",
+            "Entirely zero"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide shows `array([[54579, 0], [0, 5421]])` for perfect predictions — every off-diagonal entry is zero.",
+          "source": "c4 · slide 11"
+        },
+        {
+          "id": "mp-cm-fp-meaning",
+          "kind": "mcq",
+          "prompt": "In a spam detector, what is a false positive?",
+          "options": [
+            "A legitimate email marked as spam",
+            "A spam email that reached the inbox",
+            "A spam email correctly caught",
+            "A legitimate email correctly delivered"
+          ],
+          "answerIndex": 0,
+          "explanation": "Positive = the thing being detected (spam). False positive = wrongly flagged. This is usually the more costly error for a spam filter.",
+          "source": "c4 · slides 12–13"
+        },
+        {
+          "id": "mp-cm-fn-meaning",
+          "kind": "short",
+          "prompt": "What is the term for a positive example the classifier failed to detect?",
+          "answers": [
+            "false negative",
+            "a false negative",
+            "fn"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-total-compute",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{fn}}, {{tp}}]]`. How many examples were evaluated in total?",
+          "vars": {
+            "tn": {
+              "type": "int",
+              "min": 20,
+              "max": 90
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "fn": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "tp": {
+              "type": "int",
+              "min": 10,
+              "max": 70
+            }
+          },
+          "steps": [
+            {
+              "text": "Every example lands in exactly one of the four cells."
+            },
+            {
+              "text": "`{{tn}} + {{fp}} + {{fn}} + {{tp}}`"
+            },
+            {
+              "text": "`= {{tn + fp + fn + tp}}` examples."
+            }
+          ],
+          "answer": {
+            "expr": "tn + fp + fn + tp",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-accuracy-compute",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{100 - tp - fp - fn}}, {{fp}}], [{{fn}}, {{tp}}]]`. Give the accuracy.",
+          "vars": {
+            "tp": {
+              "type": "choice",
+              "values": [
+                30,
+                40,
+                50,
+                60
+              ]
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 9
+            },
+            "fn": {
+              "type": "int",
+              "min": 1,
+              "max": 9
+            }
+          },
+          "derived": {
+            "tn": "100 - tp - fp - fn",
+            "acc": "(100 - fp - fn)/100"
+          },
+          "steps": [
+            {
+              "text": "Accuracy is the diagonal over the total: `(TN + TP) / (TN + FP + FN + TP)`."
+            },
+            {
+              "text": "The four cells sum to 100, and the two mistakes are `{{fp}} + {{fn}} = {{fp + fn}}`."
+            },
+            {
+              "text": "So accuracy `= {{100 - fp - fn}}/100 = {{acc | 2}}`."
+            }
+          ],
+          "answer": {
+            "expr": "(100 - fp - fn)/100",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "explanation": "Out of 100 examples, accuracy is just \"100 minus the off-diagonal\". Worth remembering how little that says on its own: c4's 5-detector reaches ~91% accuracy while catching no 5s at all.",
+          "source": "c4 · slides 11, 13"
+        },
+        {
+          "id": "mp-cm-actual-positives",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{fn}}, {{tp}}]]`. How many examples were **actually** positive?",
+          "vars": {
+            "tn": {
+              "type": "int",
+              "min": 20,
+              "max": 90
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "fn": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "tp": {
+              "type": "int",
+              "min": 10,
+              "max": 70
+            }
+          },
+          "steps": [
+            {
+              "text": "Actual classes are **rows**, so the positives are the whole bottom row."
+            },
+            {
+              "text": "That is `FN + TP = {{fn}} + {{tp}}`."
+            },
+            {
+              "text": "`= {{fn + tp}}` actual positives."
+            }
+          ],
+          "answer": {
+            "expr": "fn + tp",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Row for actual, column for predicted. Reading down the last column instead gives FP + TP — the number *predicted* positive, which is a different quantity.",
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-predicted-positives",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{fn}}, {{tp}}]]`. How many examples were **predicted** positive?",
+          "vars": {
+            "tn": {
+              "type": "int",
+              "min": 20,
+              "max": 90
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "fn": {
+              "type": "int",
+              "min": 1,
+              "max": 18
+            },
+            "tp": {
+              "type": "int",
+              "min": 10,
+              "max": 70
+            }
+          },
+          "steps": [
+            {
+              "text": "Predictions are **columns**, so this is the right-hand column."
+            },
+            {
+              "text": "That is `FP + TP = {{fp}} + {{tp}}`."
+            },
+            {
+              "text": "`= {{fp + tp}}` predicted positive."
+            }
+          ],
+          "answer": {
+            "expr": "fp + tp",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-sklearn-call",
+          "kind": "mcq",
+          "prompt": "Which call builds the confusion matrix in the example?",
+          "options": [
+            "confusion_matrix(y_train_5, y_train_pred)",
+            "confusion_matrix(y_train_pred, y_train_5)",
+            "sgd_clf.confusion_matrix(X_train)",
+            "cross_val_score(sgd_clf, X, y, scoring=\"confusion\")"
+          ],
+          "answerIndex": 0,
+          "explanation": "True labels first, predictions second. Swapping them transposes the matrix, silently exchanging FP and FN.",
+          "source": "c4 · slide 11"
+        },
+        {
+          "id": "mp-cm-from-cv",
+          "kind": "recall",
+          "prompt": "Why should the predictions fed to a confusion matrix come from `cross_val_predict` rather than from predicting on the training set?",
+          "answer": "Because a model evaluated on data it **trained on** will look far better than it is. Every prediction from `cross_val_predict` comes from a model that did **not** see that example, so the resulting matrix reflects genuine out-of-sample behaviour.",
+          "source": "c4 · slides 10–11"
+        },
+        {
+          "id": "mp-cm-detector-example",
+          "kind": "mcq",
+          "prompt": "The handwriting figure in c4 is described as which classifier?",
+          "options": [
+            "A '5' detector — a binary classifier for the digit 5",
+            "A full 10-class digit classifier",
+            "A letter classifier",
+            "A spam classifier"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-diagonal-name",
+          "kind": "short",
+          "prompt": "Which two cells of a 2×2 confusion matrix hold the correct predictions?",
+          "answers": [
+            "tn and tp",
+            "tp and tn",
+            "the diagonal",
+            "true negatives and true positives",
+            "diagonal"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 13"
+        },
+        {
+          "id": "mp-cm-imbalance-warning",
+          "kind": "recall",
+          "prompt": "A '5 detector' on MNIST sees about 9% positives. Why is a confusion matrix more informative than accuracy here?",
+          "answer": "Because a classifier that predicts 'not 5' for **everything** achieves about **91% accuracy** while catching not a single 5.\n\nThe confusion matrix exposes that immediately: TP would be 0 and FN would be the entire positive class. Accuracy alone conceals it.",
+          "source": "c4 · slides 11–13"
+        }
+      ]
+    },
+    {
+      "id": "mp-precision-recall",
+      "title": "Precision, recall and F1",
+      "emphasis": "core",
+      "summary": "Two complementary questions, and the harmonic mean that combines them. Which denominator goes with which is the thing to get right.",
+      "formulas": [
+        {
+          "name": "F1 score",
+          "expression": "F1 = 2 / (1/precision + 1/recall) = 2 × (P × R)/(P + R) = TP / (TP + (FN+FP)/2)",
+          "note": "The harmonic mean of precision and recall. Low if either one is low.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "name": "F-beta score",
+          "expression": "F_β = (1 + β²)·tp / ((1 + β²)·tp + fp + β²·fn)",
+          "note": "β is how much more important recall is than precision. β = 1 gives F1.",
+          "source": "c4 · slide 14"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-precision-definition",
+          "kind": "recall",
+          "prompt": "Define precision, in words and as a formula.",
+          "answer": "**In words:** of the examples predicted positive, how many really are positive. For the 5-detector: 'how many of the predicted 5s are really 5s'.\n\n**Formula:** `precision = TP / (TP + FP)`",
+          "source": "c4 · slide 12"
+        },
+        {
+          "id": "mp-recall-definition",
+          "kind": "recall",
+          "prompt": "Define recall, in words and as a formula.",
+          "answer": "**In words:** of the examples that really are positive, how many did we find. For the 5-detector: 'how many of the real 5s do we actually find'.\n\n**Formula:** `recall = TP / (TP + FN)`",
+          "source": "c4 · slide 12"
+        },
+        {
+          "id": "mp-which-denominator",
+          "kind": "mcq",
+          "prompt": "Which metric has FP in its denominator?",
+          "options": [
+            "Precision",
+            "Recall",
+            "Both",
+            "Neither"
+          ],
+          "answerIndex": 0,
+          "explanation": "Precision = TP/(TP+FP), recall = TP/(TP+FN). Precision is punished by false alarms; recall is punished by misses.",
+          "source": "c4 · slide 12"
+        },
+        {
+          "id": "mp-precision-compute",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{fn}}, {{fp * mult}}]]`. Give the precision.",
+          "vars": {
+            "tn": {
+              "type": "choice",
+              "values": [
+                20,
+                30,
+                40,
+                50
+              ]
+            },
+            "fn": {
+              "type": "int",
+              "min": 1,
+              "max": 9
+            },
+            "fp": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                1,
+                3,
+                4,
+                9,
+                19
+              ]
+            }
+          },
+          "derived": {
+            "tp": "fp * mult",
+            "p": "mult / (mult + 1)"
+          },
+          "steps": [
+            {
+              "text": "Rows are actual, columns predicted, so `TP = {{tp}}` (bottom right) and `FP = {{fp}}` (top right)."
+            },
+            {
+              "text": "`precision = TP / (TP + FP) = {{tp}} / ({{tp}} + {{fp}}) = {{tp}}/{{tp + fp}}`"
+            },
+            {
+              "text": "`= {{p | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "mult / (mult + 1)",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c4 · slides 12–13",
+          "explanation": "Of everything flagged positive, how much really was. The denominator is the whole **right-hand column** of the matrix."
+        },
+        {
+          "id": "mp-recall-compute",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{fn}}, {{fn * mult}}]]`. Give the recall.",
+          "vars": {
+            "tn": {
+              "type": "choice",
+              "values": [
+                20,
+                30,
+                40,
+                50
+              ]
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 9
+            },
+            "fn": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                1,
+                3,
+                4,
+                9,
+                19
+              ]
+            }
+          },
+          "derived": {
+            "tp": "fn * mult",
+            "r": "mult / (mult + 1)"
+          },
+          "steps": [
+            {
+              "text": "`TP = {{tp}}` (bottom right) and `FN = {{fn}}` (bottom left)."
+            },
+            {
+              "text": "`recall = TP / (TP + FN) = {{tp}} / ({{tp}} + {{fn}}) = {{tp}}/{{tp + fn}}`"
+            },
+            {
+              "text": "`= {{r | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "mult / (mult + 1)",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c4 · slides 12–13",
+          "explanation": "Of everything that really was positive, how much we found. The denominator is the whole **bottom row** — which is why recall and precision have different denominators from the same matrix."
+        },
+        {
+          "id": "mp-f1-compute",
+          "kind": "computation",
+          "prompt": "A confusion matrix reads `[[{{tn}}, {{fp}}], [{{s - fp}}, {{(s/2) * mult}}]]`. Give the F1 score.",
+          "vars": {
+            "tn": {
+              "type": "choice",
+              "values": [
+                20,
+                30,
+                40,
+                50
+              ]
+            },
+            "s": {
+              "type": "choice",
+              "values": [
+                4,
+                6,
+                8,
+                10
+              ]
+            },
+            "fp": {
+              "type": "int",
+              "min": 1,
+              "max": 3
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                1,
+                3,
+                4,
+                9
+              ]
+            }
+          },
+          "derived": {
+            "fn": "s - fp",
+            "half": "s/2",
+            "tp": "(s/2) * mult",
+            "f": "mult / (mult + 1)"
+          },
+          "steps": [
+            {
+              "text": "Use the TP form: `F1 = TP / (TP + (FN + FP)/2)`."
+            },
+            {
+              "text": "`FN + FP = {{fn}} + {{fp}} = {{s}}`, so half of it is `{{half}}`."
+            },
+            {
+              "text": "`F1 = {{tp}} / ({{tp}} + {{half}}) = {{tp}}/{{tp + half}} = {{f | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "mult / (mult + 1)",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "explanation": "The `TP / (TP + (FN+FP)/2)` form is the one to use on paper — it avoids computing precision and recall separately and then taking a harmonic mean.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "id": "mp-f1-from-pr-compute",
+          "kind": "computation",
+          "prompt": "A classifier has precision {{p}} and recall {{same * p + (1 - same) * (1 - p)}}. Give the F1 score.",
+          "vars": {
+            "p": {
+              "type": "choice",
+              "values": [
+                0.2,
+                0.25,
+                0.4,
+                0.5,
+                0.6,
+                0.75,
+                0.8
+              ]
+            },
+            "same": {
+              "type": "choice",
+              "values": [
+                0,
+                1
+              ]
+            }
+          },
+          "derived": {
+            "r": "same * p + (1 - same) * (1 - p)",
+            "f": "2 * p * (same * p + (1 - same) * (1 - p)) / (p + (same * p + (1 - same) * (1 - p)))"
+          },
+          "steps": [
+            {
+              "text": "`F1 = 2 × (P × R) / (P + R)`."
+            },
+            {
+              "text": "Numerator `2 × {{p}} × {{r}} = {{2 * p * r | 3}}`; denominator `{{p}} + {{r}} = {{p + r | 2}}`."
+            },
+            {
+              "text": "`= {{f | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "2 * p * r / (p + r)",
+            "tolerance": 0.002,
+            "decimals": 3
+          },
+          "explanation": "F1 is the **harmonic** mean, so it sits nearer the smaller of the two. Precision 1.0 with recall 0.02 averages to 0.51 arithmetically but gives an F1 of about 0.039 — which is the honest verdict.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "id": "mp-f1-harmonic-why",
+          "kind": "recall",
+          "prompt": "Why is F1 the harmonic mean rather than the arithmetic mean?",
+          "answer": "The harmonic mean is **dominated by the smaller value**, so F1 is only high when **both** precision and recall are high.\n\nA classifier with precision 1.0 and recall 0.02 has an arithmetic mean of 0.51 — misleadingly respectable — but an F1 of about 0.039, which correctly reports it as useless.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "id": "mp-fbeta-meaning",
+          "kind": "mcq",
+          "prompt": "In the F_β score, what does β represent?",
+          "options": [
+            "How much more important recall is than precision",
+            "How much more important precision is than recall",
+            "The decision threshold",
+            "The number of classes"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide states it directly. β = 1 gives F1, weighting them equally; β = 2 weights recall more.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "id": "mp-fbeta-compute",
+          "kind": "computation",
+          "prompt": "Using c4's example matrix `[[5, 1], [2, 3]]` — so TP = 3, FP = 1, FN = 2 — give the F_β score for β = {{b}}.",
+          "vars": {
+            "b": {
+              "type": "choice",
+              "values": [
+                1,
+                2
+              ]
+            }
+          },
+          "derived": {
+            "num": "(1 + b^2)*3",
+            "den": "(1 + b^2)*3 + 1 + b^2*2",
+            "f": "(1 + b^2)*3 / ((1 + b^2)*3 + 1 + b^2*2)"
+          },
+          "steps": [
+            {
+              "text": "`F_β = (1 + β²)·tp / ((1 + β²)·tp + fp + β²·fn)`."
+            },
+            {
+              "text": "`1 + β² = {{1 + b^2}}`, so the numerator is `{{1 + b^2}} × 3 = {{num}}`."
+            },
+            {
+              "text": "Denominator `= {{num}} + 1 + {{b^2}}×2 = {{den}}`, giving `{{num}}/{{den}} = {{f | 3}}`."
+            }
+          ],
+          "answer": {
+            "expr": "(1 + b^2)*3 / ((1 + b^2)*3 + 1 + b^2*2)",
+            "tolerance": 0.002,
+            "decimals": 3
+          },
+          "explanation": "β weights how much more important **recall** is than precision. β = 1 is plain F1; β = 2 leans on recall, so the two false negatives in this matrix hurt more and the score drops.",
+          "source": "c4 · slide 14"
+        },
+        {
+          "id": "mp-report-macro-weighted",
+          "kind": "recall",
+          "prompt": "In a classification report, what is the difference between the macro average and the weighted average?",
+          "answer": "**Macro average** — the **simple mean** across classes. Every class counts equally, however rare.\n\n**Weighted average** — the mean **weighted by the number of samples** in each class. Large classes dominate.\n\nThe example shows this starkly: precision 1.00 and 0.10 give a macro average of 0.55 but a weighted average of 0.95, because the 1.00 class has 9485 samples against 515.",
+          "source": "c4 · slide 16"
+        },
+        {
+          "id": "mp-report-support",
+          "kind": "mcq",
+          "prompt": "In `classification_report` output, what does the 'support' column give?",
+          "options": [
+            "The number of samples in that class",
+            "The confidence of the prediction",
+            "The number of features used",
+            "The number of folds"
+          ],
+          "answerIndex": 0,
+          "explanation": "It is what the weighted average weights by — 9485 and 515 in the example.",
+          "source": "c4 · slide 16"
+        },
+        {
+          "id": "mp-precision-recall-tension",
+          "kind": "recall",
+          "prompt": "Why can precision and recall not usually be maximised at the same time?",
+          "answer": "They are traded against each other by the **decision threshold**.\n\nRaising the threshold means predicting positive only when confident: fewer false positives, so **precision rises**, but more missed positives, so **recall falls**. Lowering it does the reverse.\n\nOne knob moves both, in opposite directions.",
+          "source": "c4 · slides 17, 20"
+        },
+        {
+          "id": "mp-precision-perfect-trivial",
+          "kind": "recall",
+          "prompt": "How could a classifier trivially achieve precision of 1.0, and why is that not useful?",
+          "answer": "By predicting positive **only for the single example it is most confident about**. If that one is right, FP = 0 and precision is 1.0.\n\nIt is useless because **recall would be almost zero** — every other positive is missed. This is exactly why the two are always reported together, and why F1 punishes it.",
+          "source": "c4 · slides 12, 14"
+        },
+        {
+          "id": "mp-precision-recall-cloze",
+          "kind": "cloze",
+          "prompt": "precision = TP / (TP + {{1}}) and recall = TP / (TP + {{2}}).",
+          "blanks": [
+            [
+              "FP",
+              "fp",
+              "false positives"
+            ],
+            [
+              "FN",
+              "fn",
+              "false negatives"
+            ]
+          ],
+          "tier": 2,
+          "source": "c4 · slide 12"
+        },
+        {
+          "id": "mp-example-scores",
+          "kind": "mcq",
+          "prompt": "The worked MNIST example gives precision 0.7326, recall 0.8019 and F1 0.7657. What does the relationship between the three show?",
+          "options": [
+            "F1 lies between precision and recall, nearer the smaller one",
+            "F1 is the arithmetic mean of the two",
+            "F1 always exceeds both",
+            "F1 is unrelated to the other two"
+          ],
+          "answerIndex": 0,
+          "explanation": "The arithmetic mean would be 0.7673; F1 is 0.7657 — slightly lower, pulled toward the smaller value. That gap is the harmonic mean at work.",
+          "source": "c4 · slide 15"
+        }
+      ]
+    },
+    {
+      "id": "mp-thresholds-pr",
+      "title": "Thresholds and precision-recall curves",
+      "emphasis": "core",
+      "summary": "A classifier returns a score, not a class. Choosing where to cut that score is a separate decision, and the precision-recall curve shows every choice at once.",
+      "questions": [
+        {
+          "id": "mp-threshold-scores",
+          "kind": "recall",
+          "prompt": "What does a classifier actually return before a class is decided, and how is the class obtained?",
+          "answer": "A **numeric score** from `decision_function`.\n\nThe class comes from comparing that score to a **threshold**: `y_pred = (y_scores > threshold)`. The default threshold is 0, but nothing forces that choice — moving it trades precision against recall.",
+          "source": "c4 · slide 18"
+        },
+        {
+          "id": "mp-threshold-direction",
+          "kind": "mcq",
+          "prompt": "Raising the decision threshold has what effect?",
+          "options": [
+            "Precision goes up, recall goes down",
+            "Precision goes down, recall goes up",
+            "Both go up",
+            "Both go down"
+          ],
+          "answerIndex": 0,
+          "explanation": "A higher bar means fewer positive predictions: fewer false alarms (precision up) but more misses (recall down).",
+          "source": "c4 · slides 17, 20"
+        },
+        {
+          "id": "mp-threshold-digit-strip",
+          "kind": "mcq",
+          "prompt": "The digit-strip figure shows precision 6/8 = 75% with recall 6/6 = 100% at one threshold, and precision 3/3 = 100% with recall 3/6 = 50% at another. What does it demonstrate?",
+          "options": [
+            "Moving the threshold right raises precision and lowers recall",
+            "Precision and recall always move together",
+            "The classifier is broken",
+            "Accuracy is a better metric here"
+          ],
+          "answerIndex": 0,
+          "explanation": "Three thresholds along one score axis, with the middle at 4/5 = 80% precision and 4/6 = 67% recall. One knob, two metrics moving oppositely.",
+          "source": "c4 · slide 17"
+        },
+        {
+          "id": "mp-precision-from-strip",
+          "kind": "computation",
+          "prompt": "At a chosen threshold, {{den}} examples are predicted positive and {{den * f}} of them really are. Give the precision.",
+          "vars": {
+            "den": {
+              "type": "choice",
+              "values": [
+                20,
+                40
+              ]
+            },
+            "f": {
+              "type": "choice",
+              "values": [
+                0.4,
+                0.5,
+                0.6,
+                0.75,
+                0.8,
+                0.9
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "Precision counts only what was predicted positive: `{{den * f}} / {{den}}`."
+            },
+            {
+              "text": "`= {{f | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "f",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c4 · slide 17",
+          "derived": {
+            "correct": "den * f"
+          },
+          "explanation": "This is what the digit-strip figure does at each threshold: count the predicted-positive group, then count how many of them are really 5s — 6/8 = 75%, then 4/5 = 80%, then 3/3 = 100%."
+        },
+        {
+          "id": "mp-recall-from-strip",
+          "kind": "computation",
+          "prompt": "There are {{den}} actual positives, and at this threshold the classifier finds {{den * f}} of them. Give the recall.",
+          "vars": {
+            "den": {
+              "type": "choice",
+              "values": [
+                20,
+                40
+              ]
+            },
+            "f": {
+              "type": "choice",
+              "values": [
+                0.25,
+                0.4,
+                0.5,
+                0.6,
+                0.75,
+                0.9
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "Recall counts against the actual positives: `{{den * f}} / {{den}}`."
+            },
+            {
+              "text": "`= {{f | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "f",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c4 · slide 17",
+          "derived": {
+            "found": "den * f"
+          },
+          "explanation": "The denominator never moves as the threshold changes — the number of real positives is fixed — so recall only ever falls as the threshold rises. In the strip figure it goes 6/6 = 100%, 4/6 = 67%, 3/6 = 50%."
+        },
+        {
+          "id": "mp-decision-function-cv",
+          "kind": "mcq",
+          "prompt": "How are out-of-sample scores obtained for plotting a precision-recall curve?",
+          "options": [
+            "cross_val_predict(..., method=\"decision_function\")",
+            "cross_val_predict(...) with no extra argument",
+            "cross_val_score(..., scoring=\"decision_function\")",
+            "sgd_clf.predict_proba(X_train)"
+          ],
+          "answerIndex": 0,
+          "explanation": "Without `method=\"decision_function\"` you get hard labels, and a curve built from labels has only one point.",
+          "source": "c4 · slide 18"
+        },
+        {
+          "id": "mp-pr-curve-function",
+          "kind": "mcq",
+          "prompt": "What does `precision_recall_curve(y_train_5, y_scores)` return?",
+          "options": [
+            "Arrays of precisions, recalls and thresholds",
+            "A single precision and recall pair",
+            "A fitted curve object",
+            "The area under the curve"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 19"
+        },
+        {
+          "id": "mp-pr-vs-threshold-plot",
+          "kind": "mcq",
+          "prompt": "On the precision-and-recall-versus-threshold plot, how do the two lines behave as the threshold increases?",
+          "options": [
+            "Precision rises toward 1 while recall falls toward 0",
+            "Both rise together",
+            "Both fall together",
+            "They stay parallel"
+          ],
+          "answerIndex": 0,
+          "explanation": "They cross around 0.8 near threshold 0 in the figure. Precision is the rising dashed line; recall the falling solid one.",
+          "source": "c4 · slide 20"
+        },
+        {
+          "id": "mp-recall-at-precision-90",
+          "kind": "recall",
+          "prompt": "Explain the code `threshold_90_precision = thresholds[np.argmax(precisions >= 0.90)]`.",
+          "answer": "`precisions >= 0.90` is a boolean array. `np.argmax` returns the index of the **first True**, since True counts as 1 — so this finds the **lowest threshold that still achieves 90% precision**.\n\nIndexing `thresholds` with it gives that threshold. Applying it yields precision exactly 0.9 and recall about 0.599 — the price paid in recall for the precision demanded.",
+          "source": "c4 · slide 21"
+        },
+        {
+          "id": "mp-pr-curve-axes",
+          "kind": "mcq",
+          "prompt": "On the precision-recall curve, what is on each axis?",
+          "options": [
+            "Recall on x, precision on y",
+            "Precision on x, recall on y",
+            "Threshold on x, precision on y",
+            "FPR on x, TPR on y"
+          ],
+          "answerIndex": 0,
+          "explanation": "`plt.plot(recall, precision, 'b-')`. The last option describes the ROC curve instead.",
+          "source": "c4 · slide 22"
+        },
+        {
+          "id": "mp-pr-curve-shape",
+          "kind": "mcq",
+          "prompt": "What shape does a good precision-recall curve have?",
+          "options": [
+            "High precision maintained as recall increases, dropping sharply only near recall 1",
+            "A straight diagonal line",
+            "Rising steadily from left to right",
+            "Flat across the whole range"
+          ],
+          "answerIndex": 0,
+          "explanation": "The figure holds near 1.0 precision to about 0.4 recall, then declines, collapsing beyond 0.9.",
+          "source": "c4 · slide 22"
+        },
+        {
+          "id": "mp-threshold-choice-domain",
+          "kind": "recall",
+          "prompt": "A medical screening test and a spam filter need different thresholds. Explain which way each should go.",
+          "answer": "**Medical screening** — a missed case is far worse than a false alarm, so favour **recall**: use a **low** threshold and accept more false positives.\n\n**Spam filter** — deleting a real email is worse than letting spam through, so favour **precision**: use a **high** threshold and accept more misses.\n\nThe threshold encodes the relative cost of the two error types, which is a domain decision rather than a modelling one.",
+          "source": "c4 · slides 14, 17"
+        },
+        {
+          "id": "mp-threshold-zero-default",
+          "kind": "mcq",
+          "prompt": "In the example, `threshold = 0` and `y_some_digit_pred = (y_scores > threshold)` returns `array([False])` for a score of −45148. What does that mean?",
+          "options": [
+            "The score is far below the threshold, so it is classified negative",
+            "The classifier failed to produce a score",
+            "The threshold is wrong",
+            "The example is a true positive"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 18"
+        },
+        {
+          "id": "mp-scores-scale",
+          "kind": "recall",
+          "prompt": "The scores in the example run to ±1,600,000. Does the scale matter?",
+          "answer": "No. Only the **ordering** matters, and where the threshold is placed relative to it. The scores are unnormalised distances from the decision boundary, not probabilities.\n\nThis is why thresholds are chosen from the data via `precision_recall_curve` rather than picked as round numbers.",
+          "source": "c4 · slides 18–20"
+        },
+        {
+          "id": "mp-threshold-cloze",
+          "kind": "cloze",
+          "prompt": "Lowering the decision threshold {{1}} recall and {{2}} precision.",
+          "blanks": [
+            [
+              "increases",
+              "raises",
+              "improves"
+            ],
+            [
+              "decreases",
+              "lowers",
+              "reduces"
+            ]
+          ],
+          "tier": 2,
+          "source": "c4 · slides 17, 20"
+        }
+      ]
+    },
+    {
+      "id": "mp-roc-auc",
+      "title": "ROC and AUC",
+      "emphasis": "core",
+      "summary": "The other threshold-free view: true positive rate against false positive rate. AUC summarises it in one number that needs no threshold and copes with imbalance.",
+      "keyFacts": [
+        {
+          "term": "ROC curve",
+          "definition": "True positive rate (TPR) plotted against false positive rate (FPR) for all possible thresholds. Best at (0,1); the diagonal is a random classifier.",
+          "source": "c4 · slide 24"
+        },
+        {
+          "term": "AUC",
+          "definition": "Area under the ROC curve. **1.0** for the best possible classifier, **0.5** for random. Very popular: needs no threshold and works well for imbalanced data.",
+          "source": "c4 · slide 24"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-roc-axes",
+          "kind": "recall",
+          "prompt": "What does an ROC curve plot, and where are its landmark points?",
+          "answer": "**True positive rate (TPR)** on the y-axis against **false positive rate (FPR)** on the x-axis, for **all possible thresholds**.\n\n**Best** is the top-left corner, **(0, 1)** — everything found, nothing falsely flagged.\nThe **diagonal** is a random classifier.",
+          "source": "c4 · slide 24"
+        },
+        {
+          "id": "mp-auc-values",
+          "kind": "recall",
+          "prompt": "What are the AUC values for a perfect and for a random classifier, and why is AUC popular?",
+          "answer": "**1.0** for the best possible classifier, **0.5** for a random one.\n\nPopular because it **does not need a threshold** — it summarises performance across all of them — and it **works well for imbalanced data**.",
+          "source": "c4 · slide 24"
+        },
+        {
+          "id": "mp-auc-random",
+          "kind": "mcq",
+          "prompt": "An AUC of 0.5 means:",
+          "options": [
+            "The classifier is no better than random",
+            "The classifier is half correct",
+            "Precision equals recall",
+            "The threshold is set at the median score"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 24"
+        },
+        {
+          "id": "mp-roc-common-mistake",
+          "kind": "recall",
+          "prompt": "An ROC curve comes out as a single sharp corner rather than a smooth arc. What has gone wrong?",
+          "answer": "**`y_pred` was passed instead of `y_score`.**\n\nHard labels take only two values, so there is only one threshold to sweep and the curve degenerates to a corner. `roc_curve` needs the continuous scores from `decision_function`.\n\nThe course flags this explicitly as a common mistake.",
+          "source": "c4 · slide 25"
+        },
+        {
+          "id": "mp-roc-mistake-mcq",
+          "kind": "mcq",
+          "prompt": "The 'Common mistake' slide shows an angular ROC curve. What causes it?",
+          "options": [
+            "Using y_pred instead of y_score",
+            "Too few folds in cross-validation",
+            "An unscaled feature matrix",
+            "Using accuracy as the scoring metric"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 25"
+        },
+        {
+          "id": "mp-roc-curve-call",
+          "kind": "mcq",
+          "prompt": "Which call produces the values for an ROC plot?",
+          "options": [
+            "fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)",
+            "fpr, tpr = roc_curve(y_train_5, y_pred)",
+            "roc_auc_score(y_train_5, y_scores)",
+            "precision_recall_curve(y_train_5, y_scores)"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 23"
+        },
+        {
+          "id": "mp-roc-diagonal-code",
+          "kind": "mcq",
+          "prompt": "In `plot_roc_curve`, what does `plt.plot([0, 1], [0, 1], 'k--')` draw?",
+          "options": [
+            "The dashed diagonal representing a random classifier",
+            "The perfect classifier",
+            "The precision-recall trade-off",
+            "The decision threshold"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 23"
+        },
+        {
+          "id": "mp-tpr-is-recall",
+          "kind": "mcq",
+          "prompt": "The true positive rate is the same quantity as which other metric?",
+          "options": [
+            "Recall",
+            "Precision",
+            "Accuracy",
+            "F1"
+          ],
+          "answerIndex": 0,
+          "explanation": "TPR = TP/(TP+FN), which is recall. The ROC curve therefore plots recall against the false alarm rate.",
+          "source": "c4 · slides 12, 24"
+        },
+        {
+          "id": "mp-tpr-compute",
+          "kind": "computation",
+          "prompt": "At a given threshold, TP = {{fn * mult}} and FN = {{fn}}. Give the true positive rate.",
+          "vars": {
+            "fn": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                1,
+                3,
+                4,
+                9,
+                19
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "TPR is another name for **recall**: `TP / (TP + FN)`."
+            },
+            {
+              "text": "`{{tp}} / ({{tp}} + {{fn}}) = {{tp}}/{{tp + fn}}`"
+            },
+            {
+              "text": "`= {{tpr | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "mult / (mult + 1)",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c4 · slide 24",
+          "derived": {
+            "tp": "fn * mult",
+            "tpr": "mult / (mult + 1)"
+          }
+        },
+        {
+          "id": "mp-fpr-compute",
+          "kind": "computation",
+          "prompt": "At a given threshold, FP = {{fp}} and TN = {{fp * mult}}. Give the false positive rate.",
+          "vars": {
+            "fp": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                3,
+                4,
+                9,
+                19,
+                24
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "FPR is the share of **actual negatives** wrongly flagged: `FP / (FP + TN)`."
+            },
+            {
+              "text": "`{{fp}} / ({{fp}} + {{tn}}) = {{fp}}/{{fp + tn}}`"
+            },
+            {
+              "text": "`= {{fpr | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "1 / (mult + 1)",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "explanation": "The ROC curve plots TPR against this. Note that FPR uses the **top row** of the matrix, so it is unaffected by how many positives exist — which is why ROC can look flattering on very imbalanced data.",
+          "source": "c4 · slide 24",
+          "derived": {
+            "tn": "fp * mult",
+            "fpr": "1 / (mult + 1)"
+          }
+        },
+        {
+          "id": "mp-auc-example-value",
+          "kind": "mcq",
+          "prompt": "The worked example gives `roc_auc_score(y_train_5, y_scores)` = 0.9585. How should that be read?",
+          "options": [
+            "A strong classifier — well above the 0.5 random baseline",
+            "A weak classifier — well below 1.0",
+            "About average performance",
+            "Meaningless without a threshold"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 24"
+        },
+        {
+          "id": "mp-roc-imbalance",
+          "kind": "recall",
+          "prompt": "Why does AUC handle imbalanced data better than accuracy?",
+          "answer": "Accuracy is dominated by the majority class: with 91% negatives, predicting 'negative' always scores 91% while catching nothing.\n\nAUC is built from **TPR and FPR**, each normalised **within its own class** — TPR by the actual positives, FPR by the actual negatives. Class sizes cancel out, so the majority class cannot carry the score.",
+          "source": "c4 · slides 11, 24"
+        },
+        {
+          "id": "mp-roc-vs-pr",
+          "kind": "recall",
+          "prompt": "What do the ROC curve and the precision-recall curve have in common, and how do they differ?",
+          "answer": "**In common:** both describe a classifier across **all thresholds** rather than at one, and both are built from the same score array.\n\n**Differ:** ROC plots **TPR against FPR**, so both axes are normalised within a class. PR plots **precision against recall**, and precision depends on the ratio of positives to negatives — so the PR curve is more sensitive to class imbalance, and often more informative when positives are rare.",
+          "source": "c4 · slides 22, 24"
+        },
+        {
+          "id": "mp-roc-best-corner",
+          "kind": "short",
+          "prompt": "At which coordinate is an ROC curve best?",
+          "answers": [
+            "(0,1)",
+            "0,1",
+            "0 1",
+            "top left",
+            "top-left"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 24"
+        },
+        {
+          "id": "mp-auc-no-threshold",
+          "kind": "mcq",
+          "prompt": "Which of these can be computed **without** first choosing a decision threshold?",
+          "options": [
+            "AUC",
+            "Precision",
+            "Recall",
+            "F1"
+          ],
+          "answerIndex": 0,
+          "explanation": "Precision, recall and F1 all need hard predictions, which need a threshold. AUC integrates over all of them — the property the slide highlights.",
+          "source": "c4 · slide 24"
+        }
+      ]
+    },
+    {
+      "id": "mp-multiclass",
+      "title": "Multi-class, multilabel and multioutput",
+      "emphasis": "standard",
+      "summary": "Three different generalisations beyond binary. OvR and OvO turn binary classifiers into multi-class ones; multilabel allows several binary targets; multioutput allows several multiclass targets.",
+      "keyFacts": [
+        {
+          "term": "Macro vs micro F1 (multilabel)",
+          "definition": "**Macro** — compute F1 for each label separately, then average over labels. **Micro** — compute F1 for the labels per example, then average over examples.",
+          "source": "c4 · slide 34"
+        }
+      ],
+      "questions": [
+        {
+          "id": "mp-ovo-count",
+          "kind": "computation",
+          "prompt": "OneVsOneClassifier is used on a problem with {{n}} classes. How many binary estimators does it train?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 3,
+              "max": 12
+            }
+          },
+          "derived": {
+            "c": "n * (n - 1) / 2"
+          },
+          "steps": [
+            {
+              "text": "One-vs-One trains a classifier for every **pair** of classes."
+            },
+            {
+              "text": "The number of pairs from n classes is `n(n − 1)/2 = {{n}} × {{n - 1}} / 2`."
+            },
+            {
+              "text": "`= {{c}}` estimators."
+            }
+          ],
+          "answer": {
+            "expr": "n * (n - 1) / 2",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "With 10 classes this gives 45, matching `len(ovo_clf.estimators_)` in the example.",
+          "source": "c4 · slide 28"
+        },
+        {
+          "id": "mp-ovo-45",
+          "kind": "mcq",
+          "prompt": "The example reports `len(ovo_clf.estimators_)` as 45. How many classes does the problem have?",
+          "options": [
+            "10",
+            "45",
+            "9",
+            "20"
+          ],
+          "answerIndex": 0,
+          "explanation": "n(n−1)/2 = 45 gives n = 10 — the ten MNIST digits.",
+          "source": "c4 · slide 28"
+        },
+        {
+          "id": "mp-ovr-count",
+          "kind": "computation",
+          "prompt": "One-vs-Rest is used on a problem with {{n}} classes. How many binary classifiers are trained?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 3,
+              "max": 15
+            }
+          },
+          "steps": [
+            {
+              "text": "One-vs-Rest trains one classifier per class: that class against everything else."
+            },
+            {
+              "text": "So the count is simply the number of classes."
+            },
+            {
+              "text": "`= {{n}} classifiers.`"
+            }
+          ],
+          "answer": {
+            "expr": "n",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Far fewer than OvO's n(n−1)/2, though each is trained on the full dataset rather than on two classes' worth.",
+          "source": "c4 · slides 26–28"
+        },
+        {
+          "id": "mp-argmax-classes",
+          "kind": "recall",
+          "prompt": "Explain how `np.argmax(some_digit_scores)` combined with `sgd_clf.classes_` produces a prediction.",
+          "answer": "`decision_function` returns one score per class. `np.argmax` gives the **index** of the highest — 5 in the example.\n\n`classes_` maps indices back to labels: `array([0,1,…,9])`, so `classes_[5]` is 5.\n\nThe index and the label coincide here only because the classes are the digits 0–9 in order. In general you **must** go through `classes_`.",
+          "source": "c4 · slide 27"
+        },
+        {
+          "id": "mp-multiclass-scores",
+          "kind": "mcq",
+          "prompt": "For a 10-class problem, what does `decision_function` return for one instance?",
+          "options": [
+            "An array of 10 scores, one per class",
+            "A single score",
+            "A probability between 0 and 1",
+            "The predicted label"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 26"
+        },
+        {
+          "id": "mp-multilabel-definition",
+          "kind": "mcq",
+          "prompt": "What is multilabel classification?",
+          "options": [
+            "More than one binary target per example",
+            "More than two classes for a single target",
+            "Multiple multiclass targets",
+            "One target with continuous values"
+          ],
+          "answerIndex": 0,
+          "explanation": "The example builds `y_multilabel = np.c_[y_train_large, y_train_odd]` — is the digit ≥ 7, and is it odd. Two independent yes/no questions about one image.",
+          "source": "c4 · slide 33"
+        },
+        {
+          "id": "mp-multilabel-example",
+          "kind": "recall",
+          "prompt": "Describe the multilabel example and what the classifier returns.",
+          "answer": "Two binary targets are built for each digit image:\n- `y_train_large = (y_train >= 7)`\n- `y_train_odd = (y_train % 2 == 1)`\nstacked as `y_multilabel = np.c_[y_train_large, y_train_odd]`.\n\nA `KNeighborsClassifier` fitted on this returns **two booleans per instance**: `array([[False, True]])` — not large, but odd. The digit 5 fits exactly.",
+          "source": "c4 · slide 33"
+        },
+        {
+          "id": "mp-macro-micro",
+          "kind": "recall",
+          "prompt": "Distinguish macro from micro averaging for multilabel F1.",
+          "answer": "**Macro** — compute F1 for **each label separately**, then average over all labels. Every label counts equally.\n\n**Micro** — compute F1 for **the labels per example**, then average over all examples.\n\nMacro treats labels as the unit; micro treats examples as the unit.",
+          "source": "c4 · slide 34"
+        },
+        {
+          "id": "mp-macro-average-call",
+          "kind": "mcq",
+          "prompt": "Which call computes macro-averaged F1 for a multilabel problem?",
+          "options": [
+            "f1_score(y_multilabel, y_train_knn_pred, average=\"macro\")",
+            "f1_score(y_multilabel, y_train_knn_pred)",
+            "f1_score(y_multilabel, y_train_knn_pred, average=\"weighted\")",
+            "f1_score(y_multilabel, y_train_knn_pred, macro=True)"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 34"
+        },
+        {
+          "id": "mp-multioutput-definition",
+          "kind": "mcq",
+          "prompt": "What is multioutput classification?",
+          "options": [
+            "Multiple targets, each of which is multiclass",
+            "Multiple binary targets",
+            "One target with more than two classes",
+            "A regression with several outputs"
+          ],
+          "answerIndex": 0,
+          "explanation": "The example is reconstructing a clean image from a corrupted one: every output pixel is its own multiclass target over intensity values.",
+          "source": "c4 · slide 35"
+        },
+        {
+          "id": "mp-multioutput-example",
+          "kind": "short",
+          "prompt": "What task does c4 give as the multioutput example?",
+          "answers": [
+            "reconstruct an image from a corrupted version",
+            "image denoising",
+            "reconstructing a corrupted image",
+            "denoising"
+          ],
+          "tier": 2,
+          "source": "c4 · slide 35"
+        },
+        {
+          "id": "mp-scaling-improves-cv",
+          "kind": "mcq",
+          "prompt": "Scaling with StandardScaler lifts the SGD classifier's cross-validated accuracy from about 0.87 to about 0.91. Why?",
+          "options": [
+            "Gradient descent converges better when features are on comparable scales",
+            "Scaling removes outliers",
+            "Scaling adds new features",
+            "Scaling changes the class balance"
+          ],
+          "answerIndex": 0,
+          "explanation": "The contours of the cost function become more circular, so the gradient points closer to the minimum — the c5 scaling picture.",
+          "source": "c4 · slide 30; c5 · slide 17"
+        },
+        {
+          "id": "mp-error-analysis-fill-diagonal",
+          "kind": "recall",
+          "prompt": "In the error analysis, why is `np.fill_diagonal(norm_conf_mx, 0)` applied before plotting?",
+          "answer": "The diagonal holds the **correct** predictions, which are much larger than everything else. Displayed as an image, the diagonal saturates white and the errors are invisible.\n\nZeroing it rescales the display so the **off-diagonal confusions** become readable — which is the point of error analysis. The white in the first plot is about 10000; in the second, about 500.",
+          "source": "c4 · slides 31–32"
+        },
+        {
+          "id": "mp-random-forest-proba",
+          "kind": "mcq",
+          "prompt": "`forest_clf.predict_proba([some_digit])` returns `[[0., 0., 0., 0.2, 0., 0.8, 0., 0., 0., 0.]]`. What does this say?",
+          "options": [
+            "80% confidence in class 5, 20% in class 3",
+            "80% accuracy overall",
+            "Class 5 with certainty",
+            "The classifier failed to decide"
+          ],
+          "answerIndex": 0,
+          "explanation": "Index 5 holds 0.8 and index 3 holds 0.2. Unlike `decision_function`, these sum to 1 and read as probabilities.",
+          "source": "c4 · slide 29"
+        },
+        {
+          "id": "mp-multiclass-fit-y",
+          "kind": "mcq",
+          "prompt": "The multi-class example writes `sgd_clf.fit(X_train, y_train)` with the comment `# y_train, not y_train_5`. What changed?",
+          "options": [
+            "Fitting on the full 10-class target rather than the binary 5-vs-rest target",
+            "Using a different classifier",
+            "Adding more training data",
+            "Switching from OvR to OvO"
+          ],
+          "answerIndex": 0,
+          "explanation": "sklearn detects the multi-class target and wraps the binary classifier in OvR automatically.",
+          "source": "c4 · slide 26"
+        }
+      ]
+    }
+  ]
+}

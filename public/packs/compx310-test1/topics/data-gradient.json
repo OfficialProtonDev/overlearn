@@ -1,0 +1,1087 @@
+{
+  "id": "data-gradient",
+  "title": "Data Prep & Gradient Descent",
+  "summary": "Getting data into a form an algorithm can use — imputation and encoding — and then the general-purpose alternative to a closed-form solution: follow the gradient downhill.",
+  "formulas": [
+    {
+      "name": "Gradient descent step",
+      "expression": "θ⁽ⁿᵉˣᵗ ˢᵗᵉᵖ⁾ = θ − η ∇_θ MSE(θ)",
+      "note": "η is the learning rate. The minus sign is what makes it descent rather than ascent.",
+      "source": "c5 · slide 19"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "dg-missing-values",
+      "title": "Missing values",
+      "emphasis": "core",
+      "summary": "Three options, ordered by effort and by how much information they preserve. The median is preferred over the mean for numeric features.",
+      "keyFacts": [
+        {
+          "term": "Imputation preference",
+          "definition": "Prefer the **median** over the mean for numerical features, and the **most common value** for categorical features.",
+          "source": "c5 · slide 3"
+        }
+      ],
+      "questions": [
+        {
+          "id": "dg-missing-three-options",
+          "kind": "recall",
+          "prompt": "Give the three options for handling missing values, with the note attached to each.",
+          "answer": "1. **Drop the missing value** (`df.dropna()`) — simple; usually fine with a large dataset and very few missing values. Not feasible if the data contains many.\n2. **Fill with the mean / median / most common value** (`df.fillna(df.median())`) — usually better than dropping.\n3. **Learn a model to impute** from other features — most sophisticated, but the improvement may not be worth the effort, and the imputing model needs **separate validation**.",
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-median-vs-mean",
+          "kind": "mcq",
+          "prompt": "For a numerical feature, which does the course prefer for imputation?",
+          "options": [
+            "The median",
+            "The mean",
+            "Zero",
+            "The maximum"
+          ],
+          "answerIndex": 0,
+          "explanation": "The median is robust to outliers; the mean is dragged by them, so a few extreme values would distort every imputed entry.",
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-categorical-impute",
+          "kind": "mcq",
+          "prompt": "For a categorical feature, which value should be used for imputation?",
+          "options": [
+            "The most common value",
+            "The median",
+            "The mean",
+            "An empty string"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-dropna-when",
+          "kind": "mcq",
+          "prompt": "When is `df.dropna()` a reasonable choice?",
+          "options": [
+            "A large dataset with very few missing values",
+            "A small dataset with many missing values",
+            "Any dataset, since it is simplest",
+            "Only for categorical features"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-model-impute-caveat",
+          "kind": "recall",
+          "prompt": "What two caveats does the course attach to learning a model to impute missing values?",
+          "answer": "1. It is the **most sophisticated** method, but the **improvement might not be worth the effort**.\n2. The model used to impute **needs separate validation** — it is a model in its own right and can be wrong.",
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-fillna-code",
+          "kind": "mcq",
+          "prompt": "Which line fills missing values with the median?",
+          "options": [
+            "df = df.fillna(df.median())",
+            "df = df.dropna(df.median())",
+            "df = df.impute(median=True)",
+            "df = df.fillna(median)"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 3"
+        },
+        {
+          "id": "dg-impute-leakage",
+          "kind": "recall",
+          "prompt": "Should the imputation value be computed from the whole dataset or from the training set only?",
+          "answer": "From the **training set only**, then applied to validation and test data.\n\nComputing a median over the whole dataset lets information from the test set influence the training pipeline — the same reasoning behind `scaler.fit_transform(X_train)` followed by `scaler.transform(X_test)` rather than fitting on everything.",
+          "source": "c5 · slides 3, 18"
+        },
+        {
+          "id": "dg-drop-row-vs-column",
+          "kind": "recall",
+          "prompt": "When does dropping the feature beat dropping the rows?",
+          "answer": "When the missing values are **concentrated in one column**. Dropping rows would discard every example that has a gap anywhere, which can be most of the dataset; dropping the one bad column loses a single feature and keeps all the examples.",
+          "source": "c2 · slide 10; c5 · slide 3"
+        },
+        {
+          "id": "dg-missing-rate-compute",
+          "kind": "computation",
+          "prompt": "A dataset has {{n}} rows, of which {{m}} have a missing value in some column. What percentage would be lost by calling `dropna()`? Give it to 2 dp.",
+          "vars": {
+            "n": {
+              "type": "choice",
+              "values": [
+                400,
+                800,
+                1000,
+                2500,
+                5000
+              ]
+            },
+            "m": {
+              "type": "int",
+              "min": 5,
+              "max": 300,
+              "step": 5
+            }
+          },
+          "derived": {
+            "pct": "100 * m / n"
+          },
+          "steps": [
+            {
+              "text": "`dropna()` removes every row containing any missing value."
+            },
+            {
+              "text": "That is `{{m}}` of `{{n}}` rows."
+            },
+            {
+              "text": "`100 × {{m}} / {{n}} = {{pct | 2}}%`"
+            }
+          ],
+          "answer": {
+            "expr": "100 * m / n",
+            "tolerance": 0.02,
+            "decimals": 2
+          },
+          "explanation": "The figure decides the strategy: a couple of percent is fine to drop; thirty percent is not.",
+          "source": "c5 · slide 3"
+        }
+      ]
+    },
+    {
+      "id": "dg-encoding",
+      "title": "Encoding categorical features",
+      "emphasis": "core",
+      "summary": "Most algorithms take only numbers. Three options, and the course is unambiguous about the ranking: dropping is lazy, label encoding is misleading, one-hot is best.",
+      "keyFacts": [
+        {
+          "term": "The ranking",
+          "definition": "**Dropping the feature** — lazy. **Label encoding** — better, but the interpretation of model and data is misleading. **One-hot encoding** — best.",
+          "source": "c5 · slide 4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "dg-encoding-ranking",
+          "kind": "recall",
+          "prompt": "Give the three options for non-numeric features and the course's verdict on each.",
+          "answer": "1. **Dropping the feature** — *lazy*; the model will likely be less performant, though it may be appropriate if most values are unique.\n2. **Label encoding** — *better*, but the interpretation of the model and the data is **misleading**.\n3. **One-hot encoding** — *best*.",
+          "source": "c5 · slide 4"
+        },
+        {
+          "id": "dg-label-encoding-problem",
+          "kind": "recall",
+          "prompt": "Why is label encoding described as misleading?",
+          "answer": "It assigns arbitrary integers to unordered categories, and the model then reads those integers as **numbers with an ordering and spacing**.\n\nWith Auckland = 0, Dunedin = 1, Hamilton = 2, Whangarei = 3, the model can infer that Whangarei is 'three more than' Auckland and that Dunedin lies between them. None of that is true — the codes came from alphabetical order.",
+          "source": "c5 · slides 4–5"
+        },
+        {
+          "id": "dg-label-encoding-code",
+          "kind": "mcq",
+          "prompt": "Which pandas pattern performs label encoding?",
+          "options": [
+            "df['city'].astype('category') then df['city'].cat.codes",
+            "pd.get_dummies(df, columns=['city'])",
+            "df['city'].map(int)",
+            "df['city'].factorize(one_hot=True)"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 5"
+        },
+        {
+          "id": "dg-label-codes-order",
+          "kind": "mcq",
+          "prompt": "In the worked example, Auckland gets 0, Dunedin 1, Hamilton 2 and Whangarei 3. What determines the codes?",
+          "options": [
+            "Alphabetical order of the category names",
+            "Order of first appearance in the data",
+            "Frequency, most common first",
+            "Population of the city"
+          ],
+          "answerIndex": 0,
+          "explanation": "Alphabetical — note Dunedin appears fourth in the table but gets code 1, so it is not order of appearance.",
+          "source": "c5 · slide 5"
+        },
+        {
+          "id": "dg-onehot-code",
+          "kind": "mcq",
+          "prompt": "Which call performs one-hot encoding?",
+          "options": [
+            "pd.get_dummies(df, columns=['city'], prefix=['city'])",
+            "df['city'].cat.codes",
+            "df['city'].astype('category')",
+            "df.drop(columns=['city'])"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 6"
+        },
+        {
+          "id": "dg-onehot-columns-compute",
+          "kind": "computation",
+          "prompt": "A categorical column holds {{k}} distinct values. How many columns does plain one-hot encoding produce?",
+          "vars": {
+            "k": {
+              "type": "int",
+              "min": 3,
+              "max": 20
+            }
+          },
+          "steps": [
+            {
+              "text": "One-hot encoding creates one indicator column per distinct value."
+            },
+            {
+              "text": "There are `{{k}}` distinct values."
+            },
+            {
+              "text": "So `{{k}}` columns, exactly one of which is 1 in each row."
+            }
+          ],
+          "answer": {
+            "expr": "k",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "In the worked example, four cities give city_akl, city_whg, city_ham and city_dun.",
+          "source": "c5 · slide 6"
+        },
+        {
+          "id": "dg-onehot-row",
+          "kind": "recall",
+          "prompt": "In the one-hot table, the row `1, 52, Auckland` becomes what?",
+          "answer": "`id=1, age=52, city_akl=1, city_whg=0, city_ham=0, city_dun=0`.\n\nOne column per city, with a **1** in the column for this row's city and **0** everywhere else — hence 'one hot'.",
+          "source": "c5 · slide 6"
+        },
+        {
+          "id": "dg-onehot-no-order",
+          "kind": "mcq",
+          "prompt": "Why does one-hot encoding avoid label encoding's problem?",
+          "options": [
+            "Every category becomes its own column, so no ordering is implied",
+            "It uses fewer columns",
+            "It scales the values to [0,1]",
+            "It removes rare categories automatically"
+          ],
+          "answerIndex": 0,
+          "explanation": "Each category is equidistant from every other, which is the truth for unordered categories.",
+          "source": "c5 · slides 4–6"
+        },
+        {
+          "id": "dg-too-many-labels-a",
+          "kind": "recall",
+          "prompt": "A categorical feature has very many distinct values. What are the two strategies the course gives?",
+          "answer": "**a) Summarise or group.** Check whether there are too many unique entries; summarise them (e.g. as 'urban / suburban / rural') or group the long tail into 'others' if many appear only once.\n\n**b) Re-code differently.** Check whether the information could be encoded another way — **longitude/latitude** instead of suburb name or postcode.",
+          "source": "c5 · slide 7"
+        },
+        {
+          "id": "dg-latlong-recode",
+          "kind": "mcq",
+          "prompt": "Why is replacing a postcode with latitude and longitude an improvement?",
+          "options": [
+            "It turns an unordered categorical into genuinely meaningful numeric features",
+            "It reduces the number of rows",
+            "It removes the need for scaling",
+            "It guarantees no missing values"
+          ],
+          "answerIndex": 0,
+          "explanation": "Latitude and longitude have real ordering and real distances — nearby places get nearby values — so a numeric model can use them properly. Two columns replace hundreds of one-hot ones.",
+          "source": "c5 · slide 7"
+        },
+        {
+          "id": "dg-drop-mostly-unique",
+          "kind": "mcq",
+          "prompt": "When might dropping a categorical feature be the appropriate choice?",
+          "options": [
+            "When most of its values are unique",
+            "When it has exactly two categories",
+            "When it has missing values",
+            "When it is the target"
+          ],
+          "answerIndex": 0,
+          "explanation": "A near-unique column (an id, a free-text field) carries little generalisable signal and would explode into thousands of one-hot columns.",
+          "source": "c5 · slide 4"
+        },
+        {
+          "id": "dg-onehot-cost",
+          "kind": "recall",
+          "prompt": "What is the practical cost of one-hot encoding a high-cardinality feature?",
+          "answer": "The feature count **explodes**: one column per distinct value. A postcode column with 2000 values becomes 2000 columns.\n\nThat makes the data wide and sparse, slows training (linear regression is **quadratic** in the number of features), and increases overfitting risk. Hence the grouping and re-coding advice.",
+          "source": "c3 · slide 9; c5 · slides 6–7"
+        },
+        {
+          "id": "dg-encoding-cloze",
+          "kind": "cloze",
+          "prompt": "Of the three options for non-numeric features, dropping is called {{1}}, and one-hot encoding is called {{2}}.",
+          "blanks": [
+            [
+              "lazy"
+            ],
+            [
+              "best"
+            ]
+          ],
+          "tier": 2,
+          "source": "c5 · slide 4"
+        },
+        {
+          "id": "dg-why-numeric",
+          "kind": "mcq",
+          "prompt": "Why does encoding matter at all?",
+          "options": [
+            "Most ML algorithms can only handle numerical data",
+            "Categories cannot be stored in a dataframe",
+            "Text columns take too much memory",
+            "Categorical features always have missing values"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 2"
+        },
+        {
+          "id": "dg-encoding-choice-scenario",
+          "kind": "recall",
+          "prompt": "A dataset has a 'suburb' column with 1200 distinct values. Recommend an approach.",
+          "answer": "Not plain one-hot — that would add 1200 sparse columns.\n\nFollowing the course's advice:\n- **Group** the rare suburbs into 'other', or summarise into a coarser category such as urban / suburban / rural; or\n- **Re-code** as **latitude and longitude**, replacing 1200 columns with two genuinely numeric ones that preserve the geography.",
+          "source": "c5 · slide 7"
+        }
+      ]
+    },
+    {
+      "id": "dg-losses",
+      "title": "Loss functions",
+      "emphasis": "standard",
+      "summary": "Learning means finding the parameters that minimise a loss. Which loss you pick changes what model you get, so it is a modelling decision rather than an implementation detail.",
+      "questions": [
+        {
+          "id": "dg-learning-definition",
+          "kind": "recall",
+          "prompt": "What does it mean, mechanically, for an ML algorithm to 'learn'?",
+          "answer": "It is **trying to learn the parameters** (the equation) that **minimise the loss** on the training data provided.\n\nAnd crucially: depending on the **choice of loss**, you can end up with very different models from the same data.",
+          "source": "c5 · slide 8"
+        },
+        {
+          "id": "dg-regression-losses",
+          "kind": "multi",
+          "prompt": "Which of these are listed as regression losses?",
+          "options": [
+            "Squared error loss",
+            "Absolute error loss",
+            "Huber loss",
+            "Hinge loss"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Hinge is a classification loss. The fourth regression loss listed is ε-insensitive loss.",
+          "source": "c5 · slide 9"
+        },
+        {
+          "id": "dg-classification-losses",
+          "kind": "multi",
+          "prompt": "Which of these are listed as classification losses?",
+          "options": [
+            "Logistic loss",
+            "Hinge loss",
+            "Misclassification loss",
+            "Huber loss"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Huber is a regression loss. The classification list also has exponential, squared hinge and Huberized squared hinge.",
+          "source": "c5 · slide 9"
+        },
+        {
+          "id": "dg-fourth-regression-loss",
+          "kind": "short",
+          "prompt": "Name the fourth regression loss alongside squared error, absolute error and Huber.",
+          "answers": [
+            "epsilon-insensitive",
+            "epsilon insensitive loss",
+            "ε-insensitive",
+            "e-insensitive"
+          ],
+          "tier": 2,
+          "source": "c5 · slide 9"
+        },
+        {
+          "id": "dg-loss-axes",
+          "kind": "mcq",
+          "prompt": "What is on the x-axis of the two loss plots?",
+          "options": [
+            "Error ŷ − y for regression, and margin y·f(x) for classification",
+            "The learning rate for both",
+            "The number of epochs for both",
+            "The parameter value θ for both"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 9"
+        },
+        {
+          "id": "dg-loss-choice-matters",
+          "kind": "mcq",
+          "prompt": "Why does the choice of loss function matter?",
+          "options": [
+            "Different losses lead to very different models from the same data",
+            "It only affects training speed",
+            "It determines the number of features",
+            "It fixes the learning rate"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 8"
+        },
+        {
+          "id": "dg-squared-vs-absolute",
+          "kind": "recall",
+          "prompt": "Compare squared error loss with absolute error loss in how they treat outliers.",
+          "answer": "**Squared error** grows with the square of the error, so a single large outlier can dominate the total and drag the fit toward it.\n\n**Absolute error** grows linearly, so a large error costs proportionally less and the fit is **more robust** to outliers.\n\nHuber loss is the compromise: squared near zero, absolute further out.",
+          "source": "c5 · slide 9"
+        },
+        {
+          "id": "dg-two-ways-learn",
+          "kind": "recall",
+          "prompt": "What are the two ways of learning parametric models?",
+          "answer": "a) **Solving the closed form equation** (section 3.A).\nb) The **gradient descent** method.",
+          "source": "c5 · slide 10"
+        },
+        {
+          "id": "dg-bonus-slide",
+          "kind": "mcq",
+          "prompt": "The c5 slide deriving θ = (XᵀX)⁻¹Xᵀy algebraically is marked how?",
+          "options": [
+            "A bonus slide that will not be tested",
+            "Core examinable material",
+            "Optional reading with a warning that it may appear",
+            "A worked example to reproduce in the test"
+          ],
+          "answerIndex": 0,
+          "explanation": "Explicitly labelled '(BONUS SLIDE, won't be tested)'. Knowing the normal equation still matters — the *derivation* is what is excluded.",
+          "source": "c5 · slide 11"
+        },
+        {
+          "id": "dg-mae-compute",
+          "kind": "computation",
+          "prompt": "Three predictions have errors {{e1}}, {{e2}} and {{e3}}. Give the mean **absolute** error, to 3 dp.",
+          "vars": {
+            "e1": {
+              "type": "int",
+              "min": -8,
+              "max": 8
+            },
+            "e2": {
+              "type": "int",
+              "min": -8,
+              "max": 8
+            },
+            "e3": {
+              "type": "int",
+              "min": -8,
+              "max": 8
+            }
+          },
+          "steps": [
+            {
+              "text": "Absolute error loss takes magnitudes, so signs are dropped rather than squared."
+            },
+            {
+              "text": "`|{{e1}}| + |{{e2}}| + |{{e3}}| = {{abs(e1) + abs(e2) + abs(e3)}}`"
+            },
+            {
+              "text": "`MAE = {{abs(e1) + abs(e2) + abs(e3)}} / 3 = {{(abs(e1) + abs(e2) + abs(e3))/3 | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "(abs(e1) + abs(e2) + abs(e3))/3",
+            "tolerance": 0.005,
+            "decimals": 3
+          },
+          "explanation": "Compare with the MSE on the same errors: squaring inflates the large one disproportionately.",
+          "source": "c5 · slide 9"
+        }
+      ]
+    },
+    {
+      "id": "dg-gradient-descent",
+      "title": "Gradient descent and its variants",
+      "emphasis": "core",
+      "summary": "When there is no closed form, iterate: compute the gradient, step downhill, repeat. Batch, stochastic and mini-batch differ only in how much data each step looks at.",
+      "formulas": [
+        {
+          "name": "Partial derivative of the MSE",
+          "expression": "∂/∂θⱼ MSE(θ) = (2/m) Σᵢ (θᵀx⁽ⁱ⁾ − y⁽ⁱ⁾) xⱼ⁽ⁱ⁾",
+          "source": "c5 · slide 19"
+        },
+        {
+          "name": "Gradient vector",
+          "expression": "∇_θ MSE(θ) = (2/m) Xᵀ (Xθ − y)",
+          "note": "All the partial derivatives at once, in one matrix expression.",
+          "source": "c5 · slide 19"
+        }
+      ],
+      "questions": [
+        {
+          "id": "dg-gd-when-needed",
+          "kind": "recall",
+          "prompt": "Give the three situations where gradient descent is needed instead of a closed form.",
+          "answer": "1. There is **no closed form solution** — LASSO is the example given.\n2. The solution **requires more resource than is available** to the system.\n3. The **matrix is not invertible**.",
+          "source": "c5 · slide 12"
+        },
+        {
+          "id": "dg-gd-step-formula",
+          "kind": "recall",
+          "prompt": "Write the gradient descent step and explain the minus sign.",
+          "answer": "`θ⁽ⁿᵉˣᵗ ˢᵗᵉᵖ⁾ = θ − η ∇_θ MSE(θ)`\n\nThe gradient points in the direction of steepest **increase**. Subtracting it moves **downhill** instead — descent rather than ascent. `η` (eta) is the learning rate, controlling the step size.",
+          "source": "c5 · slides 13, 19"
+        },
+        {
+          "id": "dg-lr-too-small",
+          "kind": "mcq",
+          "prompt": "What does a learning rate that is too small look like?",
+          "options": [
+            "Many tiny steps, converging very slowly and possibly stalling before the minimum",
+            "Steps that overshoot and diverge",
+            "Oscillation around the minimum forever",
+            "No movement at all"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 14"
+        },
+        {
+          "id": "dg-lr-too-big",
+          "kind": "mcq",
+          "prompt": "What does a learning rate that is too big look like?",
+          "options": [
+            "Steps that jump across the valley and can diverge",
+            "Very slow convergence",
+            "Convergence to a local minimum",
+            "A flat cost curve"
+          ],
+          "answerIndex": 0,
+          "explanation": "In the figure the iterates bounce from one wall to the other, ending further from the minimum than they started.",
+          "source": "c5 · slide 15"
+        },
+        {
+          "id": "dg-non-convex-hazards",
+          "kind": "recall",
+          "prompt": "What two hazards does a non-convex loss surface present?",
+          "answer": "**Local minima** — descent can settle in one and never reach the global minimum.\n**Plateaus** — flat regions where the gradient is tiny, so progress becomes extremely slow.\n\nBoth are labelled on the non-convex figure, alongside the global minimum.",
+          "source": "c5 · slide 16"
+        },
+        {
+          "id": "dg-scaling-contours",
+          "kind": "recall",
+          "prompt": "How does feature scaling change the shape of the cost surface, and why does it matter?",
+          "answer": "With scaled features the contours are **circular**, and the gradient points more or less straight at the minimum — descent goes there directly.\n\nWith unscaled features the contours are a **stretched ellipse**. The gradient points across the valley rather than along it, so descent zig-zags and takes far longer.",
+          "source": "c5 · slide 17"
+        },
+        {
+          "id": "dg-scaler-choice",
+          "kind": "recall",
+          "prompt": "Which scaler does c5 recommend for skewed data, and which for normal-looking data?",
+          "answer": "**MinMaxScaler** — helpful for **skewed** data.\n**StandardScaler** — helpful if the data is **normal looking**; it gives mean 0 and standard deviation 1.",
+          "source": "c5 · slide 18"
+        },
+        {
+          "id": "dg-fit-transform-pattern",
+          "kind": "mcq",
+          "prompt": "The scaling code is `X_train_scaled = scaler.fit_transform(X_train)` then `X_test_scaled = scaler.transform(X_test)`. Why is `fit_transform` not used on the test set?",
+          "options": [
+            "The test set must be scaled with the training set's statistics, or information leaks",
+            "fit_transform is slower",
+            "The test set has fewer rows",
+            "transform is required for sparse data"
+          ],
+          "answerIndex": 0,
+          "explanation": "Refitting on the test set would let its distribution influence the pipeline, and would scale train and test differently — so the model would see inputs on a different scale from those it learned on.",
+          "source": "c5 · slide 18"
+        },
+        {
+          "id": "dg-batch-gd",
+          "kind": "mcq",
+          "prompt": "How much data does batch gradient descent use per step?",
+          "options": [
+            "The whole training set",
+            "One example",
+            "A mini-batch of about 32",
+            "A random half"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slides 19, 24"
+        },
+        {
+          "id": "dg-sgd-path",
+          "kind": "mcq",
+          "prompt": "Why is the stochastic gradient descent path on the contour plot so erratic?",
+          "options": [
+            "Each step uses a single random example, so its gradient is a noisy estimate",
+            "The learning rate is too large",
+            "The features are unscaled",
+            "It is minimising a different loss"
+          ],
+          "answerIndex": 0,
+          "explanation": "It gets close to the minimum quickly but never settles — hence the learning schedule that shrinks the step size over time.",
+          "source": "c5 · slides 21–22"
+        },
+        {
+          "id": "dg-minibatch-middle",
+          "kind": "recall",
+          "prompt": "Where does mini-batch gradient descent sit between the other two?",
+          "answer": "Between them in both respects.\n\nOn the comparison plot, **batch** takes a smooth direct path, **stochastic** scatters widely, and **mini-batch** follows a moderately noisy path in between.\n\nIt keeps most of the noise-averaging of batch while retaining the speed and out-of-core ability of stochastic.",
+          "source": "c5 · slide 23"
+        },
+        {
+          "id": "dg-comparison-table-outofcore",
+          "kind": "multi",
+          "prompt": "According to the comparison table, which algorithms support out-of-core learning?",
+          "options": [
+            "Stochastic GD",
+            "Mini-batch GD",
+            "Batch GD",
+            "Normal Equation"
+          ],
+          "answerIndices": [
+            0,
+            1
+          ],
+          "tier": 2,
+          "explanation": "Only the two that process data in pieces. Batch GD and the closed-form methods need everything at once.",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-comparison-scaling",
+          "kind": "multi",
+          "prompt": "According to the comparison table, which require feature scaling?",
+          "options": [
+            "Batch GD",
+            "Stochastic GD",
+            "Mini-batch GD",
+            "Normal Equation"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "All three gradient methods need scaling; the Normal Equation and SVD do not — they solve directly rather than following a gradient.",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-comparison-large-n",
+          "kind": "mcq",
+          "prompt": "The comparison table marks the Normal Equation and SVD as 'Slow' for large n. What is n here?",
+          "options": [
+            "The number of features",
+            "The number of examples",
+            "The number of epochs",
+            "The number of classes"
+          ],
+          "answerIndex": 0,
+          "explanation": "m is examples, n is features. Both closed-form methods are fast in m but slow in n — matching the quadratic-in-features complexity from c3.",
+          "source": "c3 · slide 9; c5 · slide 24"
+        },
+        {
+          "id": "dg-gradient-step-compute",
+          "kind": "computation",
+          "prompt": "A parameter is currently θ = {{t}} and the gradient at that point is {{g}}. With learning rate η = {{lr}}, what is θ after one gradient descent step? Give it to 4 dp.",
+          "vars": {
+            "t": {
+              "type": "float",
+              "min": -5,
+              "max": 5,
+              "decimals": 1
+            },
+            "g": {
+              "type": "float",
+              "min": -4,
+              "max": 4,
+              "decimals": 1
+            },
+            "lr": {
+              "type": "choice",
+              "values": [
+                0.01,
+                0.05,
+                0.1,
+                0.5
+              ]
+            }
+          },
+          "derived": {
+            "next": "t - lr * g"
+          },
+          "steps": [
+            {
+              "text": "The step is `θ_next = θ − η × gradient`."
+            },
+            {
+              "text": "`η × gradient = {{lr}} × {{g}} = {{lr * g | 4}}`"
+            },
+            {
+              "text": "`θ_next = {{t}} − {{lr * g | 4}} = {{next | 4}}`"
+            }
+          ],
+          "answer": {
+            "expr": "t - lr * g",
+            "tolerance": 0.002,
+            "decimals": 4
+          },
+          "explanation": "A positive gradient means the cost rises as θ rises, so θ moves down. A negative gradient moves it up.",
+          "source": "c5 · slide 19"
+        },
+        {
+          "id": "dg-learning-schedule",
+          "kind": "recall",
+          "prompt": "In the SGD code, `learning_schedule(t)` returns `t0 / (t + t1)` with `t0, t1 = 5, 50`. What is it for?",
+          "answer": "It **shrinks the learning rate as training proceeds**. Early on the steps are large, so progress toward the minimum is fast; later they shrink, so the iterates settle rather than bouncing around.\n\nThis is the standard fix for stochastic gradient descent's inability to converge at a fixed step size.",
+          "source": "c5 · slide 22"
+        },
+        {
+          "id": "dg-epochs-code",
+          "kind": "mcq",
+          "prompt": "The SGD code has `for epoch in range(n_epochs): for i in range(m):`. What does one epoch amount to?",
+          "options": [
+            "m single-example updates, one per training example",
+            "One update using all m examples",
+            "m epochs of batch gradient descent",
+            "One pass of the closed-form solver"
+          ],
+          "answerIndex": 0,
+          "explanation": "50 epochs × m examples, one parameter update each — versus batch GD's one update per epoch.",
+          "source": "c5 · slide 22"
+        },
+        {
+          "id": "dg-different-lr-plot",
+          "kind": "mcq",
+          "prompt": "The 'different learning rates' figure shows η = 0.02, 0.1 and 0.5. What happens at η = 0.5?",
+          "options": [
+            "The fitted lines diverge, moving further from the data with each step",
+            "It converges fastest and best",
+            "It converges to the same line as 0.1 but more slowly",
+            "Nothing changes from η = 0.02"
+          ],
+          "answerIndex": 0,
+          "explanation": "0.02 is too slow to arrive, 0.1 converges nicely, 0.5 overshoots and diverges.",
+          "source": "c5 · slide 20"
+        },
+        {
+          "id": "dg-momentum",
+          "kind": "recall",
+          "prompt": "What is momentum, in one sentence, and where does c5 point for more?",
+          "answer": "An improvement on plain gradient descent that carries velocity from previous steps, so the search **escapes local minima and pushes across plateaus** rather than stalling.\n\nc5 links to **distill.pub/2017/momentum**; c6b lists it first among the SGD improvements.",
+          "source": "c5 · slide 25; c6b · slide 5"
+        },
+        {
+          "id": "dg-gradient-zero",
+          "kind": "recall",
+          "prompt": "What does it mean when the gradient reaches zero, and why is that not always good news?",
+          "answer": "The step becomes `θ − η × 0 = θ`, so the parameters **stop changing**.\n\nOn a convex surface that is the global minimum, which is what you want. On a **non-convex** surface it could be a **local minimum** or a **plateau** — descent has stopped somewhere that is not the best solution, and plain gradient descent has no way to tell the difference.",
+          "source": "c5 · slides 16, 19"
+        }
+      ]
+    },
+    {
+      "id": "dg-hyperparameter-search",
+      "title": "Choosing hyperparameters",
+      "emphasis": "standard",
+      "summary": "Grid search: try every combination systematically, with cross-validation folded in so the comparison is honest.",
+      "questions": [
+        {
+          "id": "dg-gridsearch-definition",
+          "kind": "recall",
+          "prompt": "What is grid search?",
+          "answer": "A **systematic way to test every combination** of the hyperparameters in order to find the 'best' model.\n\nYou can write your own nested `for` loops, or use `sklearn.model_selection.GridSearchCV` to do a grid search **with cross-validation**.",
+          "source": "c5 · slides 26–27"
+        },
+        {
+          "id": "dg-gridsearchcv-cv",
+          "kind": "mcq",
+          "prompt": "What does the 'CV' in GridSearchCV add over hand-written loops?",
+          "options": [
+            "Cross-validation, so each combination is scored on held-out folds",
+            "Continuous validation during fitting",
+            "Class validation of the parameter grid",
+            "Cached vectorisation for speed"
+          ],
+          "answerIndex": 0,
+          "explanation": "Without it you would be comparing combinations on training performance, which always favours the most flexible setting.",
+          "source": "c5 · slide 27"
+        },
+        {
+          "id": "dg-grid-combinations-compute",
+          "kind": "computation",
+          "prompt": "A grid has {{a}} values for the first hyperparameter, {{b}} for the second and {{c}} for the third. How many combinations are tested?",
+          "vars": {
+            "a": {
+              "type": "int",
+              "min": 2,
+              "max": 6
+            },
+            "b": {
+              "type": "int",
+              "min": 2,
+              "max": 6
+            },
+            "c": {
+              "type": "int",
+              "min": 2,
+              "max": 5
+            }
+          },
+          "steps": [
+            {
+              "text": "Grid search tests every combination, so the counts multiply."
+            },
+            {
+              "text": "`{{a}} × {{b}} × {{c}}`"
+            },
+            {
+              "text": "`= {{a * b * c}}` combinations."
+            }
+          ],
+          "answer": {
+            "expr": "a * b * c",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c5 · slide 27"
+        },
+        {
+          "id": "dg-grid-example-count",
+          "kind": "computation",
+          "prompt": "The example grid has l1_ratio with 5 values, alpha with 4, and eta0 with 2. With {{k}}-fold cross-validation, how many model fits are performed?",
+          "vars": {
+            "k": {
+              "type": "choice",
+              "values": [
+                3,
+                5,
+                10
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "Combinations: `5 × 4 × 2 = 40`."
+            },
+            {
+              "text": "Each combination is fitted once per fold: `40 × {{k}}`."
+            },
+            {
+              "text": "`= {{40 * k}}` fits."
+            }
+          ],
+          "answer": {
+            "expr": "40 * k",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "The multiplication is why grid search gets expensive fast — adding one hyperparameter with 3 values triples the cost.",
+          "source": "c5 · slide 27"
+        },
+        {
+          "id": "dg-grid-dict-params",
+          "kind": "multi",
+          "prompt": "Which hyperparameters appear in the example `grid_dict`?",
+          "options": [
+            "l1_ratio",
+            "alpha",
+            "eta0",
+            "max_depth"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "`max_depth` is a tree parameter; this grid is over an SGDClassifier.",
+          "source": "c5 · slide 27"
+        },
+        {
+          "id": "dg-l1-ratio-meaning",
+          "kind": "mcq",
+          "prompt": "The grid searches `l1_ratio` over [0, 0.25, 0.5, 0.75, 1]. What does this parameter control?",
+          "options": [
+            "The Elastic Net mixing ratio between L1 and L2 penalties",
+            "The learning rate",
+            "The fraction of features used",
+            "The proportion of data held out"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is the `r` from c3's Elastic Net: 0 is pure Ridge (L2), 1 is pure Lasso (L1), and the grid spans both ends.",
+          "source": "c3 · slide 33; c5 · slide 27"
+        },
+        {
+          "id": "dg-adaptive-lr",
+          "kind": "mcq",
+          "prompt": "The example creates `SGDClassifier(learning_rate='adaptive')`. What does that do?",
+          "options": [
+            "Adjusts the learning rate during training rather than holding it fixed",
+            "Searches for the learning rate by grid search",
+            "Uses a different rate per feature",
+            "Disables the learning rate entirely"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same idea as the learning schedule and as c6b's scheduling section — a fixed rate is rarely right for the whole of training.",
+          "source": "c5 · slide 27; c6b · slide 7"
+        },
+        {
+          "id": "dg-gridsearch-fit",
+          "kind": "mcq",
+          "prompt": "In the example, which data is `clf.fit(...)` called on?",
+          "options": [
+            "X_train, y_train — the training data",
+            "X_test, y_test",
+            "The whole dataset",
+            "A single cross-validation fold"
+          ],
+          "answerIndex": 0,
+          "explanation": "Consistent with the rule that the test set is untouched until selection is finished.",
+          "source": "c5 · slide 27"
+        },
+        {
+          "id": "dg-grid-vs-random",
+          "kind": "recall",
+          "prompt": "What is the main weakness of grid search as the number of hyperparameters grows?",
+          "answer": "The number of combinations grows **multiplicatively**. Three hyperparameters with five values each is 125 fits; four is 625; and each is multiplied again by the number of cross-validation folds.\n\nSo exhaustive search becomes impractical quickly, and the grid must be kept coarse — which risks stepping over the best setting.",
+          "source": "c5 · slide 26"
+        },
+        {
+          "id": "dg-hyperparameter-vs-parameter",
+          "kind": "recall",
+          "prompt": "Distinguish a parameter from a hyperparameter.",
+          "answer": "A **parameter** is learned from the data by the training algorithm — the coefficients θ in a linear model.\n\nA **hyperparameter** is set **before** training and controls how learning happens — alpha, the learning rate, k in kNN, tree depth. It cannot be learned by the same procedure, which is why it needs grid search and cross-validation.",
+          "source": "intro · slide 29; c5 · slide 26"
+        }
+      ]
+    },
+    {
+      "id": "dg-closed-vs-iterative",
+      "title": "Closed form versus iterative",
+      "emphasis": "standard",
+      "summary": "The comparison table, read as a decision. Which method to reach for depends on how many examples, how many features, and whether the data fits in memory.",
+      "questions": [
+        {
+          "id": "dg-normal-eq-hyperparams",
+          "kind": "mcq",
+          "prompt": "According to the comparison table, how many hyperparameters do the Normal Equation and SVD have?",
+          "options": [
+            "0",
+            "1",
+            "2",
+            "At least 2"
+          ],
+          "answerIndex": 0,
+          "explanation": "Nothing to tune — a real advantage. Batch GD has 2; stochastic and mini-batch have at least 2.",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-batch-gd-hyperparams",
+          "kind": "mcq",
+          "prompt": "How many hyperparameters does the table give for Batch GD?",
+          "options": [
+            "2",
+            "0",
+            "1",
+            "At least 3"
+          ],
+          "answerIndex": 0,
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-sklearn-class-column",
+          "kind": "mcq",
+          "prompt": "In the comparison table, which scikit-learn class is listed for SVD?",
+          "options": [
+            "LinearRegression",
+            "SGDRegressor",
+            "n/a",
+            "Ridge"
+          ],
+          "answerIndex": 0,
+          "explanation": "The Normal Equation row reads 'n/a' — sklearn does not expose it directly. All three gradient rows list SGDRegressor.",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-large-m-slow",
+          "kind": "mcq",
+          "prompt": "Which method does the table mark 'Slow' for a large number of examples m?",
+          "options": [
+            "Batch GD",
+            "Stochastic GD",
+            "SVD",
+            "Mini-batch GD"
+          ],
+          "answerIndex": 0,
+          "explanation": "Every batch GD step touches all m examples. The stochastic methods touch a few, and the closed-form methods are linear in m.",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-choose-method-many-features",
+          "kind": "recall",
+          "prompt": "You have 100,000 features and 5,000 examples. Which family should you use, and why?",
+          "answer": "A **gradient descent** method — the table marks all three as **Fast for large n** (features), while the Normal Equation and SVD are **Slow**.\n\nThat matches c3's complexity note: the closed-form solution is **quadratic in the number of features**. With n ≫ m it is also the case that XᵀX is singular, so the plain normal equation would not solve at all.",
+          "source": "c3 · slide 9; c5 · slide 24"
+        },
+        {
+          "id": "dg-choose-method-huge-data",
+          "kind": "recall",
+          "prompt": "Your dataset does not fit in RAM. Which methods remain available?",
+          "answer": "**Stochastic GD** and **Mini-batch GD** — the only two the table marks as supporting **out-of-core** learning, because they consume the data in small pieces.\n\nThis is the same reasoning as the intro deck's advice to use online learning when data exceeds RAM.",
+          "source": "intro · slide 25; c5 · slide 24"
+        },
+        {
+          "id": "dg-no-closed-form-lasso",
+          "kind": "mcq",
+          "prompt": "Which method is given as the example with no closed-form solution?",
+          "options": [
+            "LASSO regression",
+            "Ridge regression",
+            "Linear regression",
+            "Polynomial regression"
+          ],
+          "answerIndex": 0,
+          "explanation": "Ridge does have a closed form, `(XᵀX + αA)⁻¹Xᵀy`. Lasso's absolute-value penalty is not differentiable at zero, so there is no such formula.",
+          "source": "c3 · slide 28; c5 · slide 12"
+        },
+        {
+          "id": "dg-gd-guarantee",
+          "kind": "recall",
+          "prompt": "Does gradient descent find the same answer as the normal equation for linear regression?",
+          "answer": "Approximately, yes. The MSE surface for linear regression is **convex** — a single global minimum, no local minima or plateaus — so gradient descent converges to the same point the normal equation computes exactly.\n\nThe difference is that gradient descent gets there **iteratively and approximately**, so its answer depends on the learning rate and how long it ran. The example values (4.21076, 2.74856 from SGD versus 4.21509, 2.77011 from the closed form) are close but not identical.",
+          "source": "c3 · slide 7; c5 · slides 16, 22"
+        },
+        {
+          "id": "dg-table-recall",
+          "kind": "recall",
+          "prompt": "Reproduce the comparison table's columns.",
+          "answer": "The rows are **Normal Equation, SVD, Batch GD, Stochastic GD, Mini-batch GD**, and the columns are:\n\n- **Large m** (many examples)\n- **Out-of-core support**\n- **Large n** (many features)\n- **Hyperparams**\n- **Scaling required**\n- **Scikit-Learn** class",
+          "source": "c5 · slide 24"
+        },
+        {
+          "id": "dg-scaling-not-needed",
+          "kind": "mcq",
+          "prompt": "Which methods does the table say do **not** require scaling?",
+          "options": [
+            "Normal Equation and SVD",
+            "Batch GD only",
+            "Stochastic and Mini-batch GD",
+            "All of them require scaling"
+          ],
+          "answerIndex": 0,
+          "explanation": "They solve directly rather than following a gradient, so the shape of the cost contours does not affect them.",
+          "source": "c5 · slide 24"
+        }
+      ]
+    }
+  ]
+}

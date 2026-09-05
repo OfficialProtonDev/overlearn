@@ -1,0 +1,1802 @@
+{
+  "id": "knn-trees",
+  "title": "kNN & Decision Trees",
+  "summary": "Two non-parametric supervised methods. Both carve the feature space into regions and predict a constant within each: kNN does it implicitly by distance, a tree does it explicitly by axis-aligned splits.",
+  "formulas": [
+    {
+      "name": "Euclidean distance",
+      "expression": "‖x_i − x*‖₂ = sqrt( Σ_j (x_ij − x*_j)² )",
+      "note": "The distance kNN sorts on. Squared distances give the same ordering, so the square root is often skipped.",
+      "source": "c2 · slide 5"
+    }
+  ],
+  "keyFacts": [
+    {
+      "term": "Non-parametric",
+      "definition": "Both kNN and decision trees partition the space into disjoint regions with a constant prediction in each, rather than fitting a fixed set of coefficients.",
+      "source": "c2 · slide 11"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "kt-feature-types",
+      "title": "Feature and variable types",
+      "emphasis": "standard",
+      "summary": "Four variable types collapse into two handling categories. Discreteness is not what decides it — natural ordering is.",
+      "keyFacts": [
+        {
+          "term": "Numerical variables",
+          "definition": "Continuous numbers (32.23 km/h), and discrete numbers **with** a natural ordering (0, 1, 2 children).",
+          "source": "c2 · slide 2"
+        },
+        {
+          "term": "Categorical variables",
+          "definition": "Discrete numbers **without** natural ordering (1 = Sweden, 2 = Denmark, 3 = Norway), and text strings.",
+          "source": "c2 · slide 2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-vartype-continuous",
+          "kind": "mcq",
+          "prompt": "Speeds recorded as 32.23 km/h, 12.50 km/h, 42.85 km/h are handled as:",
+          "options": [
+            "Numerical",
+            "Categorical",
+            "Ordinal only",
+            "Text"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-vartype-country-codes",
+          "kind": "mcq",
+          "prompt": "A column codes country as 1 = Sweden, 2 = Denmark, 3 = Norway. How should it be handled?",
+          "options": [
+            "Categorical — the numbers have no natural ordering",
+            "Numerical — the values are integers",
+            "Numerical, after scaling to [0,1]",
+            "It depends on how many countries there are"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is the trap in the table: the values *look* numeric but the ordering is meaningless. Denmark is not 'between' Sweden and Norway.",
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-vartype-children",
+          "kind": "mcq",
+          "prompt": "A column holds 0 children, 1 child, 2 children. How is it handled?",
+          "options": [
+            "Numerical — discrete but with a natural ordering",
+            "Categorical — the values are discrete",
+            "Categorical — counts cannot be averaged",
+            "Numerical only after one-hot encoding"
+          ],
+          "answerIndex": 0,
+          "explanation": "Discrete does not imply categorical. What matters is whether the ordering means something, and here it does.",
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-vartype-deciding",
+          "kind": "short",
+          "prompt": "What property decides whether a discrete variable is handled as numerical or categorical?",
+          "answers": [
+            "natural ordering",
+            "whether it has a natural ordering",
+            "ordering",
+            "whether the values are ordered"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-vartype-text",
+          "kind": "mcq",
+          "prompt": "Text strings such as 'Hello', 'Goodbye', 'Welcome' are handled as:",
+          "options": [
+            "Categorical",
+            "Numerical",
+            "Continuous",
+            "Ordinal"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-vartype-recall-table",
+          "kind": "recall",
+          "prompt": "Reproduce the four variable types and how each is handled.",
+          "answer": "**Number (continuous)** — e.g. 32.23 km/h → *Numerical*\n**Number (discrete) with natural ordering** — e.g. 0, 1, 2 children → *Numerical*\n**Number (discrete) without natural ordering** — e.g. 1 = Sweden, 2 = Denmark → *Categorical*\n**Text string** — e.g. Hello, Goodbye → *Categorical*",
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-attribute-feature",
+          "kind": "mcq",
+          "prompt": "How do the terms 'attribute' and 'feature' relate in this course?",
+          "options": [
+            "They are often used interchangeably",
+            "An attribute is a feature plus its label",
+            "A feature is always numeric; an attribute may be text",
+            "An attribute is a row; a feature is a column"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 11"
+        },
+        {
+          "id": "kt-feature-vector",
+          "kind": "short",
+          "prompt": "What is the standard file format the course says data is often represented in?",
+          "answers": [
+            "csv",
+            "csv files",
+            "csv-files",
+            "comma separated values"
+          ],
+          "tier": 2,
+          "source": "intro · slide 11"
+        },
+        {
+          "id": "kt-songs-example",
+          "kind": "mcq",
+          "prompt": "In the audio songs example, which two features are plotted?",
+          "options": [
+            "Length (ln s) and energy (scale 0–1)",
+            "Tempo and loudness",
+            "Year and genre",
+            "Duration and artist popularity"
+          ],
+          "answerIndex": 0,
+          "explanation": "Length on the x-axis, energy on the y-axis, coloured by artist (Beatles, Kiss, Bob Dylan). It reappears for kNN and tree decision boundaries.",
+          "source": "c2 · slide 3"
+        },
+        {
+          "id": "kt-car-stopping",
+          "kind": "mcq",
+          "prompt": "The car stopping distance example plots distance against speed. What type of supervised problem is it?",
+          "options": [
+            "Regression — the target is a continuous number",
+            "Binary classification",
+            "Multi-class classification",
+            "Clustering"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 4"
+        },
+        {
+          "id": "kt-categorical-consequence",
+          "kind": "recall",
+          "prompt": "Why does treating an unordered categorical code as numerical cause trouble for kNN specifically?",
+          "answer": "kNN works on **distances**. Coding Sweden = 1, Denmark = 2, Norway = 3 makes Denmark appear **closer to Sweden than Norway is**, which is an arbitrary artefact of the coding. The distances become meaningless, so the neighbours chosen are meaningless.",
+          "source": "c2 · slides 2, 5"
+        },
+        {
+          "id": "kt-vartype-ordinal-cloze",
+          "kind": "cloze",
+          "prompt": "A discrete variable **with** a natural ordering is handled as {{1}}; one **without** a natural ordering is handled as {{2}}.",
+          "blanks": [
+            [
+              "numerical"
+            ],
+            [
+              "categorical"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-postcode-example",
+          "kind": "mcq",
+          "prompt": "A postcode column is stored as an integer. Which handling is correct?",
+          "options": [
+            "Categorical — postcodes have no meaningful numeric ordering",
+            "Numerical — they are integers with a natural order",
+            "Numerical after standardisation",
+            "It cannot be used as a feature"
+          ],
+          "answerIndex": 0,
+          "explanation": "Same shape as the country-code case. c5 later suggests re-coding postcodes as latitude/longitude, which *is* meaningfully numeric.",
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-two-categories",
+          "kind": "short",
+          "prompt": "The four variable types collapse into how many handling categories?",
+          "answers": [
+            "two",
+            "2"
+          ],
+          "tier": 1,
+          "source": "c2 · slide 2"
+        },
+        {
+          "id": "kt-target-vs-feature",
+          "kind": "mcq",
+          "prompt": "In a supervised training example, what are the two components?",
+          "options": [
+            "Features and a label/class",
+            "Features and a distance",
+            "A label and a decision boundary",
+            "Attributes and hyperparameters"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 11"
+        }
+      ]
+    },
+    {
+      "id": "kt-knn-algorithm",
+      "title": "The kNN algorithm",
+      "emphasis": "core",
+      "summary": "Method 2.1: compute the distance to every training point, take the k nearest, then average (regression) or take a majority vote (classification).",
+      "formulas": [
+        {
+          "name": "kNN prediction",
+          "expression": "ŷ(x*) = Average{y_j : j ∈ N*}   (regression)\nŷ(x*) = MajorityVote{y_j : j ∈ N*}   (classification)",
+          "note": "N* is the set of the k training points closest to the query x*.",
+          "source": "c2 · slide 5"
+        }
+      ],
+      "keyFacts": [
+        {
+          "term": "kNN, Method 2.1",
+          "definition": "1. Compute distances ‖x_i − x*‖₂ for all training points i = 1…n. 2. Let N* be the set of the k points closest to x*. 3. Predict by averaging (regression) or majority vote (classification).",
+          "source": "c2 · slide 5"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-knn-three-steps",
+          "kind": "recall",
+          "prompt": "State the three steps of the kNN algorithm (Method 2.1).",
+          "answer": "1. Compute the distances `‖x_i − x*‖₂` for **all** training data points i = 1 … n.\n2. Let `N*` be the set of the **k data points closest** to x*.\n3. Predict: **Average** of their y values for regression, **MajorityVote** for classification.",
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-regression-vs-class",
+          "kind": "mcq",
+          "prompt": "How does kNN form its prediction differently for regression and classification?",
+          "options": [
+            "Average of the neighbours' targets vs majority vote of their labels",
+            "Median vs mode",
+            "Weighted sum vs unweighted sum",
+            "Nearest neighbour only vs all k neighbours"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-distance-metric",
+          "kind": "short",
+          "prompt": "Which distance does the kNN method as stated use?",
+          "answers": [
+            "euclidean",
+            "euclidean distance",
+            "l2",
+            "l2 norm",
+            "2-norm"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-toy-nearest",
+          "kind": "mcq",
+          "prompt": "In the toy example (query x₁ = 1, x₂ = 2), the sorted distances are √1, √2, √4, √5, √8, √9 for points i = 6, 2, 4, 1, 5, 3 with labels Red, Blue, Blue, Red, Blue, Red. What does k = 1 predict?",
+          "options": [
+            "Red",
+            "Blue",
+            "A tie",
+            "Cannot be determined"
+          ],
+          "answerIndex": 0,
+          "explanation": "The single nearest point is i = 6 at distance √1, labelled Red.",
+          "source": "c2 · slide 6"
+        },
+        {
+          "id": "kt-knn-toy-k3",
+          "kind": "mcq",
+          "prompt": "Same toy example. The three nearest are i = 6 (Red), i = 2 (Blue), i = 4 (Blue). What does k = 3 predict?",
+          "options": [
+            "Blue",
+            "Red",
+            "A tie",
+            "Red, because it is nearest"
+          ],
+          "answerIndex": 0,
+          "explanation": "Majority vote over the k nearest: two Blue against one Red. Note this *differs* from the k = 1 answer — the point of the example.",
+          "source": "c2 · slide 6"
+        },
+        {
+          "id": "kt-knn-toy-recall",
+          "kind": "recall",
+          "prompt": "In the toy example, k = 1 and k = 3 give different answers. What does that illustrate?",
+          "answer": "That **k matters**. k = 1 predicts Red (nearest point is i = 6, √1 away); k = 3 predicts Blue (two of the three nearest are Blue).\n\nSmall k follows individual points and is sensitive to noise; larger k smooths over the neighbourhood.",
+          "source": "c2 · slides 6–7"
+        },
+        {
+          "id": "kt-knn-euclid-2d",
+          "kind": "computation",
+          "prompt": "A training point sits at ({{ax}}, {{ay}}) and the query at ({{bx}}, {{by}}). Give the **squared** Euclidean distance between them.",
+          "vars": {
+            "ax": {
+              "type": "int",
+              "min": -4,
+              "max": 4
+            },
+            "ay": {
+              "type": "int",
+              "min": -4,
+              "max": 4
+            },
+            "bx": {
+              "type": "int",
+              "min": -4,
+              "max": 4
+            },
+            "by": {
+              "type": "int",
+              "min": -4,
+              "max": 4
+            }
+          },
+          "derived": {
+            "d2": "(ax - bx)^2 + (ay - by)^2"
+          },
+          "steps": [
+            {
+              "text": "Squared Euclidean distance is `(Δx)² + (Δy)²`."
+            },
+            {
+              "text": "`Δx = {{ax}} − {{bx}} = {{ax - bx}}` and `Δy = {{ay}} − {{by}} = {{ay - by}}`."
+            },
+            {
+              "text": "So `d² = {{(ax-bx)^2}} + {{(ay-by)^2}} = {{d2}}`, and `d = √{{d2}}`."
+            }
+          ],
+          "answer": {
+            "expr": "(ax - bx)^2 + (ay - by)^2",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "kNN only ever **sorts** on distance, and squaring preserves the ordering — which is why implementations skip the square root, and why the c2 toy example leaves its distances as √1, √2, √4, √5, √8, √9 rather than evaluating them.",
+          "source": "c2 · slides 5–6"
+        },
+        {
+          "id": "kt-knn-regression-mean",
+          "kind": "computation",
+          "prompt": "For a regression query, the k = 3 nearest neighbours have target values {{m - d1}}, {{m + d2}} and {{m + d1 - d2}}. What does kNN predict?",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 20,
+              "max": 80
+            },
+            "d1": {
+              "type": "choice",
+              "values": [
+                3,
+                5,
+                7,
+                9
+              ]
+            },
+            "d2": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                4,
+                6
+              ]
+            }
+          },
+          "derived": {
+            "total": "3*m"
+          },
+          "steps": [
+            {
+              "text": "For regression, kNN predicts the **average** of the neighbours' targets."
+            },
+            {
+              "text": "`({{m - d1}} + {{m + d2}} + {{m + d1 - d2}}) / 3 = {{total}} / 3`"
+            },
+            {
+              "text": "`= {{m}}`"
+            }
+          ],
+          "answer": {
+            "expr": "m",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c2 · slide 5",
+          "explanation": "Average for regression, majority vote for classification — the only difference between the two halves of Method 2.1. Note the prediction is a constant over the whole region, which is what makes kNN non-parametric in the same sense as a tree."
+        },
+        {
+          "id": "kt-knn-training-cost",
+          "kind": "mcq",
+          "prompt": "Where does kNN do its work?",
+          "options": [
+            "At prediction time — it computes distances to all training points for every query",
+            "At training time — it fits coefficients once, then prediction is cheap",
+            "Half at training, half at prediction",
+            "It precomputes all possible queries"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is what makes it instance-based: training is essentially storing the data, and all the cost lands on each prediction.",
+          "source": "c2 · slide 5; intro · slide 27"
+        },
+        {
+          "id": "kt-knn-neighbourhood-set",
+          "kind": "cloze",
+          "prompt": "In Method 2.1, {{1}} denotes the set of indices of the k training points closest to the query {{2}}.",
+          "blanks": [
+            [
+              "N*",
+              "N",
+              "N star"
+            ],
+            [
+              "x*",
+              "x",
+              "x star"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-tie",
+          "kind": "recall",
+          "prompt": "Why is an even k a poor choice for binary classification?",
+          "answer": "Majority vote can **tie** — with k = 4 and a 2–2 split there is no majority, so the prediction needs an arbitrary tie-break. Odd k avoids the situation entirely in the two-class case.",
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-supervised",
+          "kind": "mcq",
+          "prompt": "Is kNN supervised or unsupervised, and why?",
+          "options": [
+            "Supervised — it needs labelled training points to vote or average over",
+            "Unsupervised — it groups points by distance without a model",
+            "Semi-supervised — it uses both",
+            "Neither — it is a preprocessing step"
+          ],
+          "answerIndex": 0,
+          "explanation": "Distance-based does not mean unsupervised. The neighbours' *labels* are what produce the prediction.",
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-vs-clustering",
+          "kind": "mcq",
+          "prompt": "kNN and K-Means both have a 'k'. What does each k control?",
+          "options": [
+            "kNN: how many neighbours vote. K-Means: how many clusters are found",
+            "Both: how many clusters are found",
+            "Both: how many neighbours vote",
+            "kNN: how many features are used. K-Means: how many iterations"
+          ],
+          "answerIndex": 0,
+          "explanation": "Entirely unrelated parameters in unrelated algorithms — kNN is supervised, K-Means is clustering.",
+          "source": "c2 · slide 5; intro · slide 15"
+        },
+        {
+          "id": "kt-knn-method-number",
+          "kind": "short",
+          "prompt": "kNN appears in the textbook as which numbered method?",
+          "answers": [
+            "method 2.1",
+            "2.1"
+          ],
+          "tier": 1,
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-majority-count",
+          "kind": "computation",
+          "prompt": "A classification query uses k = {{k}}. Of the k nearest neighbours, {{red}} are Red and the rest are Blue. How many are Blue?",
+          "vars": {
+            "k": {
+              "type": "choice",
+              "values": [
+                5,
+                7,
+                9,
+                11,
+                13
+              ]
+            },
+            "red": {
+              "type": "int",
+              "min": 1,
+              "max": 4
+            }
+          },
+          "steps": [
+            {
+              "text": "Every one of the k neighbours carries one of the two labels."
+            },
+            {
+              "text": "Blue count = `k − Red count` = `{{k}} − {{red}}`."
+            },
+            {
+              "text": "So `{{k - red}}` are Blue — which is the majority, so the prediction is Blue."
+            }
+          ],
+          "answer": {
+            "expr": "k - red",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c2 · slide 5"
+        },
+        {
+          "id": "kt-knn-scaling-need",
+          "kind": "mcq",
+          "prompt": "Why is kNN especially sensitive to feature scaling?",
+          "options": [
+            "Its predictions come from distances, which a large-range feature dominates",
+            "Its coefficients grow without bound",
+            "Its splits are axis-aligned",
+            "It uses gradient descent, which needs scaled inputs"
+          ],
+          "answerIndex": 0,
+          "explanation": "A feature ranging over [0, 1000000] swamps one over [0, 1] in the distance sum, so only the large feature effectively decides the neighbours.",
+          "source": "c2 · slide 10"
+        }
+      ]
+    },
+    {
+      "id": "kt-choosing-k",
+      "title": "Choosing k and decision boundaries",
+      "emphasis": "core",
+      "summary": "k is the complexity dial. k = 1 gives jagged boundaries that chase every point; large k gives smooth boundaries that can wash out real structure.",
+      "questions": [
+        {
+          "id": "kt-k1-boundary",
+          "kind": "mcq",
+          "prompt": "How does the decision boundary change from k = 1 to k = 3?",
+          "options": [
+            "It becomes smoother, with fewer isolated regions",
+            "It becomes more jagged and fragmented",
+            "It becomes exactly linear",
+            "It does not change; only the predictions change"
+          ],
+          "answerIndex": 0,
+          "explanation": "The k = 1 plot has small islands around individual points; k = 3 smooths them away.",
+          "source": "c2 · slide 7"
+        },
+        {
+          "id": "kt-k1-overfits",
+          "kind": "mcq",
+          "prompt": "Which fitting problem does k = 1 risk?",
+          "options": [
+            "Overfitting",
+            "Underfitting",
+            "Sampling bias",
+            "Vanishing gradients"
+          ],
+          "answerIndex": 0,
+          "explanation": "It follows every training point exactly, including the noisy ones.",
+          "source": "c2 · slides 8–9"
+        },
+        {
+          "id": "kt-k20-underfits",
+          "kind": "mcq",
+          "prompt": "In the car stopping distance plots, what happens to the kNN fit as k goes from 1 to 20?",
+          "options": [
+            "It changes from a jagged step function tracking every point to a smooth curve that flattens at the extremes",
+            "It becomes a straight line through the origin",
+            "It becomes more jagged",
+            "It stops predicting at high speeds"
+          ],
+          "answerIndex": 0,
+          "explanation": "At k = 20 the ends flatten because the neighbourhood can only reach inwards, dragging the prediction back towards the middle.",
+          "source": "c2 · slide 9"
+        },
+        {
+          "id": "kt-k-tradeoff-recall",
+          "kind": "recall",
+          "prompt": "Describe the trade-off in choosing k.",
+          "answer": "**Small k** (e.g. 1): the boundary follows individual points, giving high complexity — sensitive to noise, likely to **overfit**.\n\n**Large k** (e.g. 20): the boundary is smooth and real structure can be washed out — likely to **underfit**.\n\nk is the complexity dial, and the best value is found empirically on validation data.",
+          "source": "c2 · slides 7–9"
+        },
+        {
+          "id": "kt-k-equals-n",
+          "kind": "recall",
+          "prompt": "What does kNN predict if k is set equal to the total number of training points?",
+          "answer": "The **same thing for every query**: the majority class of the whole training set (classification) or the overall mean (regression).\n\nThe neighbourhood is the entire dataset, so the query point stops mattering. Maximal underfitting.",
+          "source": "c2 · slides 8–9"
+        },
+        {
+          "id": "kt-choose-k-how",
+          "kind": "mcq",
+          "prompt": "How should k be chosen in practice?",
+          "options": [
+            "Empirically, using validation or cross-validation error",
+            "Always the square root of the number of features",
+            "Always 1, since it fits the training data best",
+            "As large as computationally affordable"
+          ],
+          "answerIndex": 0,
+          "explanation": "k is a hyperparameter. Choosing it by training error would always pick k = 1, which is exactly the overfitting case.",
+          "source": "c2 · slides 8–9; intro · slide 30"
+        },
+        {
+          "id": "kt-k-training-error",
+          "kind": "recall",
+          "prompt": "What is the training error of kNN with k = 1, and why does that make training error useless for choosing k?",
+          "answer": "**Essentially zero** — every training point is its own nearest neighbour, so it predicts its own label.\n\nSo training error always favours k = 1, the most overfitted choice. You must select k on **held-out** data.",
+          "source": "c2 · slides 8–9"
+        },
+        {
+          "id": "kt-k-cloze",
+          "kind": "cloze",
+          "prompt": "Decreasing k makes the model {{1}} complex and more likely to {{2}}fit.",
+          "blanks": [
+            [
+              "more"
+            ],
+            [
+              "over"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slides 7–9"
+        },
+        {
+          "id": "kt-songs-knn-plot",
+          "kind": "mcq",
+          "prompt": "In the songs dataset plots, what visibly distinguishes the k = 1 map from the k = 20 map?",
+          "options": [
+            "k = 1 has many small isolated coloured islands; k = 20 has a few large regions",
+            "k = 1 has fewer classes shown",
+            "k = 20 has jagged edges around each point",
+            "They are identical apart from the axis labels"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 8"
+        },
+        {
+          "id": "kt-boundary-shape",
+          "kind": "mcq",
+          "prompt": "kNN decision boundaries are:",
+          "options": [
+            "Piecewise and generally not axis-aligned",
+            "Always straight lines through the origin",
+            "Always axis-aligned rectangles",
+            "Always smooth curves"
+          ],
+          "answerIndex": 0,
+          "explanation": "Contrast with decision trees, whose boundaries *are* axis-aligned by construction.",
+          "source": "c2 · slides 7, 11"
+        },
+        {
+          "id": "kt-k-noise-robustness",
+          "kind": "recall",
+          "prompt": "One training point is mislabelled. How does k affect the damage?",
+          "answer": "With **k = 1**, that point owns a region of the space and every query landing there is predicted wrongly.\n\nWith **larger k**, the mislabelled point is outvoted by its correctly labelled neighbours and the damage is largely absorbed. Larger k buys robustness to label noise.",
+          "source": "c2 · slides 7–9"
+        },
+        {
+          "id": "kt-k-complexity-direction",
+          "kind": "mcq",
+          "prompt": "Which statement matches the course's framing?",
+          "options": [
+            "Larger k means a less complex model",
+            "Larger k means a more complex model",
+            "k does not affect model complexity",
+            "k affects complexity only in regression"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slides 8–9"
+        },
+        {
+          "id": "kt-k-flat-ends",
+          "kind": "recall",
+          "prompt": "Why does the k = 20 fit flatten at the extreme ends of the car stopping distance plot?",
+          "answer": "Near the edges of the data there are no points further out, so the 20 nearest neighbours all lie **inwards**. The prediction is dragged back toward the middle of the data, flattening the curve where it should keep rising.",
+          "source": "c2 · slide 9"
+        },
+        {
+          "id": "kt-k-validation-curve",
+          "kind": "mcq",
+          "prompt": "Plotting validation error against k typically produces:",
+          "options": [
+            "A U shape — high at k = 1 from overfitting, high at large k from underfitting",
+            "A strictly decreasing curve",
+            "A strictly increasing curve",
+            "A flat line"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same shape as the general complexity/error picture in c4: the useful k is at the bottom of the U.",
+          "source": "c2 · slides 8–9; c4 · slide 2"
+        },
+        {
+          "id": "kt-k-odd-even",
+          "kind": "short",
+          "prompt": "For binary classification, should k be odd or even?",
+          "answers": [
+            "odd",
+            "an odd number",
+            "odd number"
+          ],
+          "tier": 1,
+          "source": "c2 · slide 5"
+        }
+      ]
+    },
+    {
+      "id": "kt-preprocessing",
+      "title": "Normalisation and missing values",
+      "emphasis": "core",
+      "summary": "Two standard normalisations, and three ways to handle missing values. Both matter most for distance-based methods.",
+      "formulas": [
+        {
+          "name": "Min-max normalisation",
+          "expression": "f(x) = (x − min) / (max − min)",
+          "note": "Squashes into [0, 1]. Useful for skewed data.",
+          "source": "c2 · slide 10"
+        },
+        {
+          "name": "Standardisation",
+          "expression": "f(x) = (x − mean) / sdev",
+          "note": "Subtract the mean and divide by the standard deviation, giving mean 0 and standard deviation 1. Useful when data looks normal.",
+          "source": "c2 · slide 10"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-why-normalise",
+          "kind": "recall",
+          "prompt": "Why is normalisation essential, using the range example from the slide?",
+          "answer": "If x₁ lies in **[0, 1]** and x₂ lies in **[0, 1000000]**, then x₂ completely dominates any distance calculation. The contribution of x₁ is invisible against it, so effectively only x₂ decides which points are 'near'.\n\nNormalisation puts the features on a comparable scale so each gets a say.",
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-two-normalisations",
+          "kind": "recall",
+          "prompt": "State the two standard normalisation formulas.",
+          "answer": "**Squash into [0,1]:** `f(x) = (x − min) / (max − min)`\n\n**Subtract mean, divide by standard deviation:** `f(x) = (x − mean) / sdev`",
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-minmax-compute",
+          "kind": "computation",
+          "prompt": "A feature ranges from {{lo}} to {{lo + span}}. Min-max normalise the value {{lo + span*f}}.",
+          "vars": {
+            "lo": {
+              "type": "choice",
+              "values": [
+                0,
+                10,
+                20,
+                50
+              ]
+            },
+            "span": {
+              "type": "choice",
+              "values": [
+                100,
+                200
+              ]
+            },
+            "f": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.2,
+                0.25,
+                0.5,
+                0.75,
+                0.8
+              ]
+            }
+          },
+          "derived": {
+            "z": "f"
+          },
+          "steps": [
+            {
+              "text": "`f(x) = (x − min) / (max − min)`."
+            },
+            {
+              "text": "`({{lo + span*f}} − {{lo}}) / ({{lo + span}} − {{lo}}) = {{span*f}} / {{span}}`"
+            },
+            {
+              "text": "`= {{f | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "f",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-standardise-compute",
+          "kind": "computation",
+          "prompt": "A feature has mean {{mu}} and standard deviation {{sd}}. Standardise the value {{mu + sd*z}}.",
+          "vars": {
+            "mu": {
+              "type": "int",
+              "min": 20,
+              "max": 80,
+              "step": 5
+            },
+            "sd": {
+              "type": "choice",
+              "values": [
+                2,
+                4,
+                8,
+                10
+              ]
+            },
+            "z": {
+              "type": "choice",
+              "values": [
+                -2,
+                -1.5,
+                -1,
+                -0.5,
+                0.5,
+                1,
+                1.5,
+                2
+              ]
+            }
+          },
+          "derived": {
+            "x": "mu + sd*z"
+          },
+          "steps": [
+            {
+              "text": "`f(x) = (x − mean) / sdev`."
+            },
+            {
+              "text": "`({{x}} − {{mu}}) / {{sd}} = {{sd*z}} / {{sd}}`"
+            },
+            {
+              "text": "`= {{z | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "z",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "explanation": "The result reads directly as \"this many standard deviations from the mean\", which is why standardised features are comparable across columns — the whole point for a distance-based method like kNN.",
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-minmax-range",
+          "kind": "mcq",
+          "prompt": "After min-max normalisation, what is the range of the transformed feature?",
+          "options": [
+            "[0, 1]",
+            "[−1, 1]",
+            "Mean 0, sdev 1",
+            "Unchanged"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-standardise-result",
+          "kind": "cloze",
+          "prompt": "After standardisation the feature has mean {{1}} and standard deviation {{2}}.",
+          "blanks": [
+            [
+              "0",
+              "zero"
+            ],
+            [
+              "1",
+              "one"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slide 10; c5 · slide 18"
+        },
+        {
+          "id": "kt-missing-three-ways",
+          "kind": "recall",
+          "prompt": "Name the three ways of handling missing values given in c2.",
+          "answer": "1. **Drop the example** (the row).\n2. **Drop the feature** (the column).\n3. **Impute** — fill in with the mean, or by more sophisticated means.",
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-minmax-vs-standard",
+          "kind": "mcq",
+          "prompt": "Which normalisation does the course associate with skewed data?",
+          "options": [
+            "Min-max",
+            "Standardisation",
+            "Neither — they are interchangeable",
+            "Both, but only after removing outliers"
+          ],
+          "answerIndex": 0,
+          "explanation": "c5 puts it plainly: min-max for skewed data, standard scaler when the data looks normal.",
+          "source": "c5 · slide 18"
+        },
+        {
+          "id": "kt-minmax-outlier",
+          "kind": "recall",
+          "prompt": "A single extreme outlier is present. How does it affect min-max normalisation?",
+          "answer": "It sets the **max** (or min), so every other value gets squashed into a narrow band near the other end of [0, 1]. One bad point can compress all the real variation into a sliver of the range.\n\nThis is why the course pairs outlier **removal** with cleaning, before normalising.",
+          "source": "c2 · slide 10; intro · slide 32"
+        },
+        {
+          "id": "kt-normalise-which-methods",
+          "kind": "mcq",
+          "prompt": "Which of these does *not* need numeric features to be preprocessed?",
+          "options": [
+            "Decision trees",
+            "kNN",
+            "Ridge regression",
+            "Gradient descent on a linear model"
+          ],
+          "answerIndex": 0,
+          "explanation": "Trees split on thresholds within a single feature, so a monotone rescaling changes nothing. Distance- and gradient-based methods all care.",
+          "source": "c2 · slide 19"
+        },
+        {
+          "id": "kt-impute-mean",
+          "kind": "short",
+          "prompt": "What is the term for filling in a missing value rather than dropping it?",
+          "answers": [
+            "impute",
+            "imputation",
+            "imputing"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-drop-feature-when",
+          "kind": "recall",
+          "prompt": "When is dropping the whole feature the sensible response to missing values, rather than dropping rows?",
+          "answer": "When a **large proportion of that one column** is missing. Dropping rows would then throw away most of the dataset to save one feature, so it is cheaper to lose the feature and keep the examples.",
+          "source": "c2 · slide 10; c5 · slide 3"
+        },
+        {
+          "id": "kt-minmax-at-min",
+          "kind": "computation",
+          "prompt": "A feature ranges from {{lo}} to {{hi}}. What does min-max normalisation give for a value exactly at the minimum?",
+          "vars": {
+            "lo": {
+              "type": "int",
+              "min": 5,
+              "max": 50,
+              "step": 5
+            },
+            "hi": {
+              "type": "int",
+              "min": 60,
+              "max": 150,
+              "step": 10
+            }
+          },
+          "steps": [
+            {
+              "text": "Min-max is `(x − min) / (max − min)`."
+            },
+            {
+              "text": "At `x = min = {{lo}}`, the numerator is `{{lo}} − {{lo}} = 0`."
+            },
+            {
+              "text": "So the result is `0 / {{hi - lo}} = 0`."
+            }
+          ],
+          "answer": {
+            "expr": "0",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-preprocessing-essential",
+          "kind": "mcq",
+          "prompt": "The c2 slide covering normalisation and missing values is titled:",
+          "options": [
+            "Preprocessing is essential",
+            "Data cleaning basics",
+            "Feature engineering",
+            "Scaling and imputation"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 10"
+        },
+        {
+          "id": "kt-standardise-negative",
+          "kind": "mcq",
+          "prompt": "A standardised value comes out as −1.8. What does that mean?",
+          "options": [
+            "The value is 1.8 standard deviations below the mean",
+            "The calculation is wrong — standardised values cannot be negative",
+            "The value is 1.8 times smaller than the mean",
+            "The feature needs min-max scaling instead"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 10"
+        }
+      ]
+    },
+    {
+      "id": "kt-regression-trees",
+      "title": "Regression trees",
+      "emphasis": "core",
+      "summary": "Greedy recursive splitting. For every attribute, find the threshold minimising the sum of squared errors on both sides; predict the mean within each region; stop on depth, size, or near-zero SSE.",
+      "formulas": [
+        {
+          "name": "Split SSE",
+          "expression": "SSE = Σ_lt (x_i − mean_lt)² + Σ_gt (x_i − mean_gt)²",
+          "note": "Sum of squared errors either side of a candidate threshold. The split minimising it is chosen.",
+          "source": "c2 · slide 12"
+        }
+      ],
+      "keyFacts": [
+        {
+          "term": "Greedy recursive splitting",
+          "definition": "For each attribute find the best splitting threshold, choose the pair (attribute, threshold) minimising SSE, split, and recurse on each side.",
+          "source": "c2 · slide 12"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-tree-region-prediction",
+          "kind": "mcq",
+          "prompt": "What does a regression tree predict within a leaf region?",
+          "options": [
+            "The mean of the training targets in that region",
+            "The median of the training targets",
+            "The nearest training target",
+            "A linear function of the features"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-sse-formula",
+          "kind": "recall",
+          "prompt": "Write the quantity a regression tree minimises when choosing a split.",
+          "answer": "`SSE = Σ_lt (x_i − mean_lt)² + Σ_gt (x_i − mean_gt)²`\n\nThe sum of squared errors on the **less-than** side plus the sum of squared errors on the **greater-than** side, each measured against that side's own mean.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-stopping-three",
+          "kind": "recall",
+          "prompt": "Name the three stopping criteria for growing a regression tree.",
+          "answer": "1. **Max tree depth** reached.\n2. **Not enough examples** left to split.\n3. **SSE very close to 0.0**.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-greedy",
+          "kind": "mcq",
+          "prompt": "Why is decision tree splitting described as greedy?",
+          "options": [
+            "Each split is chosen as the best immediate one, without looking ahead to later splits",
+            "It uses as much memory as available",
+            "It always splits on the feature with the largest values",
+            "It grows until every leaf holds one example"
+          ],
+          "answerIndex": 0,
+          "explanation": "Greedy here means locally optimal at each step, with no guarantee the overall tree is optimal.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-sse-one-side",
+          "kind": "computation",
+          "prompt": "One side of a candidate split holds the target values {{m - d}}, {{m}} and {{m + d}}. Give the sum of squared errors for that side.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 4,
+              "max": 18
+            },
+            "d": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          },
+          "derived": {
+            "sse": "2*d^2"
+          },
+          "steps": [
+            {
+              "text": "The prediction for a region is the **mean** of its targets: `({{m - d}} + {{m}} + {{m + d}})/3 = {{m}}`."
+            },
+            {
+              "text": "SSE = `({{m - d}} − {{m}})² + ({{m}} − {{m}})² + ({{m + d}} − {{m}})²`"
+            },
+            {
+              "text": "`= {{d^2}} + 0 + {{d^2}} = {{sse}}`"
+            }
+          ],
+          "answer": {
+            "expr": "2*d^2",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "The middle value sits exactly on the mean and contributes nothing; only the spread costs. A pure side (all values equal) has SSE = 0, which is what the greedy split search is driving towards.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-sse-pure-side",
+          "kind": "computation",
+          "prompt": "One side of a split holds {{n}} examples, all with the target value {{v}}. What is the SSE for that side?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 2,
+              "max": 12
+            },
+            "v": {
+              "type": "int",
+              "min": 1,
+              "max": 30
+            }
+          },
+          "steps": [
+            {
+              "text": "The mean of identical values is that value: `mean = {{v}}`."
+            },
+            {
+              "text": "Every deviation is `{{v}} − {{v}} = 0`, so every squared deviation is 0."
+            },
+            {
+              "text": "The sum of {{n}} zeros is `0`."
+            }
+          ],
+          "answer": {
+            "expr": "0",
+            "tolerance": 0.0001,
+            "decimals": 0
+          },
+          "explanation": "A pure region has zero SSE, which is exactly the third stopping criterion.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-search-space",
+          "kind": "mcq",
+          "prompt": "When choosing a split, what does the algorithm search over?",
+          "options": [
+            "Every attribute, and for each one every possible splitting threshold",
+            "Only the attribute with the highest variance",
+            "Only thresholds at the feature means",
+            "A random subset of attributes"
+          ],
+          "answerIndex": 0,
+          "explanation": "'For each attribute find the best splitting threshold' — an exhaustive search at each node. Random subsets are a random-forest idea, not part of a single tree.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-axis-aligned",
+          "kind": "mcq",
+          "prompt": "Tree splits take the form x_j < s. What does that imply about the regions?",
+          "options": [
+            "They are axis-aligned boxes",
+            "They can have any shape",
+            "They are always squares",
+            "They are circular around each training point"
+          ],
+          "answerIndex": 0,
+          "explanation": "Each split cuts perpendicular to one axis, so the regions are rectangles (Fig 2.7 in the deck).",
+          "source": "c2 · slides 11–12"
+        },
+        {
+          "id": "kt-tree-nested-if",
+          "kind": "recall",
+          "prompt": "Give the two informal ways the course describes a decision tree.",
+          "answer": "As **nested if-then-else** statements, and as a **set of rules**.\n\nBoth reflect the same thing: a path from root to leaf is a conjunction of threshold tests.",
+          "source": "c2 · slide 11"
+        },
+        {
+          "id": "kt-tree-fig-example",
+          "kind": "mcq",
+          "prompt": "In the example tree, the root tests x₂ < 3.0 and the right branch then tests x₁ < 5.0, giving regions R₁, R₂, R₃. How many leaf regions does the tree have?",
+          "options": [
+            "3",
+            "2",
+            "4",
+            "6"
+          ],
+          "answerIndex": 0,
+          "explanation": "R₁ (Blue) from the first split, then R₂ (Blue) and R₃ (Red) from the second.",
+          "source": "c2 · slide 11"
+        },
+        {
+          "id": "kt-tree-mean-why",
+          "kind": "recall",
+          "prompt": "Why is the mean the right constant to predict in a region, given the SSE criterion?",
+          "answer": "Because the **mean is the constant that minimises the sum of squared errors** for a set of values. Since the tree chooses splits by minimising SSE, predicting the mean within each region is the consistent choice — anything else would raise the very quantity being minimised.",
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-depth-stop",
+          "kind": "short",
+          "prompt": "Which stopping criterion directly limits how many splits can occur on any path from the root?",
+          "answers": [
+            "max depth",
+            "maximum depth",
+            "max tree depth",
+            "tree depth"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-recursive",
+          "kind": "cloze",
+          "prompt": "The learning procedure is called greedy recursive {{1}}, and the prediction in each region is the {{2}}.",
+          "blanks": [
+            [
+              "splitting",
+              "binary splitting"
+            ],
+            [
+              "mean",
+              "average"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slide 12"
+        },
+        {
+          "id": "kt-tree-predict-procedure",
+          "kind": "recall",
+          "prompt": "How does the 'Predict from a decision tree' procedure work?",
+          "answer": "1. Find the region `R_ℓ` that the test point `x*` belongs to, by following the splits from the root.\n2. Return that region's prediction: `ŷ(x*) = ŷ_ℓ`.\n\nPrediction is a single root-to-leaf walk, which is why trees are fast at prediction time.",
+          "source": "c2 · slide 13"
+        },
+        {
+          "id": "kt-sse-vs-count",
+          "kind": "mcq",
+          "prompt": "Two candidate splits give the same total SSE, but one leaves 2 examples on the left and the other leaves 20. Which does the SSE criterion prefer?",
+          "options": [
+            "Neither — SSE alone does not distinguish them",
+            "The one with 20, since more data is better",
+            "The one with 2, since it is purer",
+            "The one with the deeper resulting tree"
+          ],
+          "answerIndex": 0,
+          "explanation": "SSE is the sole criterion for choosing among splits. Region size enters only via the separate 'not enough examples left to split' stopping rule.",
+          "source": "c2 · slide 12"
+        }
+      ]
+    },
+    {
+      "id": "kt-classification-trees",
+      "title": "Classification trees and impurity",
+      "emphasis": "core",
+      "summary": "Replace SSE with an impurity measure. All three are functions of r, the proportion of one class, and all three peak at r = 0.5 and vanish at r = 0 and r = 1.",
+      "formulas": [
+        {
+          "name": "Misclassification rate",
+          "expression": "Q = 1 − max(r, 1 − r)",
+          "note": "Fraction wrong if the node predicts its majority class. Peaks at 0.5 when r = 0.5.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "name": "Gini index",
+          "expression": "Q = 2r(1 − r)",
+          "note": "For the two-class case. Peaks at 0.5 when r = 0.5.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "name": "Entropy",
+          "expression": "Q = −r ln r − (1 − r) ln(1 − r)",
+          "note": "Natural log in this course. Peaks at ln 2 ≈ 0.693 when r = 0.5.",
+          "source": "c2 · slide 15"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-three-impurities",
+          "kind": "recall",
+          "prompt": "Write the three impurity measures for a two-class node with class proportion r.",
+          "answer": "**Misclassification rate:** `Q = 1 − max(r, 1 − r)`\n**Gini index:** `Q = 2r(1 − r)`\n**Entropy:** `Q = −r ln r − (1 − r) ln(1 − r)`",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-gini-compute",
+          "kind": "computation",
+          "prompt": "A node holds {{pct}}% class-1 examples. Give its Gini index, to 4 dp.",
+          "vars": {
+            "pct": {
+              "type": "int",
+              "min": 5,
+              "max": 95,
+              "step": 5
+            }
+          },
+          "derived": {
+            "r": "pct / 100"
+          },
+          "steps": [
+            {
+              "text": "Gini for two classes is `Q = 2r(1 − r)`, with r the proportion of one class."
+            },
+            {
+              "text": "Here `r = {{pct}}/100 = {{r}}`, so `1 − r = {{1 - r}}`."
+            },
+            {
+              "text": "`Q = 2 × {{r}} × {{1 - r}} = {{2*r*(1-r) | 4}}`"
+            }
+          ],
+          "answer": {
+            "expr": "2*r*(1-r)",
+            "tolerance": 0.001,
+            "decimals": 4
+          },
+          "explanation": "Gini is symmetric in r and 1 − r: a node that is 30% class 1 has the same Gini as one that is 70% class 1.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-entropy-compute",
+          "kind": "short",
+          "tier": 2,
+          "prompt": "A node is exactly balanced — half class 1, half class 0. Give its entropy, as a formula and as a number.",
+          "answers": [
+            "ln 2 ≈ 0.693",
+            "ln 2",
+            "ln2",
+            "0.693",
+            "0.6931",
+            "log 2",
+            "ln(2)"
+          ],
+          "source": "c2 · slide 15",
+          "explanation": "`Q = −r ln r − (1 − r) ln(1 − r)`, and at `r = 0.5` that is `−0.5 ln 0.5 − 0.5 ln 0.5 = ln 2 ≈ 0.693`.\n\nTwo anchors are worth carrying into the test: entropy is **0 at a pure node** and **maximal at r = 0.5**. Because this course uses the **natural** log that maximum is **ln 2 ≈ 0.693**, not 1 — log₂ would give 1. Compare the Gini index, which is 0.5 at the same node."
+        },
+        {
+          "id": "kt-misclass-compute",
+          "kind": "computation",
+          "prompt": "A node holds {{pct}}% class-1 examples. Give its misclassification rate, to 3 dp.",
+          "vars": {
+            "pct": {
+              "type": "int",
+              "min": 5,
+              "max": 95,
+              "step": 5
+            }
+          },
+          "derived": {
+            "r": "pct / 100"
+          },
+          "steps": [
+            {
+              "text": "Misclassification rate is `Q = 1 − max(r, 1 − r)`."
+            },
+            {
+              "text": "Here `r = {{r}}` and `1 − r = {{1 - r}}`, so the majority proportion is `{{max(r, 1-r)}}`."
+            },
+            {
+              "text": "`Q = 1 − {{max(r, 1-r)}} = {{1 - max(r, 1-r) | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "1 - max(r, 1-r)",
+            "tolerance": 0.001,
+            "decimals": 3
+          },
+          "explanation": "This is just the minority proportion — the fraction you get wrong by predicting the majority class.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-impurity-max-point",
+          "kind": "mcq",
+          "prompt": "At what value of r are all three impurity measures at their maximum?",
+          "options": [
+            "r = 0.5",
+            "r = 0",
+            "r = 1",
+            "r = 0.25"
+          ],
+          "answerIndex": 0,
+          "explanation": "A 50/50 node is maximally impure. All three vanish at r = 0 and r = 1, where the node is pure.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-gini-max-value",
+          "kind": "mcq",
+          "prompt": "What is the maximum possible value of the Gini index for a two-class node?",
+          "options": [
+            "0.5",
+            "1.0",
+            "0.693",
+            "0.25"
+          ],
+          "answerIndex": 0,
+          "explanation": "2 × 0.5 × 0.5 = 0.5 at r = 0.5. Entropy peaks at ln 2 ≈ 0.693; misclassification rate peaks at 0.5.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-entropy-max-value",
+          "kind": "mcq",
+          "prompt": "Using natural logs, what is the maximum entropy for a two-class node?",
+          "options": [
+            "ln 2 ≈ 0.693",
+            "1.0",
+            "0.5",
+            "2.0"
+          ],
+          "answerIndex": 0,
+          "explanation": "With log₂ it would be exactly 1. This course writes `ln`, so the peak is 0.693.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-pure-node-impurity",
+          "kind": "computation",
+          "prompt": "A node contains {{n}} examples, all of the same class. What is its Gini index?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 3,
+              "max": 40
+            }
+          },
+          "steps": [
+            {
+              "text": "All examples share one class, so `r = 1` (and `1 − r = 0`)."
+            },
+            {
+              "text": "`Q = 2r(1 − r) = 2 × 1 × 0`."
+            },
+            {
+              "text": "`Q = 0` — the node is pure."
+            }
+          ],
+          "answer": {
+            "expr": "0",
+            "tolerance": 0.0001,
+            "decimals": 0
+          },
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-impurity-replaces",
+          "kind": "mcq",
+          "prompt": "In a classification tree, the impurity measure replaces which quantity from the regression tree?",
+          "options": [
+            "SSE",
+            "The mean prediction",
+            "The stopping depth",
+            "The distance metric"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide says it directly: 'Instead of SSE need some accuracy measure'. Everything else about the algorithm is unchanged.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-r-definition",
+          "kind": "short",
+          "prompt": "In the impurity formulas, what does r represent?",
+          "answers": [
+            "the probability of one class",
+            "the proportion of one class",
+            "probability of one class",
+            "the fraction of one class"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-gini-symmetry",
+          "kind": "recall",
+          "prompt": "Show that Gini gives the same value for r = 0.3 and r = 0.7.",
+          "answer": "At `r = 0.3`: `2 × 0.3 × 0.7 = 0.42`.\nAt `r = 0.7`: `2 × 0.7 × 0.3 = 0.42`.\n\nThe formula is **symmetric** in r and 1 − r, which it must be — labelling which class is 'class 1' is arbitrary and cannot change how impure a node is.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-classification-leaf-prediction",
+          "kind": "mcq",
+          "prompt": "What does a classification tree predict in a leaf?",
+          "options": [
+            "The majority class of the training examples in that region",
+            "The mean of the class indices",
+            "The class of the nearest training point",
+            "A probability distribution fitted by gradient descent"
+          ],
+          "answerIndex": 0,
+          "explanation": "Method 2.2 gives MajorityVote for classification problems, mirroring Average for regression.",
+          "source": "c2 · slide 13"
+        },
+        {
+          "id": "kt-misclass-vs-gini",
+          "kind": "recall",
+          "prompt": "For r = 0.5, compute all three impurity measures and comment on what the differences show.",
+          "answer": "**Misclassification:** `1 − max(0.5, 0.5) = 0.5`\n**Gini:** `2 × 0.5 × 0.5 = 0.5`\n**Entropy:** `−0.5 ln 0.5 − 0.5 ln 0.5 = ln 2 ≈ 0.693`\n\nAll three agree that this is the worst case, but they are on **different scales**, so impurity values are only comparable within one measure.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-impurity-cloze",
+          "kind": "cloze",
+          "prompt": "The Gini index is written {{1}}r(1 − r), and the misclassification rate is 1 − {{2}}(r, 1 − r).",
+          "blanks": [
+            [
+              "2",
+              "two"
+            ],
+            [
+              "max",
+              "maximum"
+            ]
+          ],
+          "tier": 2,
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-gini-from-counts",
+          "kind": "computation",
+          "prompt": "A node holds {{b * mult}} class-1 examples and {{b}} class-0 examples. Give its Gini index.",
+          "vars": {
+            "b": {
+              "type": "choice",
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "mult": {
+              "type": "choice",
+              "values": [
+                1,
+                3,
+                4,
+                9
+              ]
+            }
+          },
+          "derived": {
+            "r": "mult / (mult + 1)",
+            "g": "2*(mult/(mult+1))*(1/(mult+1))"
+          },
+          "steps": [
+            {
+              "text": "`r` is the class-1 proportion: `{{b * mult}} / {{b * mult + b}} = {{r | 2}}`."
+            },
+            {
+              "text": "`Q = 2r(1 − r) = 2 × {{r | 2}} × {{1 - r | 2}}`"
+            },
+            {
+              "text": "`= {{g | 4}}`"
+            }
+          ],
+          "answer": {
+            "expr": "2*(mult/(mult+1))*(1/(mult+1))",
+            "tolerance": 0.0005,
+            "decimals": 4
+          },
+          "explanation": "Exam questions usually give counts rather than a proportion, so converting first is the step people forget.",
+          "source": "c2 · slide 15"
+        },
+        {
+          "id": "kt-impurity-zero-meaning",
+          "kind": "mcq",
+          "prompt": "An impurity measure of exactly 0 means:",
+          "options": [
+            "The node is pure — every example in it has the same class",
+            "The node is evenly split between classes",
+            "The node has no examples",
+            "The split failed"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 15"
+        }
+      ]
+    },
+    {
+      "id": "kt-tree-properties",
+      "title": "Tree properties, depth and practicalities",
+      "emphasis": "standard",
+      "summary": "Trees are fast, explainable and unstable. Depth is the complexity dial, and instability — a liability for a single tree — is what makes ensembles work later.",
+      "keyFacts": [
+        {
+          "term": "Unstable classifier",
+          "definition": "A small change in the training data produces a very different tree. Problematic for single trees, but useful later in ensembles.",
+          "source": "c2 · slide 14"
+        }
+      ],
+      "questions": [
+        {
+          "id": "kt-leafsize-one",
+          "kind": "mcq",
+          "prompt": "A tree grown all the way down with leaf_size = 1 behaves most like:",
+          "options": [
+            "kNN with k = 1",
+            "kNN with k = 20",
+            "Linear regression",
+            "A random classifier"
+          ],
+          "answerIndex": 0,
+          "explanation": "Each leaf holds a single training example, so predictions come from one point each — with the same overfitting consequence.",
+          "source": "c2 · slide 14"
+        },
+        {
+          "id": "kt-unstable-meaning",
+          "kind": "recall",
+          "prompt": "What does it mean that a decision tree is an 'unstable' classifier, and why is that useful later?",
+          "answer": "A **small change in the training data** produces a **very different tree**.\n\nThat is a problem for a single tree — the model you get is partly an accident of the sample. But it is exactly what makes **ensembles** work: many diverse trees, each fit to slightly different data, average out to something better than any one of them.",
+          "source": "c2 · slide 14"
+        },
+        {
+          "id": "kt-tree-depth-complexity",
+          "kind": "mcq",
+          "prompt": "In the songs example, comparing a fully grown tree with one limited to max depth 4:",
+          "options": [
+            "The fully grown tree carves out many thin regions; depth 4 gives a few large blocks",
+            "The two are visually identical",
+            "Depth 4 produces more regions",
+            "The fully grown tree produces non-axis-aligned boundaries"
+          ],
+          "answerIndex": 0,
+          "explanation": "Same over/underfitting story as k in kNN — depth is the complexity dial for trees.",
+          "source": "c2 · slides 16–17"
+        },
+        {
+          "id": "kt-tree-explainable",
+          "kind": "mcq",
+          "prompt": "How does the course qualify the claim that trees are explainable?",
+          "options": [
+            "Explainable 'at least in principle'",
+            "Explainable only for regression",
+            "Explainable only up to depth 4",
+            "Fully explainable in all cases"
+          ],
+          "answerIndex": 0,
+          "explanation": "The hedge matters: a deep tree is technically a set of rules, but not a comprehensible one.",
+          "source": "c2 · slide 18"
+        },
+        {
+          "id": "kt-tree-no-preprocessing",
+          "kind": "mcq",
+          "prompt": "What does the course say about preprocessing numeric features for decision trees?",
+          "options": [
+            "They do not need it",
+            "They need standardisation but not min-max",
+            "They need min-max but not standardisation",
+            "They need both"
+          ],
+          "answerIndex": 0,
+          "explanation": "Splits are thresholds within a single feature, so any monotone rescaling gives the same tree.",
+          "source": "c2 · slide 19"
+        },
+        {
+          "id": "kt-tree-missing-values",
+          "kind": "mcq",
+          "prompt": "What does the course say about tree implementations and missing values?",
+          "options": [
+            "Some implementations are smart about them — but not sklearn",
+            "All implementations handle them automatically",
+            "sklearn handles them but others do not",
+            "Trees cannot be trained with missing values at all"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide singles sklearn out explicitly as *not* being one of the smart ones.",
+          "source": "c2 · slide 19"
+        },
+        {
+          "id": "kt-tree-run-out-of-data",
+          "kind": "recall",
+          "prompt": "The course calls trees fast but notes they 'might run out of data'. What does that mean?",
+          "answer": "Each split divides the examples between two children, so the number of examples available **halves roughly at every level**. Deep in the tree, decisions are being made from a handful of points, and those splits are unreliable.\n\nThis is the reasoning behind the 'not enough examples left to split' stopping criterion.",
+          "source": "c2 · slides 12, 18"
+        },
+        {
+          "id": "kt-pruning",
+          "kind": "short",
+          "prompt": "What is the term for cutting back an already-grown tree to reduce overfitting?",
+          "answers": [
+            "pruning",
+            "prune"
+          ],
+          "tier": 2,
+          "source": "c2 · slide 19"
+        },
+        {
+          "id": "kt-tree-vs-knn-boundary",
+          "kind": "recall",
+          "prompt": "Contrast the decision boundaries of kNN and decision trees.",
+          "answer": "**Trees** produce **axis-aligned** boundaries — every split is of the form `x_j < s`, so the regions are rectangles.\n\n**kNN** boundaries are **not axis-aligned**: they are piecewise segments determined by which training points are nearest, and can run at any angle.\n\nBoth partition the space into regions with a constant prediction in each — they differ in the shapes available.",
+          "source": "c2 · slides 7, 11"
+        },
+        {
+          "id": "kt-plot-tree",
+          "kind": "mcq",
+          "prompt": "Which sklearn function does the course link for visualising a fitted tree?",
+          "options": [
+            "sklearn.tree.plot_tree",
+            "sklearn.tree.draw_tree",
+            "sklearn.plot.tree",
+            "sklearn.visualize.tree"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 18"
+        },
+        {
+          "id": "kt-depth-underfit",
+          "kind": "mcq",
+          "prompt": "A tree limited to max_depth = 1 on a complex problem will most likely:",
+          "options": [
+            "Underfit — a single split cannot capture the structure",
+            "Overfit — it memorises the split point",
+            "Fit perfectly, since it is maximally simple",
+            "Fail to train at all"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slides 16–17"
+        },
+        {
+          "id": "kt-tree-variants",
+          "kind": "mcq",
+          "prompt": "What does the course say about decision tree implementations?",
+          "options": [
+            "There are many implementations and variants",
+            "There is one standard algorithm used everywhere",
+            "Only sklearn implements them correctly",
+            "Variants differ only in speed, never in the resulting tree"
+          ],
+          "answerIndex": 0,
+          "source": "c2 · slide 19"
+        },
+        {
+          "id": "kt-tree-instability-experiment",
+          "kind": "recall",
+          "prompt": "You refit a decision tree after removing one training example and get a visibly different tree. Is that a bug?",
+          "answer": "No — it is the documented **instability** of trees. Because splitting is greedy, a small change can flip the choice at a high node, and every split below it then differs.\n\nIt is a real limitation of single trees, and the property that ensembles exploit.",
+          "source": "c2 · slide 14"
+        },
+        {
+          "id": "kt-tree-fast",
+          "kind": "mcq",
+          "prompt": "The course describes decision trees as fast. Fast at what, primarily?",
+          "options": [
+            "Prediction — a single root-to-leaf walk per example",
+            "Training on very high-dimensional data",
+            "Handling categorical features without encoding",
+            "Converging under gradient descent"
+          ],
+          "answerIndex": 0,
+          "explanation": "Contrast with kNN, which must compute distances to every training point for each prediction.",
+          "source": "c2 · slides 13, 18"
+        },
+        {
+          "id": "kt-depth-vs-k-cloze",
+          "kind": "cloze",
+          "prompt": "For kNN, {{1}} k means a more complex model; for a decision tree, {{2}} depth means a more complex model.",
+          "blanks": [
+            [
+              "smaller",
+              "lower",
+              "decreasing"
+            ],
+            [
+              "greater",
+              "larger",
+              "more",
+              "increasing"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "The dials run in opposite directions, which is the easy thing to get backwards.",
+          "source": "c2 · slides 8–9, 16–17"
+        }
+      ]
+    }
+  ]
+}

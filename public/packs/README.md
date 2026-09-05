@@ -28,19 +28,22 @@ public/packs/
 A missing or empty `index.json` is fine — it just means nothing is bundled,
 and the app opens on the library screen instead.
 
-## These are gitignored
+## What ships, and what stays local
 
-`.gitignore` excludes everything here except this file. Packs are generated
-from course material, and this repository is public, so the derived questions
-stay on your machine by default. Load them at runtime with **Packs → Choose a
-folder**, which works identically and stores them in your browser.
+`.gitignore` excludes everything here except this file, `index.json`, and
+`compx310-test1` — one pack committed as a worked example, so the deployed app
+has something to open on first load instead of an empty library.
 
-If you do want to ship a pack — for a course where that's appropriate, or in a
-private fork — remove these two lines from `.gitignore`:
+Packs you generate stay on your machine by default: they're derived from your
+own course material and this repository is public. Load them at runtime with
+**Packs → Choose a folder**, which works identically and stores them in your
+browser.
+
+To ship another, list it in `index.json` and add a negation line to
+`.gitignore` alongside the existing one:
 
 ```
-public/packs/*
-!public/packs/README.md
+!public/packs/your-pack-id/
 ```
 
 ## Generating a pack

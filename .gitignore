@@ -24,8 +24,10 @@ dist-ssr
 *.sw?
 
 # Study packs.
-# Packs are generated from your own course material and are deliberately not
-# committed — the app is public, the derived content stays local. To ship a
-# pack with a deployment, delete the two lines below and commit it.
+# Packs are generated from your own course material. The COMPX310 pack ships as
+# a worked example, so the deployed app has something to open on first load;
+# anything else you generate stays local. To ship another, add a negation line.
 public/packs/*
 !public/packs/README.md
+!public/packs/index.json
+!public/packs/compx310-test1/

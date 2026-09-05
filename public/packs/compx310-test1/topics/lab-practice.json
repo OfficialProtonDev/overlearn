@@ -1,0 +1,1064 @@
+{
+  "id": "lab-practice",
+  "title": "Lab Practice",
+  "summary": "The first three assignments, which the test announcement puts on the syllabus alongside the lectures. This is the applied side: how a real experiment is set up, why the test set is quarantined, and how to read the results you get back.",
+  "keyFacts": [
+    {
+      "term": "Reproducible seeding",
+      "definition": "Every random process uses `random_state = STUDENT_ID` (or `STUDENT_ID + i` when repeating), so the same notebook rerun gives the same numbers.",
+      "source": "Lab 1 · spec"
+    },
+    {
+      "term": "Stratified splitting",
+      "definition": "`stratify=y` on `train_test_split` preserves the class proportions in each part. Used in Labs 1 and 3.",
+      "source": "Lab 1, Lab 3"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "lab-workflow",
+      "title": "The experimental workflow",
+      "emphasis": "core",
+      "summary": "The shape every lab shares: load, clean, split, scale, fit, evaluate — with the test set held back until the very end.",
+      "keyFacts": [
+        {
+          "term": "Why the test set is quarantined",
+          "definition": "Any data used to *choose* a model stops being an unbiased estimate of performance on new data. Selecting on the test set optimises against it, so its score becomes optimistic.",
+          "source": "Lab 2 · Part 1"
+        },
+        {
+          "term": "Three-way split (Lab 3)",
+          "definition": "60/20/20 train/validation/test, achieved by two calls: `test_size=0.2` to peel off the test set, then `test_size=0.25` on the remainder (25% of 80% = 20%).",
+          "source": "Lab 3 · setup"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lab-why-not-test-for-selection",
+          "kind": "recall",
+          "prompt": "Lab 2 asks you to explain, in 2–3 sentences, why the test set should not be used during model selection. Give that explanation.",
+          "answer": "The test set exists to estimate performance on **unseen** data. If you use it to choose between models, you are optimising against it, and it is no longer unseen — the winning model is partly winning by fitting that particular sample.\n\nThe reported test score then becomes **optimistic**, and the model may do noticeably worse in reality. Selection belongs on the **validation** set (or via cross-validation on the training data), leaving the test set untouched for a single final measurement.",
+          "source": "Lab 2 · Part 1; intro · slide 30"
+        },
+        {
+          "id": "lab-random-state-why",
+          "kind": "recall",
+          "prompt": "Why do the labs require `random_state = YOUR_STUDENT_ID` on every random process?",
+          "answer": "For **reproducibility** — rerunning the notebook produces exactly the same splits and therefore the same numbers, so the results in the submitted report match the code.\n\nUsing the *student ID* rather than a fixed constant also gives each student a different split, so identical numbers between two submissions are evidence of copying rather than coincidence.",
+          "source": "Lab 1 · spec"
+        },
+        {
+          "id": "lab-random-state-plus-i",
+          "kind": "mcq",
+          "prompt": "Lab 2 repeats its split 30 times with `random_state = STUDENT_ID + i` for i = 0…29. Why add i rather than reusing one seed?",
+          "options": [
+            "A fixed seed would give the same split every time, so all 30 repeats would be identical",
+            "Adding i makes the splits stratified",
+            "It increases the size of the training set each round",
+            "It is required for the violin plot to render"
+          ],
+          "answerIndex": 0,
+          "explanation": "The point of repeating is to see the **spread** of accuracies across different splits. With one seed there would be no spread to see.",
+          "source": "Lab 2 · Part 2"
+        },
+        {
+          "id": "lab-stratify-what",
+          "kind": "recall",
+          "prompt": "What does `stratify=y` do in `train_test_split`, and when does it matter most?",
+          "answer": "It makes the split **preserve the class proportions** of `y` in both parts. If the full data is 65% benign, both the train and test sets come out about 65% benign.\n\nIt matters most when classes are **imbalanced** or the dataset is **small**, where an unlucky random split could leave a class badly under-represented — or in the extreme, almost absent from the training set.",
+          "source": "Lab 1, Lab 3"
+        },
+        {
+          "id": "lab-stratify-mcq",
+          "kind": "mcq",
+          "prompt": "Which labs use `stratify=y` when splitting?",
+          "options": [
+            "Labs 1 and 3, both on the Wisconsin data",
+            "Lab 2 only",
+            "All three labs",
+            "None of them"
+          ],
+          "answerIndex": 0,
+          "explanation": "Lab 2's covtype splits use `random_state` but no `stratify` argument.",
+          "source": "Lab 1, Lab 2, Lab 3"
+        },
+        {
+          "id": "lab-three-way-compute",
+          "kind": "computation",
+          "prompt": "Lab 3 splits 60/20/20 with two calls. The first uses `test_size=0.2`. What `test_size` must the second call use on the remainder to leave 20% of the original as validation? Give it as a decimal.",
+          "vars": {},
+          "steps": [
+            {
+              "text": "After the first split, `1 − 0.2 = 0.8` of the data remains."
+            },
+            {
+              "text": "You need 0.2 of the **original** out of that 0.8, so the fraction is `0.2 / 0.8`."
+            },
+            {
+              "text": "`= 0.25` — which is exactly what the notebook passes."
+            }
+          ],
+          "answer": {
+            "expr": "0.2 / 0.8",
+            "tolerance": 0.001,
+            "decimals": 2
+          },
+          "explanation": "The classic slip is passing 0.2 again, which would give 64/16/20 rather than 60/20/20.",
+          "source": "Lab 3 · setup"
+        },
+        {
+          "id": "lab-scaler-fit-train-only",
+          "kind": "recall",
+          "prompt": "Lab 1 writes `scaler = StandardScaler().fit(X_train)` then transforms both sets. Why not fit on all the data?",
+          "answer": "Fitting on everything would let the **test set's mean and standard deviation** influence the transformation applied to the training data — information from data the model is not supposed to have seen. That is **data leakage**, and it makes the test score optimistic.\n\nThe scaler is fitted on the training data only, then that same fitted transformation is applied to the test data.",
+          "source": "Lab 1; c5 · slide 18"
+        },
+        {
+          "id": "lab-scaler-order",
+          "kind": "mcq",
+          "prompt": "Should the scaler be fitted before or after the train/test split?",
+          "options": [
+            "After — fit on the training set only, then transform both",
+            "Before — so both sets are on the same scale",
+            "It makes no difference",
+            "Before, but only for kNN"
+          ],
+          "answerIndex": 0,
+          "source": "Lab 1; c5 · slide 18"
+        },
+        {
+          "id": "lab-pipeline-why",
+          "kind": "recall",
+          "prompt": "Lab 3 wraps the scaler and the model in a `Pipeline`. What problem does that solve?",
+          "answer": "```python\nPipeline([(\"scaler\", StandardScaler()),\n          (\"logistic\", LogisticRegression(max_iter=1000))])\n```\n\nThe pipeline's `fit` fits the scaler **on the training data only** and then the model, and its `predict` applies the *already fitted* scaler before predicting. So the leakage the previous question describes becomes structurally impossible rather than something you have to remember.\n\nThat matters especially in Lab 3, where 511 subsets are fitted in a loop and a manual scaler would be easy to misplace.",
+          "source": "Lab 3 · Part A; c3 · slide 23"
+        },
+        {
+          "id": "lab-workflow-order",
+          "kind": "recall",
+          "prompt": "Put the standard lab workflow in order.",
+          "answer": "1. **Load** the data.\n2. **Explore** — `info()`, `describe()`, a pairplot; identify problems.\n3. **Clean** — drop the id column, handle missing values.\n4. **Separate** X (predictors) from y (target).\n5. **Split** — train/test, or train/validation/test, stratified, with a fixed seed.\n6. **Scale**, fitting on the training data only.\n7. **Fit** the model.\n8. **Evaluate** — confusion matrix, classification report.\n9. **Experiment** — vary the hyperparameter, plot, interpret.",
+          "source": "Lab 1, Lab 2, Lab 3"
+        },
+        {
+          "id": "lab-split-order-trap",
+          "kind": "mcq",
+          "prompt": "Which of these orderings leaks information from the test set?",
+          "options": [
+            "Scale the whole dataset, then split",
+            "Split, then fit the scaler on train and transform both",
+            "Split, then fit a separate pipeline per subset",
+            "Split, then evaluate on the test set once at the end"
+          ],
+          "answerIndex": 0,
+          "explanation": "The scaler's mean and standard deviation would be computed partly from the test rows, so the training transformation carries information about data the model should not have seen.",
+          "source": "Lab 1; c5 · slide 18"
+        },
+        {
+          "id": "lab-notebook-requirements",
+          "kind": "multi",
+          "prompt": "Which of these does Lab 1 require the notebook to contain?",
+          "options": [
+            "Your name and student ID",
+            "Your partner's name and ID if pair programming",
+            "All code cells executed with output visible",
+            "A written comparison against the lecture slides"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Submission requires a **rendered** notebook: cells executed, figures visible, output included.",
+          "source": "Lab 1 · spec"
+        },
+        {
+          "id": "lab-report-not-code",
+          "kind": "mcq",
+          "prompt": "Lab 1 says the notebook should read like what?",
+          "options": [
+            "A small experimental report, not a sequence of code cells",
+            "A tutorial for other students",
+            "A formal academic paper",
+            "A commented script"
+          ],
+          "answerIndex": 0,
+          "explanation": "And explicitly: 'Simply producing code that trains a classifier will NOT receive full marks.'",
+          "source": "Lab 1 · spec"
+        },
+        {
+          "id": "lab-validation-role",
+          "kind": "cloze",
+          "prompt": "Model selection happens on the {{1}} set; the {{2}} set is used once, at the end, to estimate real performance.",
+          "blanks": [
+            [
+              "validation",
+              "val"
+            ],
+            [
+              "test"
+            ]
+          ],
+          "tier": 2,
+          "source": "Lab 2 · Part 1; intro · slide 30"
+        },
+        {
+          "id": "lab-val-test-sizes-compute",
+          "kind": "computation",
+          "prompt": "The Wisconsin dataset has 683 rows after dropping the missing values. Under Lab 3's 60/20/20 split, how many end up in the test set?",
+          "vars": {},
+          "steps": [
+            {
+              "text": "The test set is 20% of the whole dataset: `683 / 5`."
+            },
+            {
+              "text": "`= 136.6`, which is not a whole number of rows."
+            },
+            {
+              "text": "`train_test_split` rounds up the test side, giving **137** rows."
+            }
+          ],
+          "answer": {
+            "expr": "round(683 / 5)",
+            "tolerance": 1,
+            "decimals": 0
+          },
+          "explanation": "699 rows minus the 16 with a missing `nuclei` value leaves 683. Split 60/20/20 that is roughly 409 train, 137 validation, 137 test.",
+          "source": "Lab 1, Lab 3",
+          "derived": {}
+        },
+        {
+          "id": "lab-pair-programming",
+          "kind": "mcq",
+          "prompt": "When pair programming, what does Lab 1 say to use as the random seed?",
+          "options": [
+            "The sum of both student IDs",
+            "The first partner's ID",
+            "Any fixed number, as long as it is documented",
+            "42"
+          ],
+          "answerIndex": 0,
+          "source": "Lab 1 · spec"
+        }
+      ]
+    },
+    {
+      "id": "lab-knn-practical",
+      "title": "Lab 1 — kNN on the Wisconsin data",
+      "emphasis": "core",
+      "summary": "The Wisconsin Breast Cancer dataset: what is wrong with it, what to do about it, and how k behaves from 1 to 100.",
+      "keyFacts": [
+        {
+          "term": "Wisconsin Breast Cancer dataset",
+          "definition": "699 rows, 11 columns. An `id` column, nine predictors on a 1–10 scale (thickness, size, shape, adhesion, single, nuclei, chromatin, nucleoli, mitosis), and `class` (0 = benign, 1 = malignant). 16 rows have a missing `nuclei` value.",
+          "source": "Lab 1"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lab1-dataset-shape",
+          "kind": "mcq",
+          "prompt": "How many rows does the Wisconsin Breast Cancer dataset have before cleaning?",
+          "options": [
+            "699",
+            "683",
+            "569",
+            "1000"
+          ],
+          "answerIndex": 0,
+          "explanation": "683 is what remains after dropping the 16 rows with a missing `nuclei` value.",
+          "source": "Lab 1"
+        },
+        {
+          "id": "lab1-missing-column",
+          "kind": "mcq",
+          "prompt": "Which column in the Wisconsin dataset has missing values, and how many?",
+          "options": [
+            "nuclei, 16",
+            "mitosis, 16",
+            "thickness, 8",
+            "class, 2"
+          ],
+          "answerIndex": 0,
+          "source": "Lab 1"
+        },
+        {
+          "id": "lab1-drop-id",
+          "kind": "recall",
+          "prompt": "Why is the `id` column dropped before training?",
+          "answer": "It is an **arbitrary identifier** with no relationship to the diagnosis. Keeping it would feed the classifier pure noise.\n\nFor **kNN specifically** it is actively harmful: id values are large compared to the 1–10 predictors, so after scaling it still contributes a full dimension of meaningless distance, pushing genuinely similar patients apart.\n\nThe pairplot shows this — the id row and column have no clustering by class at all.",
+          "source": "Lab 1; c5 · slide 4"
+        },
+        {
+          "id": "lab1-class-coding",
+          "kind": "mcq",
+          "prompt": "In the Wisconsin data, what do class 0 and class 1 mean?",
+          "options": [
+            "0 = benign, 1 = malignant",
+            "0 = malignant, 1 = benign",
+            "0 = missing, 1 = present",
+            "They are arbitrary cluster labels"
+          ],
+          "answerIndex": 0,
+          "explanation": "Which matters for reading the confusion matrix: the **positive** class is malignant, so a false negative is a missed cancer.",
+          "source": "Lab 1"
+        },
+        {
+          "id": "lab1-fn-cost",
+          "kind": "recall",
+          "prompt": "Lab 1 asks whether the classifier's errors are acceptable in this application. Answer it for the Wisconsin data.",
+          "answer": "The two errors are **not** equally costly.\n\nA **false negative** — a malignant tumour classified benign — means a missed cancer, and is far worse than a **false positive**, which leads to further testing that turns out negative.\n\nSo **recall on the malignant class matters more than precision**, and if the threshold could be moved, it should be moved toward catching more positives even at the cost of more false alarms.",
+          "source": "Lab 1 · Part 2; c4 · slides 12–14"
+        },
+        {
+          "id": "lab1-scaling-knn",
+          "kind": "recall",
+          "prompt": "The Wisconsin predictors are all on a 1–10 scale. Does scaling still matter for kNN here?",
+          "answer": "Much less than usual — the features are already comparable, so no single one can dominate the distance the way a feature ranging to 1,000,000 would.\n\nBut it is not pointless: standardisation also equalises the **spread** of each feature, and some of the nine vary more than others. The lab wants the *reasoning* either way — 'why it was necessary, or why you decided it was not' — not the ritual.\n\nIt matters far more once `id` is present, since that column is on a completely different scale.",
+          "source": "Lab 1 · Part 1; c2 · slide 10"
+        },
+        {
+          "id": "lab1-k-range",
+          "kind": "mcq",
+          "prompt": "Over what range of k does Lab 1 require the investigation?",
+          "options": [
+            "1 to 100",
+            "1 to 20",
+            "1 to 50",
+            "Powers of 2 up to 1024"
+          ],
+          "answerIndex": 0,
+          "explanation": "Powers of 2 up to 32768 is Lab 2's `max_leaf_nodes` sweep.",
+          "source": "Lab 1 · Part 3"
+        },
+        {
+          "id": "lab1-small-large-k",
+          "kind": "recall",
+          "prompt": "Lab 1 asks why very small and very large values of k behave differently. Answer it.",
+          "answer": "**Very small k** (k = 1): the prediction comes from a single nearest point, so the model follows individual training examples including noisy and mislabelled ones. High variance, low bias — it **overfits**, and accuracy is unstable between splits.\n\n**Very large k**: the neighbourhood covers a large part of the data, so predictions get smoothed toward the overall majority class. Low variance, high bias — it **underfits**, and as k approaches the dataset size every query returns the same answer.\n\nThe best k sits between: large enough to average away noise, small enough to keep local structure.",
+          "source": "Lab 1 · Part 3; c2 · slides 8–9"
+        },
+        {
+          "id": "lab1-accuracy-curve-shape",
+          "kind": "mcq",
+          "prompt": "What shape does the k-versus-accuracy curve typically take on this dataset?",
+          "options": [
+            "Rises quickly from k = 1, peaks over a broad range of small-to-moderate k, then declines slowly",
+            "Rises steadily all the way to k = 100",
+            "Falls monotonically from k = 1",
+            "Stays flat throughout"
+          ],
+          "answerIndex": 0,
+          "explanation": "The notebook sets `plt.ylim(0.90, 1.00)` precisely because the whole interesting range sits in the top ten percent — the differences are small and would be invisible on a 0–1 axis.",
+          "source": "Lab 1 · Part 3"
+        },
+        {
+          "id": "lab1-argmax-best-k",
+          "kind": "mcq",
+          "prompt": "The notebook computes `best_k = np.argmax(accuracies) + 1`. Why the `+ 1`?",
+          "options": [
+            "The list is indexed from 0 but k runs from 1",
+            "To skip k = 1, which always overfits",
+            "Because argmax returns the last maximum",
+            "To convert to a 1-based accuracy"
+          ],
+          "answerIndex": 0,
+          "explanation": "`accuracies[0]` holds the score for k = 1, so the index is always one less than the k it belongs to.",
+          "source": "Lab 1 · Part 3"
+        },
+        {
+          "id": "lab1-best-k-caveat",
+          "kind": "recall",
+          "prompt": "Lab 1's k sweep evaluates on the **test** set. What is the methodological problem, and how would you fix it?",
+          "answer": "Choosing k by test-set accuracy is **selecting on the test set** — the exact thing Lab 2 asks you to argue against. The reported accuracy for the winning k is then optimistic, because that k was picked partly for fitting this particular sample.\n\nThe fix is to sweep k on a **validation** set (or by cross-validation on the training data), pick the best k there, and only then measure the chosen model once on the test set.\n\nLab 3's 60/20/20 split is set up to do exactly this.",
+          "source": "Lab 1 · Part 3; Lab 2 · Part 1; Lab 3 · setup"
+        },
+        {
+          "id": "lab1-two-issues",
+          "kind": "recall",
+          "prompt": "Lab 1 requires you to identify at least two aspects of the dataset that could affect ML performance. Give two, with why each matters and a fix.",
+          "answer": "**1. Missing values.** 16 rows have no `nuclei` value. *Why it matters:* most estimators cannot fit with NaNs, and kNN's distances are undefined. *Fix:* drop the 16 rows (only 2.3% of the data), or impute with the median.\n\n**2. A meaningless id column.** *Why it matters:* it is pure noise, and its large magnitude distorts kNN distances. *Fix:* drop it.\n\nA third: **class imbalance** — benign outnumbers malignant, so accuracy alone is misleading and the split should be stratified.",
+          "source": "Lab 1 · Part 1"
+        },
+        {
+          "id": "lab1-drop-fraction-compute",
+          "kind": "computation",
+          "prompt": "Lab 1 finds {{m}} missing values in `nuclei` out of {{n}} rows, and drops those rows. Roughly what percentage of the data is lost? Give it to 1 dp.",
+          "vars": {
+            "n": {
+              "type": "choice",
+              "values": [
+                699
+              ]
+            },
+            "m": {
+              "type": "choice",
+              "values": [
+                16
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "`{{m}} / {{n}}` — and 699 is close enough to 700 to work with."
+            },
+            {
+              "text": "`{{m}}/700 = {{16/7}}/100`, so a bit over 2%."
+            },
+            {
+              "text": "Exactly: `{{pct | 2}}%`."
+            }
+          ],
+          "answer": {
+            "expr": "100 * m / n",
+            "tolerance": 0.2,
+            "decimals": 1
+          },
+          "explanation": "About **2.3%**. That is the number the lab wants you to reason from: losing 2% of rows is cheap, so `dropna()` is defensible here — where c5 warns it would not be if a lot of the data were missing.",
+          "source": "Lab 1 · Part 1; c5 · slide 3",
+          "derived": {
+            "pct": "100 * m / n"
+          }
+        },
+        {
+          "id": "lab1-feature-subset-experiment",
+          "kind": "recall",
+          "prompt": "The Lab 1 notebook drops adhesion, single, nucleoli and mitosis for a second experiment. What was the reasoning, and what is it testing?",
+          "answer": "The **pairplot** showed those four with **less defined clustering** by class than the others, suggesting they carry less signal.\n\nThe experiment is the lab's required 'additional modelling decision': does a **smaller, cleaner feature subset** beat the full set? Removing weak features can help kNN in particular, because every irrelevant dimension adds noise to the distance calculation — the dimensionality-reduction argument from the intro deck.",
+          "source": "Lab 1 · Part 3; intro · slide 18"
+        },
+        {
+          "id": "lab1-nine-features",
+          "kind": "computation",
+          "prompt": "The Wisconsin data has 11 columns. After dropping `id` and separating `class`, how many predictor features remain?",
+          "vars": {},
+          "steps": [
+            {
+              "text": "Start with 11 columns."
+            },
+            {
+              "text": "Drop `id` (1) and remove `class` as the target (1)."
+            },
+            {
+              "text": "`11 − 2 = 9` predictors."
+            }
+          ],
+          "answer": {
+            "expr": "11 - 2",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "thickness, size, shape, adhesion, single, nuclei, chromatin, nucleoli, mitosis.",
+          "source": "Lab 1, Lab 3"
+        },
+        {
+          "id": "lab1-knn-default-k",
+          "kind": "mcq",
+          "prompt": "What value of k does the baseline classifier use?",
+          "options": [
+            "5",
+            "1",
+            "3",
+            "10"
+          ],
+          "answerIndex": 0,
+          "explanation": "`KNeighborsClassifier(n_neighbors=5)`, which is also sklearn's default.",
+          "source": "Lab 1 · Part 2"
+        }
+      ]
+    },
+    {
+      "id": "lab-tree-complexity",
+      "title": "Lab 2 — tree complexity and model selection",
+      "emphasis": "core",
+      "summary": "Thirty repeated splits, fifteen tree sizes, and the question of what the resulting spread actually tells you.",
+      "keyFacts": [
+        {
+          "term": "max_leaf_nodes sweep",
+          "definition": "Powers of two from 2 to 32768: [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768] — fifteen values.",
+          "source": "Lab 2 · Part 2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lab2-max-leaf-nodes-what",
+          "kind": "recall",
+          "prompt": "What does `max_leaf_nodes` control, and how does it relate to model complexity?",
+          "answer": "The **maximum number of leaf regions** the tree may split the space into. Each leaf holds one constant prediction.\n\nMore leaves means **more, smaller regions** — a more complex model, with more capacity to fit the training data and more risk of overfitting. It is the same complexity dial as `max_depth`, but counted in regions rather than levels.",
+          "source": "Lab 2 · Part 2; c2 · slides 16–17"
+        },
+        {
+          "id": "lab2-fit-count-compute",
+          "kind": "computation",
+          "prompt": "Lab 2 repeats the split {{r}} times and trains a tree for each of {{v}} `max_leaf_nodes` values. How many trees are fitted in Part 2?",
+          "vars": {
+            "r": {
+              "type": "choice",
+              "values": [
+                30
+              ]
+            },
+            "v": {
+              "type": "choice",
+              "values": [
+                15
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "For every split, one tree is trained per `max_leaf_nodes` value."
+            },
+            {
+              "text": "`{{r}} splits × {{v}} values`"
+            },
+            {
+              "text": "`= {{r * v}}` trees."
+            }
+          ],
+          "answer": {
+            "expr": "r * v",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "450 fits, which is why the notebook collects results into a DataFrame rather than printing as it goes.",
+          "source": "Lab 2 · Part 2"
+        },
+        {
+          "id": "lab2-leaf-values",
+          "kind": "mcq",
+          "prompt": "The `max_leaf_nodes` values run 2, 4, 8 … 32768. What pattern is that, and how many values?",
+          "options": [
+            "Powers of two, fifteen values",
+            "Powers of two, ten values",
+            "Doubling from 1, sixteen values",
+            "Fibonacci, fifteen values"
+          ],
+          "answerIndex": 0,
+          "explanation": "2¹ through 2¹⁵. A geometric sweep covers a huge range of complexity in few steps — the useful shape for a complexity parameter.",
+          "source": "Lab 2 · Part 2"
+        },
+        {
+          "id": "lab2-why-geometric",
+          "kind": "recall",
+          "prompt": "Why sweep `max_leaf_nodes` in powers of two rather than in equal steps?",
+          "answer": "The interesting behaviour spans **orders of magnitude**. Stepping linearly — 2, 4, 6, 8 … — would spend every trial in the tiny-tree region and never reach the overfitting end.\n\nA geometric sweep covers 2 to 32768 in fifteen fits, and the effect of doubling capacity is roughly constant across the range, so each step is about equally informative.",
+          "source": "Lab 2 · Part 2"
+        },
+        {
+          "id": "lab2-repeat-30-why",
+          "kind": "recall",
+          "prompt": "Why repeat the validation experiment 30 times instead of once?",
+          "answer": "A single split gives a single number, and that number is partly luck — which examples happened to land in validation.\n\nThirty repeats give a **distribution**: you can see the **mean** performance of each setting *and* how **variable** it is. That is what makes it possible to answer the lab's question about which values are 'unexpectedly unstable', which a single run could never show.",
+          "source": "Lab 2 · Parts 2–3"
+        },
+        {
+          "id": "lab2-violin-what",
+          "kind": "recall",
+          "prompt": "Lab 2 asks what information a violin plot conveys, and what would not be visible from plotting the mean. Answer both.",
+          "answer": "A violin plot shows the **full distribution** of the 30 accuracies for each setting: its **spread**, its **shape**, and where the density is concentrated. The width at any height is how common that accuracy was.\n\nWhat a mean alone would hide:\n- the **variance** — two settings can share a mean while one is far less reliable\n- **skew** — a long tail of bad splits pulling the mean down\n- **bimodality** — two clusters of outcomes, which a mean would report as a value that never actually occurs",
+          "source": "Lab 2 · Part 3"
+        },
+        {
+          "id": "lab2-violin-vs-mean",
+          "kind": "mcq",
+          "prompt": "Which feature of the results is visible in a violin plot but not in a plot of the means?",
+          "options": [
+            "The spread and shape of the distribution",
+            "Which setting scored highest on average",
+            "The number of settings tested",
+            "The order of the settings"
+          ],
+          "answerIndex": 0,
+          "source": "Lab 2 · Part 3"
+        },
+        {
+          "id": "lab2-stability-metric",
+          "kind": "mcq",
+          "prompt": "The notebook groups by `max_leaf_nodes` and aggregates `[\"mean\", \"std\"]`. Which column answers 'which values are unexpectedly unstable'?",
+          "options": [
+            "std — the standard deviation across the 30 splits",
+            "mean — the average accuracy",
+            "The difference between mean and std",
+            "Neither; stability needs the violin plot"
+          ],
+          "answerIndex": 0,
+          "explanation": "A high standard deviation means the setting's performance depends heavily on which split it got — the definition of unstable.",
+          "source": "Lab 2 · Part 2"
+        },
+        {
+          "id": "lab2-small-tree-stability",
+          "kind": "recall",
+          "prompt": "Would you expect `max_leaf_nodes = 2` or `max_leaf_nodes = 32768` to have the higher variance across splits? Explain.",
+          "answer": "**32768** — the large tree.\n\nA 2-leaf tree makes one split; there is very little to vary, so it gives a consistently mediocre result across every split. That is **low variance, high bias**.\n\nA 32768-leaf tree fits the fine structure of whichever training sample it was given, and that structure differs between splits — so its validation accuracy moves around much more. **High variance**, which is exactly c2's 'unstable classifier' point measured empirically.",
+          "source": "Lab 2 · Part 2; c2 · slide 14; c3 · slide 26"
+        },
+        {
+          "id": "lab2-val-vs-test-agree",
+          "kind": "recall",
+          "prompt": "Lab 2 asks whether the validation and test plots recommend the same model, and why they might differ. Answer it.",
+          "answer": "They often recommend a **similar** setting but rarely the exact same one.\n\nReasons they can differ:\n- The validation curve is averaged over 30 splits on 80% of the training data; the test curve comes from **one** fit on 100% of it. More training data can shift the best complexity **upward**.\n- The test set is a **single sample**, so its curve carries its own noise — a difference of a fraction of a percent between adjacent settings is not meaningful.\n\nWhether the disagreement is practically important depends on the **size** of the accuracy gap: if the two candidates are within the noise of each other, picking either is fine.",
+          "source": "Lab 2 · Part 4"
+        },
+        {
+          "id": "lab2-part4-training-data",
+          "kind": "mcq",
+          "prompt": "In Part 4, the 15 trees are trained on what?",
+          "options": [
+            "The entire training set",
+            "The 80% training split from Part 2",
+            "The validation set",
+            "The test set"
+          ],
+          "answerIndex": 0,
+          "explanation": "Once selection is done, the final model is refitted on all the training data — more data, so a better model — and measured once on the test set.",
+          "source": "Lab 2 · Part 4"
+        },
+        {
+          "id": "lab2-tree-depth-8-leaves",
+          "kind": "recall",
+          "prompt": "Part 5 fits a tree with `max_leaf_nodes = 8`. What is the minimum possible depth of such a tree, and why might the actual tree be deeper?",
+          "answer": "A **perfectly balanced** binary tree with 8 leaves has depth **3**, since 2³ = 8.\n\nThe actual tree is usually **deeper**, because splitting is greedy and driven by impurity, not by balance. It will happily split one branch repeatedly while leaving another as a leaf, producing a lopsided tree with the same 8 leaves but a longer deepest path.",
+          "source": "Lab 2 · Part 5; c2 · slide 12"
+        },
+        {
+          "id": "lab2-min-depth-compute",
+          "kind": "computation",
+          "prompt": "A perfectly balanced binary tree has {{leaves}} leaves. What is its depth?",
+          "vars": {
+            "leaves": {
+              "type": "choice",
+              "values": [
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128,
+                256
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "A balanced binary tree of depth d has 2^d leaves."
+            },
+            {
+              "text": "So `d = log₂({{leaves}})`."
+            },
+            {
+              "text": "`= {{log2(leaves)}}`"
+            }
+          ],
+          "answer": {
+            "expr": "log2(leaves)",
+            "tolerance": 0.01,
+            "decimals": 0
+          },
+          "explanation": "This is the **minimum** depth for that many leaves. A greedy tree is usually deeper because it splits unevenly.",
+          "source": "Lab 2 · Part 5"
+        },
+        {
+          "id": "lab2-root-feature",
+          "kind": "recall",
+          "prompt": "Part 5 asks which feature appears most influential near the root. Why is the root split the most influential one?",
+          "answer": "Because the root split applies to **every example**. It is chosen as the single split that most reduces impurity across the whole dataset, and everything below it is conditioned on it.\n\nA split deep in the tree affects only the small subset that reaches that node, so however good it is locally, it changes far fewer predictions.",
+          "source": "Lab 2 · Part 5; c2 · slide 12"
+        },
+        {
+          "id": "lab2-explain-a-split",
+          "kind": "recall",
+          "prompt": "Part 5 asks you to explain what an internal decision node represents. How should such an explanation be phrased?",
+          "answer": "In terms of the **data, not the code**. A node reading `Elevation <= 3044.5` means:\n\n'Of the examples reaching this node, those with elevation at or below 3044.5 m go left and the rest go right. The split was chosen because separating on that threshold most reduces impurity here — cover types at low elevation differ systematically from those higher up.'\n\nThe lab asks for it 'in your own words', so name the feature, the threshold, which way each branch goes, and **what it means about the problem**.",
+          "source": "Lab 2 · Part 5"
+        },
+        {
+          "id": "lab2-covtype-datasets",
+          "kind": "mcq",
+          "prompt": "How does Lab 2 obtain its test set?",
+          "options": [
+            "It is supplied as a separate covtype_test.csv file",
+            "By splitting covtype_train.csv 80/20",
+            "By cross-validation on the training data",
+            "It reuses the validation split"
+          ],
+          "answerIndex": 0,
+          "explanation": "Train and test arrive as separate files, so the 80/20 split inside Part 2 produces the **validation** set only.",
+          "source": "Lab 2 · Part 1"
+        },
+        {
+          "id": "lab2-generic-explanations",
+          "kind": "mcq",
+          "prompt": "Lab 2's comparison section warns against what?",
+          "options": [
+            "Generic textbook explanations rather than reference to your own results",
+            "Using violin plots",
+            "Training on the full training set",
+            "Reporting standard deviations"
+          ],
+          "answerIndex": 0,
+          "explanation": "The recurring theme across all three labs: evidence from your own experiment, not recited theory.",
+          "source": "Lab 2 · Part 4"
+        }
+      ]
+    },
+    {
+      "id": "lab-logreg-features",
+      "title": "Lab 3 — feature subsets and interpreting coefficients",
+      "emphasis": "core",
+      "summary": "Exhaustive subset search, and the trap in reading logistic regression coefficients as feature importance.",
+      "questions": [
+        {
+          "id": "lab3-subset-count-compute",
+          "kind": "computation",
+          "prompt": "Lab 3 generates all non-empty subsets of {{f}} features. How many are there?",
+          "vars": {
+            "f": {
+              "type": "int",
+              "min": 3,
+              "max": 12
+            }
+          },
+          "derived": {
+            "n": "2^f - 1"
+          },
+          "steps": [
+            {
+              "text": "Each feature is either in or out, giving `2^f` subsets in total."
+            },
+            {
+              "text": "`2^{{f}} = {{2^f}}`"
+            },
+            {
+              "text": "Excluding the empty subset: `{{2^f}} − 1 = {{n}}`"
+            }
+          ],
+          "answer": {
+            "expr": "2^f - 1",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "With the Wisconsin data's 9 features that is 2⁹ − 1 = **511** models.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-511-subsets",
+          "kind": "mcq",
+          "prompt": "How many non-empty feature subsets does Lab 3 fit, given 9 predictors?",
+          "options": [
+            "511",
+            "512",
+            "256",
+            "81"
+          ],
+          "answerIndex": 0,
+          "explanation": "2⁹ = 512 including the empty set, which is excluded.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-subsets-of-size",
+          "kind": "recall",
+          "prompt": "Of the 9 Wisconsin features, how many subsets contain exactly k features, for k = 1 … 8? What does the pattern imply for the violin plot?",
+          "answer": "The binomial coefficients `C(9, k)`:\n\n| k | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |\n|---|---|---|---|---|---|---|---|---|\n| count | 9 | 36 | 84 | 126 | 126 | 84 | 36 | 9 |\n\nThey are **symmetric** and **peak in the middle**. So the violin plot has far more observations at subset sizes 4 and 5 than at 1 or 8 — the extreme columns are summarising only nine subsets each and their shape is correspondingly unreliable.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-subsets-size-one",
+          "kind": "computation",
+          "prompt": "A dataset has {{f}} features. How many of Lab 3's subsets have size {{f}}−1 — that is, leave exactly one feature out?",
+          "vars": {
+            "f": {
+              "type": "int",
+              "min": 4,
+              "max": 12
+            }
+          },
+          "steps": [
+            {
+              "text": "A subset of size `f − 1` is fixed by the single feature it **excludes**."
+            },
+            {
+              "text": "There are `f` features to choose to leave out."
+            },
+            {
+              "text": "So there are `{{f}}` such subsets — the same count as the single-feature subsets."
+            }
+          ],
+          "answer": {
+            "expr": "f",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Choosing which to include and choosing which to exclude are the same decision, which is why C(n, k) = C(n, n−k). Both ends of Lab 3's subset sweep are therefore narrow; the count peaks in the middle.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-subset-size-performance",
+          "kind": "recall",
+          "prompt": "What relationship would you expect between subset size and validation accuracy, and why?",
+          "answer": "Accuracy **rises steeply** from one feature to about three or four, then **plateaus**, with the spread narrowing as subsets grow.\n\nWhy: the first few informative features carry most of the signal. Beyond that, extra features add little — the Wisconsin predictors are strongly correlated with each other, so the fifth largely repeats what the first four said.\n\nThe **spread** matters as much as the mean: small subsets vary enormously depending on *which* features they contain, while large subsets are all much the same because they all contain the good ones.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-why-violin-again",
+          "kind": "recall",
+          "prompt": "Lab 3 asks you to justify your choice of visualisation for subset size versus performance. Make the case for a violin plot.",
+          "answer": "At each subset size there are **many** subsets — 126 of size 4, for instance — so the data at each x is a distribution, not a point.\n\nA violin plot shows that distribution: the **spread** across subsets of the same size, and where the density lies. A line of means would hide the most interesting finding, which is that **small subsets vary hugely** in quality while large ones do not.\n\nA scatter would also show spread but with hundreds of overlapping points; a box plot shows quartiles but not shape.",
+          "source": "Lab 3 · Part A"
+        },
+        {
+          "id": "lab3-coefficient-magnitude",
+          "kind": "recall",
+          "prompt": "Are coefficient magnitudes a reliable indicator of feature importance? Answer Lab 3's question.",
+          "answer": "**Only under conditions**, and even then with care.\n\nThe headline problem is **scale**: a coefficient is per unit of its feature, so a feature measured in small units gets a large coefficient for the same real effect. Comparing magnitudes is meaningless unless the features are **standardised first** — which is why Lab 3 puts a `StandardScaler` in the pipeline.\n\nEven scaled, they mislead when features are **correlated**: two features carrying the same information can split the weight between them, or take large opposing coefficients that mostly cancel. Neither looks like its true importance.",
+          "source": "Lab 3 · Part B; c3 · slide 28"
+        },
+        {
+          "id": "lab3-coefficient-scale-mcq",
+          "kind": "mcq",
+          "prompt": "Why must features be standardised before comparing logistic regression coefficients?",
+          "options": [
+            "A coefficient is per unit of its feature, so unit choice changes its size",
+            "Logistic regression cannot fit unscaled data",
+            "Standardisation makes all coefficients positive",
+            "Otherwise the coefficients cannot be computed"
+          ],
+          "answerIndex": 0,
+          "explanation": "Measure a length in metres rather than millimetres and its coefficient grows a thousandfold, without anything about the underlying relationship changing.",
+          "source": "Lab 3 · Part B; c3 · slide 28"
+        },
+        {
+          "id": "lab3-coefficient-fails",
+          "kind": "recall",
+          "prompt": "Give a situation where selecting features solely by coefficient magnitude would perform poorly.",
+          "answer": "**Correlated features.** Suppose two features are near-duplicates and jointly important. Logistic regression may split the weight between them, giving each a middling coefficient — so a magnitude ranking drops both, discarding information that was actually essential.\n\nThe reverse also occurs: two correlated features can take **large coefficients with opposite signs** that largely cancel. Both look critical by magnitude, but removing either barely changes predictions.\n\nThe Wisconsin predictors *are* correlated — the pairplot shows it — so this is the live case, not a hypothetical.",
+          "source": "Lab 3 · Part B"
+        },
+        {
+          "id": "lab3-four-largest",
+          "kind": "mcq",
+          "prompt": "How does the notebook identify the four largest coefficients?",
+          "options": [
+            "By absolute value — it computes a `magnitude` column and sorts on it",
+            "By the raw signed coefficient, descending",
+            "By p-value",
+            "By the order they appear in the feature list"
+          ],
+          "answerIndex": 0,
+          "explanation": "By magnitude, since a large **negative** coefficient is just as influential as a large positive one — it points the other way.",
+          "source": "Lab 3 · Part B"
+        },
+        {
+          "id": "lab3-coefficient-sign",
+          "kind": "recall",
+          "prompt": "What does the sign of a logistic regression coefficient mean?",
+          "answer": "A **positive** coefficient means that increasing the feature increases `xᵀθ`, and so increases the predicted probability of the **positive class** (malignant, in the Wisconsin data).\n\nA **negative** one pushes the prediction toward class 0.\n\nMagnitude gives strength, sign gives direction — which is why importance is ranked on the absolute value.",
+          "source": "Lab 3 · Part B; c3 · slide 10"
+        },
+        {
+          "id": "lab3-part-c-options",
+          "kind": "multi",
+          "prompt": "Which improvements does Lab 3 Part C offer to choose from?",
+          "options": [
+            "PolynomialFeatures",
+            "Feature scaling",
+            "Regularisation tuning",
+            "Switching to a decision tree"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "The fourth option is open — 'another improvement of your own choosing (justify it)' — but a different model type is a change of approach rather than an improvement to this one.",
+          "source": "Lab 3 · Part C"
+        },
+        {
+          "id": "lab3-complexity-worthwhile",
+          "kind": "recall",
+          "prompt": "Lab 3 asks whether the additional complexity was worthwhile. How should that be judged?",
+          "answer": "By comparing the accuracy **gain** against the cost.\n\nOn this dataset a baseline logistic regression already scores in the high 90s, so the headroom is a percentage point or two. A gain of 0.3% on a validation set of ~137 rows is **less than one example** — well inside the noise, and not evidence of anything.\n\nAgainst that, PolynomialFeatures multiplies the feature count and the overfitting risk. So the honest answer is usually **no**, and saying so with the numbers to back it is worth more marks than claiming an improvement that the data does not support.",
+          "source": "Lab 3 · Part C"
+        },
+        {
+          "id": "lab3-val-predicts-test",
+          "kind": "recall",
+          "prompt": "Lab 3 asks whether the validation results accurately predicted the test results. What should you look for?",
+          "answer": "Whether the subset that won on **validation** also does well on **test**.\n\nWith 511 subsets evaluated, the validation winner is partly a **selection artefact**: try enough candidates and one will look good by luck. Its test accuracy is usually **lower** than its validation accuracy, and that gap is the honest finding.\n\nThat is the multiple-comparisons version of Lab 2's argument for quarantining the test set, and it is exactly why the lab has you record both numbers for every subset.",
+          "source": "Lab 3 · Parts A, C; intro · slide 30"
+        },
+        {
+          "id": "lab3-max-iter",
+          "kind": "mcq",
+          "prompt": "Why does the notebook use `LogisticRegression(max_iter=1000)`?",
+          "options": [
+            "The default iteration limit can be reached before the solver converges",
+            "It makes the model more accurate",
+            "It is required when using a Pipeline",
+            "It sets the number of feature subsets"
+          ],
+          "answerIndex": 0,
+          "explanation": "Logistic regression has no closed form and is solved iteratively; hitting the cap produces a convergence warning and a not-quite-fitted model.",
+          "source": "Lab 3 · Part A; c3 · slide 11"
+        },
+        {
+          "id": "lab3-best-subset-report",
+          "kind": "mcq",
+          "prompt": "The notebook selects the best subset using `results_df[\"validation_accuracy\"].idxmax()`. Why validation rather than test accuracy?",
+          "options": [
+            "Selecting on test accuracy would invalidate the test set as an estimate",
+            "Test accuracy is not computed",
+            "Validation accuracy is always higher",
+            "idxmax only works on the validation column"
+          ],
+          "answerIndex": 0,
+          "explanation": "Both are recorded, but only validation may be used to *choose*. Test is recorded so you can afterwards report what the chosen subset actually achieves.",
+          "source": "Lab 3 · Part A; Lab 2 · Part 1"
+        }
+      ]
+    },
+    {
+      "id": "lab-reading-results",
+      "title": "Reading experimental results",
+      "emphasis": "standard",
+      "summary": "The interpretation skills all three labs mark on: telling a real difference from noise, and saying what a plot does and does not show.",
+      "questions": [
+        {
+          "id": "lab-noise-vs-difference",
+          "kind": "recall",
+          "prompt": "Two settings score 96.4% and 96.7% on a validation set of 137 examples. Is that a real difference?",
+          "answer": "Almost certainly **not**. 0.3% of 137 examples is **0.4 of one example** — the two models differ on essentially no predictions, and reordering a single borderline case would flip which one wins.\n\nThe right response is to treat them as **tied** and choose on other grounds: simplicity, stability across splits, or interpretability. Reporting the 96.7% model as 'best' overstates what the experiment showed.",
+          "source": "Lab 2 · Part 4; Lab 3 · Part C"
+        },
+        {
+          "id": "lab-example-count-compute",
+          "kind": "computation",
+          "prompt": "A validation set has {{n}} examples. An accuracy difference of {{d}} percentage points corresponds to how many examples? Give it to 2 dp.",
+          "vars": {
+            "n": {
+              "type": "choice",
+              "values": [
+                100,
+                137,
+                200,
+                500,
+                1000
+              ]
+            },
+            "d": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.3,
+                0.5,
+                1,
+                2
+              ]
+            }
+          },
+          "derived": {
+            "ex": "n * d / 100"
+          },
+          "steps": [
+            {
+              "text": "A percentage point is 1/100 of the examples."
+            },
+            {
+              "text": "`{{n}} × {{d}} / 100`"
+            },
+            {
+              "text": "`= {{ex | 2}}` examples."
+            }
+          ],
+          "answer": {
+            "expr": "n * d / 100",
+            "tolerance": 0.02,
+            "decimals": 2
+          },
+          "explanation": "Worth doing before calling any difference meaningful — on a small validation set, a percentage point can be a single example.",
+          "source": "Lab 2 · Part 4"
+        },
+        {
+          "id": "lab-mean-vs-std",
+          "kind": "recall",
+          "prompt": "Setting A has mean accuracy 0.842 with standard deviation 0.004; setting B has mean 0.847 with standard deviation 0.021. Which would you choose?",
+          "answer": "Arguably **A**, despite the lower mean.\n\nB's advantage is 0.005 while its standard deviation is 0.021 — the gap is a **quarter of one standard deviation**, so on any given split B could easily do worse. A is far more **predictable**.\n\nThis is precisely the judgement Lab 2's stability question is asking for: a mean alone would have picked B without noticing the risk.",
+          "source": "Lab 2 · Parts 2–3"
+        },
+        {
+          "id": "lab-overfitting-signature",
+          "kind": "recall",
+          "prompt": "What does the validation accuracy curve look like as tree complexity increases, and where is the best setting?",
+          "answer": "It **rises steeply** as the tree gains enough capacity to capture real structure, reaches a **plateau or gentle peak**, and then **declines or flattens** as the extra leaves start fitting noise.\n\nThe best setting sits at the top of that curve — often at the **start** of the plateau rather than its exact maximum, since the simplest model within the plateau is the more defensible choice.\n\nThe same U-shape as c4's error-versus-complexity plot, measured rather than drawn.",
+          "source": "Lab 2 · Parts 2, 4; c4 · slide 2"
+        },
+        {
+          "id": "lab-plateau-choice",
+          "kind": "mcq",
+          "prompt": "Several settings sit on a flat plateau of near-identical accuracy. Which should you choose?",
+          "options": [
+            "The simplest one on the plateau",
+            "The most complex one, since it has the most capacity",
+            "The one with the single highest mean, regardless of spread",
+            "The one at the middle of the range"
+          ],
+          "answerIndex": 0,
+          "explanation": "Equal performance for less complexity: cheaper, more stable across splits, and more interpretable. Chasing the exact maximum is fitting the validation noise.",
+          "source": "Lab 2 · Part 4; c3 · slide 25"
+        },
+        {
+          "id": "lab-test-lower-than-val",
+          "kind": "recall",
+          "prompt": "Your chosen model scores 97.8% on validation and 95.6% on test. Is something wrong?",
+          "answer": "Not necessarily — this is the **expected** direction.\n\nThe model was **chosen** on validation, so that score is optimistic: among many candidates, the winner is partly winning on that sample's quirks. The test score, measured once on data used for nothing else, is the honest number.\n\nIt is worth reporting the gap rather than hiding it, and the **test** figure is the one to quote as the model's performance.",
+          "source": "Lab 2 · Part 4; Lab 3 · Part C"
+        },
+        {
+          "id": "lab-accuracy-alone",
+          "kind": "recall",
+          "prompt": "Lab 1 asks whether the reported metrics agree with each other. Why check that rather than reading accuracy alone?",
+          "answer": "Accuracy hides **which** class the errors fall on. With benign outnumbering malignant, a classifier can score well on accuracy while doing noticeably worse on the malignant class specifically.\n\nThe **classification report** breaks precision, recall and F1 down per class, so a high overall accuracy alongside a low malignant recall is immediately visible — and on this dataset, that is the failure that matters.",
+          "source": "Lab 1 · Part 2; c4 · slides 11–16"
+        },
+        {
+          "id": "lab-confusion-and-report",
+          "kind": "mcq",
+          "prompt": "Lab 1 requires both a confusion matrix and a classification report. What does the matrix add?",
+          "options": [
+            "The raw counts, showing exactly how many errors of each kind occurred",
+            "The per-class precision and recall",
+            "The overall accuracy",
+            "Nothing — it is redundant"
+          ],
+          "answerIndex": 0,
+          "explanation": "The report gives rates; the matrix gives counts. '3 malignant cases missed' lands differently from 'recall 0.94', and on 137 test rows the counts are what make the rates concrete.",
+          "source": "Lab 1 · Part 2; c4 · slides 11, 16"
+        },
+        {
+          "id": "lab-ylim-honesty",
+          "kind": "recall",
+          "prompt": "The Lab 1 k-sweep plot sets `plt.ylim(0.90, 1.00)`. What does that gain, and what should be said about it?",
+          "answer": "**Gain:** all the accuracies sit above 0.90, so a full 0–1 axis would compress them into a flat line at the top. Zooming makes the differences between values of k visible at all.\n\n**Caveat:** it also **exaggerates** them visually. A drop that looks dramatic on a 0.90–1.00 axis may be a fraction of a percent — a handful of examples. The axis range should be stated when discussing the plot, so the reader can calibrate.",
+          "source": "Lab 1 · Part 3"
+        },
+        {
+          "id": "lab-conclusions-evidence",
+          "kind": "mcq",
+          "prompt": "What do all three lab rubrics reward most?",
+          "options": [
+            "Justified decisions and critical interpretation supported by your own results",
+            "The highest accuracy achieved",
+            "The largest number of models tried",
+            "The most thorough preprocessing"
+          ],
+          "answerIndex": 0,
+          "explanation": "Stated across all three: 'Marks will be awarded for the quality of your reasoning, not for performing every possible preprocessing step'; 'Simply producing code and numerical results is not sufficient'.",
+          "source": "Lab 1, Lab 2, Lab 3 rubrics"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,882 @@
+{
+  "id": "foundations",
+  "title": "Foundations of ML",
+  "summary": "What machine learning is, the axes along which methods are classified, and the two things that go wrong: bad data, and models that are the wrong complexity for the data they have.",
+  "keyFacts": [
+    {
+      "term": "Machine learning (Mitchell, 1997)",
+      "definition": "A program learns from experience **E** with respect to task **T** and performance measure **P** if its performance on T, as measured by P, improves with E.",
+      "source": "intro · slide 3"
+    },
+    {
+      "term": "Machine learning (Samuel, 1959)",
+      "definition": "The field of study that gives computers the ability to learn without being explicitly programmed.",
+      "source": "intro · slide 3"
+    },
+    {
+      "term": "The three ingredients",
+      "definition": "**Data**, a (mathematical) **model**, and a **learning algorithm**.",
+      "source": "intro · slide 36"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "f-what-is-ml",
+      "title": "What machine learning is",
+      "emphasis": "core",
+      "summary": "The three standard definitions, and why a learned spam filter beats a hand-written one: it is data-driven, and it adapts when the spammers change tactics.",
+      "keyFacts": [
+        {
+          "term": "Training instance",
+          "definition": "A single example in the training set — for spam filtering, one email.",
+          "source": "intro · slide 3"
+        },
+        {
+          "term": "Data mining",
+          "definition": "Finding patterns in large amounts of data to help a human understand the problem better, e.g. discovering new spam features.",
+          "source": "intro · slide 8"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-mitchell-tep",
+          "kind": "cloze",
+          "prompt": "Mitchell's definition: a program learns from experience {{1}} with respect to task {{2}} if its performance, measured by {{3}}, improves with experience.",
+          "blanks": [
+            [
+              "E",
+              "experience"
+            ],
+            [
+              "T",
+              "task"
+            ],
+            [
+              "P",
+              "performance measure",
+              "performance"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "T, E and P. For spam filtering: T is labelling new emails, E is the set of emails, P is the ratio of correct predictions.",
+          "source": "intro · slide 3"
+        },
+        {
+          "id": "f-spam-tep-mapping",
+          "kind": "mcq",
+          "prompt": "In the spam-filtering example, what plays the role of the performance measure P?",
+          "options": [
+            "Accuracy — the ratio of correct predictions",
+            "The set of flagged and unflagged emails",
+            "Labelling a new email as spam or not spam",
+            "The number of features extracted per email"
+          ],
+          "answerIndex": 0,
+          "explanation": "T is the labelling task, E is the email set, P is accuracy. Confusing E and P is the usual slip — E is the *data*, P is the *score*.",
+          "source": "intro · slide 3"
+        },
+        {
+          "id": "f-manual-steps",
+          "kind": "recall",
+          "prompt": "What are the three steps for building a spam classifier by hand, and what goes wrong with the approach?",
+          "answer": "1. **Identify useful features** — typical words like '4U' or 'free', patterns in metadata such as sender names.\n2. **Write code** to count those features and declare spam when enough are present.\n3. **Test and repeat** until good enough.\n\nWhat goes wrong: a hard problem needs a long, complex list of rules that is hard to understand and hard to improve.",
+          "source": "intro · slides 4–5"
+        },
+        {
+          "id": "f-ml-advantage",
+          "kind": "mcq",
+          "prompt": "A spammer changes '4U' to 'For U'. Why does the ML approach cope better than hand-written rules?",
+          "options": [
+            "It is data-driven, so retraining on new emails adapts it automatically",
+            "It stores every email it has ever seen, so nothing is ever forgotten",
+            "It does not use features, so word changes cannot affect it",
+            "It computes an exact probability rather than a rule"
+          ],
+          "answerIndex": 0,
+          "explanation": "Being data-driven is the point: the rules are re-derived from data rather than re-written by hand.",
+          "source": "intro · slides 6–7"
+        },
+        {
+          "id": "f-ml-good-for",
+          "kind": "multi",
+          "prompt": "Which of these are given as problems ML is good for?",
+          "options": [
+            "Problems needing a long list of rules",
+            "Problems with no good traditional solution",
+            "Problems that change over time",
+            "Problems where a provably optimal algorithm already exists"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "The fourth is where you should *not* reach for ML. The fourth listed use is getting insight from large and complex data.",
+          "source": "intro · slide 9"
+        },
+        {
+          "id": "f-three-ingredients",
+          "kind": "short",
+          "prompt": "Name the three ingredients of machine learning.",
+          "answers": [
+            "data, model, learning algorithm",
+            "data model and learning algorithm",
+            "data a mathematical model and a learning algorithm"
+          ],
+          "tier": 2,
+          "source": "intro · slide 36"
+        },
+        {
+          "id": "f-data-mining",
+          "kind": "short",
+          "prompt": "What term describes finding patterns in large amounts of data to help humans understand a problem better?",
+          "answers": [
+            "data mining"
+          ],
+          "tier": 2,
+          "source": "intro · slide 8"
+        },
+        {
+          "id": "f-four-steps",
+          "kind": "recall",
+          "prompt": "List the four steps of the ML process.",
+          "answer": "1. **Study and prepare** the data.\n2. **Select** a model and/or algorithm.\n3. **Train** the model, optimising hyperparameter values.\n4. **Apply** the model to new data (prediction / inference) and judge quality.",
+          "source": "intro · slide 29"
+        },
+        {
+          "id": "f-ocr-spam-age",
+          "kind": "mcq",
+          "prompt": "Which claim about ML's history does the course make?",
+          "options": [
+            "It has been around a while — OCR and spam detection are given as examples",
+            "It began with deep learning in the 2010s",
+            "It was invented alongside the first spam filters in the 2000s",
+            "It is a purely theoretical field with few deployed uses"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 3"
+        }
+      ]
+    },
+    {
+      "id": "f-types",
+      "title": "Types of machine learning",
+      "emphasis": "core",
+      "summary": "Three axes: how much human supervision, online vs batch, and model- vs instance-based. Supervised splits into classification and regression; unsupervised into clustering, anomaly detection, dimensionality reduction and association rules.",
+      "keyFacts": [
+        {
+          "term": "The three axes of comparison",
+          "definition": "**How much human supervision** (supervised / unsupervised / semi-supervised / reinforcement), **online vs batch** learning, and **model-based vs instance-based**.",
+          "source": "intro · slide 10"
+        },
+        {
+          "term": "Feature",
+          "definition": "An attribute–value pair such as `age=21`. 'Attribute' and 'feature' are often used interchangeably.",
+          "source": "intro · slide 11"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-three-axes",
+          "kind": "recall",
+          "prompt": "Name the three axes along which ML methods are compared.",
+          "answer": "1. **How much human supervision**: supervised, unsupervised, semi-supervised, reinforcement learning.\n2. **Online vs batch** learning (incremental, on the fly).\n3. **Model-based vs instance-based**.",
+          "source": "intro · slide 10"
+        },
+        {
+          "id": "f-classification-vs-regression",
+          "kind": "mcq",
+          "prompt": "What distinguishes regression from classification in supervised learning?",
+          "options": [
+            "The target is a number rather than a label",
+            "Regression is unsupervised; classification is supervised",
+            "Regression requires more features",
+            "Regression cannot use decision trees"
+          ],
+          "answerIndex": 0,
+          "explanation": "Predicting the value of a used car from mileage, age and brand is regression; labelling an email spam or not is classification.",
+          "source": "intro · slides 11–13"
+        },
+        {
+          "id": "f-clustering-algos",
+          "kind": "multi",
+          "prompt": "Which of these are listed as clustering algorithms?",
+          "options": [
+            "K-Means",
+            "DBSCAN",
+            "Hierarchical Cluster Analysis",
+            "Isolation Forest"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Isolation Forest is anomaly detection, not clustering. The clustering three are K-Means, DBSCAN and HCA.",
+          "source": "intro · slide 15"
+        },
+        {
+          "id": "f-anomaly-algos",
+          "kind": "short",
+          "prompt": "Name either of the two algorithms listed for anomaly and novelty detection.",
+          "answers": [
+            "one-class SVM",
+            "one class SVM",
+            "isolation forest",
+            "1-class SVM"
+          ],
+          "tier": 2,
+          "source": "intro · slide 15"
+        },
+        {
+          "id": "f-dimreduction-algos",
+          "kind": "multi",
+          "prompt": "Which are listed under visualization and dimensionality reduction?",
+          "options": [
+            "PCA",
+            "Kernel PCA",
+            "t-SNE",
+            "Apriori"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Apriori is association rule learning (with Eclat). LLE is the fourth dimensionality-reduction method listed.",
+          "source": "intro · slide 15"
+        },
+        {
+          "id": "f-semisupervised",
+          "kind": "recall",
+          "prompt": "What is semi-supervised learning, and why is it useful in practice?",
+          "answer": "Training a classifier with **many unlabeled** and **a few labeled** examples, usually combining supervised and unsupervised methods.\n\nIt is useful because **labels are expensive** — unlabeled data is generally easy to obtain and labeling it is not.",
+          "source": "intro · slides 20–21"
+        },
+        {
+          "id": "f-rl-loop",
+          "kind": "recall",
+          "prompt": "Describe the reinforcement learning loop and the trade-off it must manage.",
+          "answer": "An **agent** observes an **environment**, takes an **action**, receives a **reward or penalty**, and updates a **policy** (strategy) to maximise reward over time.\n\nIt must combine **exploration** with **exploitation**. AlphaGo is the given example.",
+          "source": "intro · slide 22"
+        },
+        {
+          "id": "f-supervised-methods",
+          "kind": "multi",
+          "prompt": "Which of these are listed as popular supervised methods?",
+          "options": [
+            "K-nearest neighbour",
+            "Support Vector Machines",
+            "Decision Trees / Random Forests",
+            "DBSCAN"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "DBSCAN is clustering. The full supervised list also includes linear regression, logistic regression and neural networks.",
+          "source": "intro · slide 13"
+        },
+        {
+          "id": "f-dimreduction-why",
+          "kind": "recall",
+          "prompt": "Give three reasons to reduce dimensionality, the two ways of doing it, and the catch.",
+          "answer": "**Why:** needs less space, learning is faster, and accuracy can improve if 'bad' predictors are removed.\n\n**How:** *remove* irrelevant or redundant features, or *merge* correlated ones (age and mileage of a car become 'wear and tear').\n\n**The catch:** remove too many and accuracy suffers — there is a sweet spot, a 'goldilocks zone'.",
+          "source": "intro · slide 18"
+        },
+        {
+          "id": "f-categorical-target",
+          "kind": "mcq",
+          "prompt": "A supervised problem with exactly two possible labels is called:",
+          "options": [
+            "Binary classification",
+            "Multi-class classification",
+            "Regression",
+            "Multilabel classification"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 11"
+        }
+      ]
+    },
+    {
+      "id": "f-learning-modes",
+      "title": "Batch vs online, instance vs model-based",
+      "emphasis": "standard",
+      "summary": "Two independent choices. Batch learning trains once on everything and must retrain from scratch as data arrives; online learning consumes data in chunks and can forget. Instance-based methods remember examples; model-based ones build an explicit representation such as a decision boundary.",
+      "keyFacts": [
+        {
+          "term": "Instance-based learning",
+          "definition": "Remember all training examples; for a test example, find the most similar training example(s) and use their labels.",
+          "source": "intro · slide 27"
+        },
+        {
+          "term": "Model-based learning",
+          "definition": "Generate an explicit representation for prediction, e.g. a line separating two classes — a **decision boundary**.",
+          "source": "intro · slide 28"
+        },
+        {
+          "term": "Generalization",
+          "definition": "Performance on **new** examples. Doing well on training data is necessary but not sufficient — doing well only on old data is memorization or compression.",
+          "source": "intro · slide 26"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-batch-cons",
+          "kind": "recall",
+          "prompt": "State the advantage and the two-step disadvantage of batch learning.",
+          "answer": "**Pro:** you can compute a really good model offline.\n\n**Cons:** when more training data becomes available you must **retrain from scratch** on old + new data, which **becomes infeasible** at some stage.",
+          "source": "intro · slide 23"
+        },
+        {
+          "id": "f-online-benefits",
+          "kind": "multi",
+          "prompt": "Which are given as properties of online learning?",
+          "options": [
+            "Processes data in small chunks — one example or a mini-batch",
+            "Can respond quickly to changes",
+            "Can 'forget' old data",
+            "Always produces a more accurate model than batch learning"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Online learning trades some model quality for adaptability and memory footprint; it is not claimed to be more accurate.",
+          "source": "intro · slide 24"
+        },
+        {
+          "id": "f-online-ram",
+          "kind": "mcq",
+          "prompt": "The dataset does not fit into RAM. What does the course recommend?",
+          "options": [
+            "Use online learning",
+            "Use instance-based learning",
+            "Reduce the number of classes",
+            "Switch from classification to regression"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 25"
+        },
+        {
+          "id": "f-instance-vs-model",
+          "kind": "short",
+          "prompt": "Which approach — instance-based or model-based — remembers all training examples and predicts from the most similar ones?",
+          "answers": [
+            "instance-based",
+            "instance based",
+            "instance"
+          ],
+          "tier": 2,
+          "source": "intro · slide 27"
+        },
+        {
+          "id": "f-decision-boundary-term",
+          "kind": "short",
+          "prompt": "What is the term for the explicit representation a model-based learner builds to separate two classes?",
+          "answers": [
+            "decision boundary",
+            "a decision boundary"
+          ],
+          "tier": 2,
+          "source": "intro · slide 28"
+        },
+        {
+          "id": "f-generalization-meaning",
+          "kind": "mcq",
+          "prompt": "Why is doing well on the training data described as necessary but not sufficient?",
+          "options": [
+            "Good training performance may be memorization rather than generalization",
+            "Training data is always smaller than test data",
+            "Training accuracy cannot be measured reliably",
+            "The training set is chosen randomly, so its score is meaningless"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide calls doing well only on old examples 'memorization (or compression)'. What matters is performance on new examples.",
+          "source": "intro · slide 26"
+        },
+        {
+          "id": "f-knn-is-instance",
+          "kind": "mcq",
+          "prompt": "kNN with k = 1 is best described as:",
+          "options": [
+            "Instance-based",
+            "Model-based",
+            "Online",
+            "Unsupervised"
+          ],
+          "answerIndex": 0,
+          "explanation": "It stores the training data and predicts from the nearest stored example — the definition of instance-based.",
+          "source": "intro · slide 27"
+        },
+        {
+          "id": "f-batch-default",
+          "kind": "mcq",
+          "prompt": "Which does the course describe as the current default approach?",
+          "options": [
+            "Batch learning: take a large dataset, train, then predict",
+            "Online learning on mini-batches",
+            "Reinforcement learning with a replay buffer",
+            "Semi-supervised pretraining"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 23"
+        },
+        {
+          "id": "f-axes-independent",
+          "kind": "recall",
+          "prompt": "Can a method be both online and model-based? Explain.",
+          "answer": "Yes. The axes are **independent**: online vs batch is about *when and how data arrives*, model- vs instance-based is about *what the learner stores*. An online-trained linear model is both online and model-based.",
+          "source": "intro · slide 10"
+        }
+      ]
+    },
+    {
+      "id": "f-data-quality",
+      "title": "Data quality and representativeness",
+      "emphasis": "core",
+      "summary": "Two distinct data failures. Small samples give sampling noise; large but badly drawn samples give sampling bias, which more data does not fix. Then the mundane problems: errors, outliers, missing values and irrelevant features.",
+      "keyFacts": [
+        {
+          "term": "Sampling noise",
+          "definition": "Non-representative data caused by the sample being **small**.",
+          "source": "intro · slide 31"
+        },
+        {
+          "term": "Sampling bias",
+          "definition": "Non-representative data caused by the sampling **method**, present even in very large samples.",
+          "source": "intro · slide 31"
+        },
+        {
+          "term": "GIGO",
+          "definition": "Garbage in, garbage out — irrelevant features produce a bad model however good the algorithm.",
+          "source": "intro · slide 32"
+        },
+        {
+          "term": "Feature engineering",
+          "definition": "Feature **selection**, feature **extraction**, and **gathering additional data**.",
+          "source": "intro · slide 32"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-noise-vs-bias",
+          "kind": "mcq",
+          "prompt": "A survey samples 10 million people and gets 2.4 million responses, yet still predicts the wrong election result. What is the problem?",
+          "options": [
+            "Sampling bias — a large sample can still be drawn badly",
+            "Sampling noise — the sample was too small",
+            "Overfitting to the responses",
+            "The performance measure was wrong"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is the 1936 US election example: the sample skewed wealthy (hence conservative), plus nonresponse bias. Size does not fix bias.",
+          "source": "intro · slide 31"
+        },
+        {
+          "id": "f-1936-election",
+          "kind": "recall",
+          "prompt": "Describe the 1936 US election polling failure and the two reasons given for it.",
+          "answer": "10 million people were sampled and 2.4 million responded. The poll predicted **Landon 57%**, but **Roosevelt won with 62%**.\n\nTwo reasons:\n- The 10 million **included more wealthy people**, skewing conservative.\n- **Nonresponse bias** — those who replied were not like those who did not.",
+          "source": "intro · slide 31"
+        },
+        {
+          "id": "f-nonresponse-bias",
+          "kind": "short",
+          "prompt": "What is the term for bias arising because the people who answer a survey differ from those who do not?",
+          "answers": [
+            "nonresponse bias",
+            "non-response bias",
+            "non response bias"
+          ],
+          "tier": 2,
+          "source": "intro · slide 31"
+        },
+        {
+          "id": "f-missing-values-options",
+          "kind": "multi",
+          "prompt": "Which are given as ways to handle missing values?",
+          "options": [
+            "Remove the example",
+            "Guess the value (impute)",
+            "Remove the feature",
+            "Set every missing value to zero and record nothing"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "The intro deck gives 'remove example' and 'somehow guess (impute)'; c2 adds dropping the whole feature. Blind zero-filling is not among them.",
+          "source": "intro · slide 32"
+        },
+        {
+          "id": "f-outliers",
+          "kind": "mcq",
+          "prompt": "What does the course recommend doing with outliers?",
+          "options": [
+            "Remove them",
+            "Impute them from the mean",
+            "Duplicate them so the model sees them more often",
+            "Convert them to categorical features"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 32"
+        },
+        {
+          "id": "f-feature-engineering-three",
+          "kind": "recall",
+          "prompt": "Name the three parts of feature engineering.",
+          "answer": "**Selection** — choosing the useful features.\n**Extraction** — deriving new features from existing ones.\n**Gathering additional data**.",
+          "source": "intro · slide 32"
+        },
+        {
+          "id": "f-gigo",
+          "kind": "short",
+          "prompt": "What does the acronym GIGO stand for?",
+          "answers": [
+            "garbage in garbage out",
+            "garbage-in garbage-out",
+            "garbage in, garbage out"
+          ],
+          "tier": 2,
+          "source": "intro · slide 32"
+        },
+        {
+          "id": "f-cleaning-tedious",
+          "kind": "mcq",
+          "prompt": "How does the course characterise data cleaning?",
+          "options": [
+            "Often tedious and tricky",
+            "Largely automated by modern libraries",
+            "Unnecessary if the model is complex enough",
+            "Only required for image data"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 32"
+        },
+        {
+          "id": "f-spurious-correlations",
+          "kind": "mcq",
+          "prompt": "Why does the course link to a 'spurious correlations' site when discussing dimensionality reduction?",
+          "options": [
+            "To illustrate that irrelevant features can appear correlated and should be removed",
+            "To show that correlation is sufficient evidence of causation",
+            "To demonstrate a clustering algorithm",
+            "To argue that more features always help"
+          ],
+          "answerIndex": 0,
+          "explanation": "It appears under 'remove (irrelevant or redundant) features' — a warning that apparent correlation can be meaningless.",
+          "source": "intro · slide 18"
+        }
+      ]
+    },
+    {
+      "id": "f-fitting",
+      "title": "Over- and underfitting",
+      "emphasis": "core",
+      "summary": "Overfitting is a model too complex for the data it has; underfitting is the reverse. Each has its own list of remedies, and the lists are close to mirror images.",
+      "keyFacts": [
+        {
+          "term": "Regularization",
+          "definition": "Constraining the model to combat overfitting.",
+          "source": "intro · slide 34"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-overfit-definition",
+          "kind": "mcq",
+          "prompt": "Overfitting is best described as:",
+          "options": [
+            "A complex model on too little data",
+            "A simple model on too much data",
+            "A model trained without a validation set",
+            "A model whose features are not scaled"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 33"
+        },
+        {
+          "id": "f-overfit-example",
+          "kind": "recall",
+          "prompt": "Explain the 'letter w' example of overfitting and its counterexamples.",
+          "answer": "Countries with life satisfaction > 7 are New Zealand, Norway, Sweden and Switzerland. A model could learn the **bad rule** 'country name contains a w ⇒ life satisfaction > 7'.\n\nThe **counterexamples** are **Rwanda** and **Zimbabwe** — names containing 'w' with no such satisfaction score. The rule fits the training data perfectly and generalises not at all.",
+          "source": "intro · slide 33"
+        },
+        {
+          "id": "f-combat-overfit",
+          "kind": "multi",
+          "prompt": "Which are listed as ways to combat overfitting?",
+          "options": [
+            "Collect more data",
+            "Reduce noise — fix errors, remove outliers",
+            "Simplify the model: fewer parameters or attributes",
+            "Add more parameters to the model"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Adding parameters is the fix for *under*fitting. Constraining the model is called regularization.",
+          "source": "intro · slide 34"
+        },
+        {
+          "id": "f-combat-underfit",
+          "kind": "recall",
+          "prompt": "List the three remedies for underfitting.",
+          "answer": "1. Select a model with **more parameters**.\n2. Provide **better features**.\n3. **Reduce the constraints** on the model — weaker regularization.",
+          "source": "intro · slide 35"
+        },
+        {
+          "id": "f-regularization-term",
+          "kind": "short",
+          "prompt": "What is the term for constraining a model in order to reduce overfitting?",
+          "answers": [
+            "regularization",
+            "regularisation"
+          ],
+          "tier": 2,
+          "source": "intro · slide 34"
+        },
+        {
+          "id": "f-fitting-mirror",
+          "kind": "mcq",
+          "prompt": "Weakening regularization is a remedy for which problem?",
+          "options": [
+            "Underfitting",
+            "Overfitting",
+            "Sampling bias",
+            "Missing values"
+          ],
+          "answerIndex": 0,
+          "explanation": "Strengthening it fights overfitting; weakening it fights underfitting. The two lists are near mirror images.",
+          "source": "intro · slides 34–35"
+        },
+        {
+          "id": "f-more-data-which",
+          "kind": "mcq",
+          "prompt": "Collecting more training data primarily helps with:",
+          "options": [
+            "Overfitting",
+            "Underfitting",
+            "Both equally",
+            "Neither — it only affects training time"
+          ],
+          "answerIndex": 0,
+          "explanation": "More data constrains a complex model. Underfitting is fixed by more model or better features, not more rows.",
+          "source": "intro · slides 34–35"
+        },
+        {
+          "id": "f-fitting-diagnosis",
+          "kind": "recall",
+          "prompt": "A model scores poorly on both the training set and the test set. Which problem is it, and what would you try?",
+          "answer": "**Underfitting** — the model is too simple to capture the pattern, so it fails even on data it has seen.\n\nTry: a model with more parameters, better or more features, or weaker regularization.",
+          "source": "intro · slide 35"
+        },
+        {
+          "id": "f-simplify-methods",
+          "kind": "multi",
+          "prompt": "Which count as 'simplifying the model' in the overfitting remedies?",
+          "options": [
+            "Fewer parameters",
+            "Fewer attributes",
+            "Constraining the model",
+            "A larger training set"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "A larger training set is its own separate remedy, not a way of simplifying the model.",
+          "source": "intro · slide 34"
+        }
+      ]
+    },
+    {
+      "id": "f-evaluation-setup",
+      "title": "Training, validation and test sets",
+      "emphasis": "core",
+      "summary": "Why two splits are not enough. Selecting the best of many models on the test set optimises against it, so its error stops being an honest estimate — hence a third, held-back set.",
+      "keyFacts": [
+        {
+          "term": "The two-way split",
+          "definition": "Training set 80%, test set 20%: train on train, validate on test.",
+          "source": "intro · slide 30"
+        },
+        {
+          "term": "The three-way split",
+          "definition": "Training 60%, validation 20%, test 20%. Use validation error to select the best model, then the test set to judge real error.",
+          "source": "intro · slide 30"
+        }
+      ],
+      "questions": [
+        {
+          "id": "f-why-three-way",
+          "kind": "mcq",
+          "prompt": "You train 100 models, pick the one with the lowest test error (5%), and on new data it scores 15%. What went wrong?",
+          "options": [
+            "The test set was used to select the model, so its error is no longer an honest estimate",
+            "100 models is too few to choose from",
+            "The test set was too large",
+            "The models were underfitted"
+          ],
+          "answerIndex": 0,
+          "explanation": "Exactly the scenario on the slide. Selecting on the test set optimises against it — you need a separate validation set for selection and to keep the test set untouched.",
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-split-proportions",
+          "kind": "cloze",
+          "prompt": "The three-way split given is training {{1}}%, validation {{2}}%, and test {{3}}%.",
+          "blanks": [
+            [
+              "60"
+            ],
+            [
+              "20"
+            ],
+            [
+              "20"
+            ]
+          ],
+          "tier": 2,
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-two-way-split",
+          "kind": "mcq",
+          "prompt": "What proportions does the course give for the simple two-way split?",
+          "options": [
+            "80% train, 20% test",
+            "50% train, 50% test",
+            "90% train, 10% test",
+            "60% train, 40% test"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-best-approach",
+          "kind": "mcq",
+          "prompt": "What does the course describe as better still than a three-way split?",
+          "options": [
+            "Split into train + test, and use cross-validation on the train data",
+            "Use the whole dataset for both training and testing",
+            "Use a 90/10 split with more models",
+            "Skip validation entirely and rely on regularization"
+          ],
+          "answerIndex": 0,
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-role-of-validation",
+          "kind": "short",
+          "prompt": "Which of the three sets is used to *select* between models?",
+          "answers": [
+            "validation",
+            "the validation set",
+            "validation set"
+          ],
+          "tier": 2,
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-role-of-test",
+          "kind": "recall",
+          "prompt": "What is each of the three sets for?",
+          "answer": "**Training set** — fit the model's parameters.\n**Validation set** — choose between models and hyperparameter settings.\n**Test set** — judge the real error, once, after selection is finished.",
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-split-sizes-compute",
+          "kind": "computation",
+          "prompt": "A dataset has {{n}} examples. Using the 60/20/20 three-way split, how many examples go into the validation set?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 500,
+              "max": 20000,
+              "step": 500
+            }
+          },
+          "steps": [
+            {
+              "text": "The validation set is 20% of the whole dataset."
+            },
+            {
+              "text": "So it holds `0.2 × {{n}}`."
+            },
+            {
+              "text": "That is `{{0.2 * n}}` examples."
+            }
+          ],
+          "answer": {
+            "expr": "0.2 * n",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "intro · slide 30"
+        },
+        {
+          "id": "f-train-size-compute",
+          "kind": "computation",
+          "prompt": "A dataset has {{n}} examples. Under the simple two-way split, how many examples are used for **training**?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 250,
+              "max": 10000,
+              "step": 250
+            }
+          },
+          "steps": [
+            {
+              "text": "The two-way split is training 80%, test 20%."
+            },
+            {
+              "text": "So training holds `0.8 × {{n}}`."
+            },
+            {
+              "text": "That is `{{0.8 * n}}` examples, leaving `{{0.2 * n}}` to test on."
+            }
+          ],
+          "answer": {
+            "expr": "0.8 * n",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "intro · slide 30",
+          "explanation": "intro slide 30 gives this as the first answer to \"how do we know a model is any good\", then immediately complains about it: pick the best of 100 models by test error and that 5% is no longer an honest estimate. Hence the three-way split."
+        },
+        {
+          "id": "f-cross-val-forward",
+          "kind": "mcq",
+          "prompt": "In the recommended setup, cross-validation is run on which portion of the data?",
+          "options": [
+            "The training data, after a train/test split has been made",
+            "The test data",
+            "The whole dataset including the test set",
+            "A separate dataset gathered later"
+          ],
+          "answerIndex": 0,
+          "explanation": "Split into train + test first, then cross-validate *within* train. The test set stays untouched until the end.",
+          "source": "intro · slide 30"
+        }
+      ]
+    }
+  ]
+}

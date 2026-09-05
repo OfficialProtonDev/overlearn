@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "compx310-test1",
+  "title": "COMPX310 · Test 1",
+  "subtitle": "Machine Learning",
+  "description": "Lectures 1–6 of COMPX310-26B plus the first three assignments — both are on the test. Every question cites the deck and slide, or the lab and part, it came from.\n\n**Test format:** 50 minutes, in person, pen on paper. **No devices of any kind, including calculators.** One A4 cheat sheet, double-sided and printed allowed — the Cheat sheet page defaults to exactly that.",
+  "generatedAt": "2026-09-05",
+  "source": {
+    "label": "7 lecture decks (219 slides) + 3 lab specs and notebooks",
+    "detail": "Course material is based on Lindholm et al., *Machine Learning: A First Course for Scientists and Engineers* (CUP 2022), with figures and code from Géron, *Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow* (O'Reilly 2019). The test announcement states that all lecture material from the first six weeks and the first three assignments are examinable.",
+    "documents": [
+      {
+        "key": "intro",
+        "title": "intro_2026.pdf — What is ML?",
+        "pages": 41
+      },
+      {
+        "key": "c2",
+        "title": "c2_2026.pdf — Supervised Learning",
+        "pages": 19
+      },
+      {
+        "key": "c3",
+        "title": "c3_2026.pdf — Parametric Models",
+        "pages": 33
+      },
+      {
+        "key": "c4",
+        "title": "c4_2026.pdf — Understanding Model Performance",
+        "pages": 35
+      },
+      {
+        "key": "c5",
+        "title": "c5_2026.pdf — Learning Parametric Models",
+        "pages": 27
+      },
+      {
+        "key": "c6a",
+        "title": "Compx310_c6a_2025.pdf — Neural Networks",
+        "pages": 30
+      },
+      {
+        "key": "c6b",
+        "title": "c6b_2025.pdf — Deep Neural Networks",
+        "pages": 34
+      },
+      {
+        "key": "Lab 1",
+        "title": "Lab 1 — kNN on the Wisconsin Breast Cancer data"
+      },
+      {
+        "key": "Lab 2",
+        "title": "Lab 2 — Decision trees and model selection (covtype)"
+      },
+      {
+        "key": "Lab 3",
+        "title": "Lab 3 — Feature subsets and logistic regression"
+      }
+    ]
+  },
+  "topics": [
+    {
+      "id": "foundations",
+      "title": "Foundations of ML",
+      "file": "topics/foundations.json"
+    },
+    {
+      "id": "knn-trees",
+      "title": "kNN & Decision Trees",
+      "file": "topics/knn-trees.json"
+    },
+    {
+      "id": "linear-models",
+      "title": "Linear Models",
+      "file": "topics/linear-models.json"
+    },
+    {
+      "id": "performance",
+      "title": "Model Performance",
+      "file": "topics/performance.json"
+    },
+    {
+      "id": "data-gradient",
+      "title": "Data Prep & Gradient Descent",
+      "file": "topics/data-gradient.json"
+    },
+    {
+      "id": "neural-networks",
+      "title": "Neural Networks",
+      "file": "topics/neural-networks.json"
+    },
+    {
+      "id": "deep-networks",
+      "title": "Deep Neural Networks",
+      "file": "topics/deep-networks.json"
+    },
+    {
+      "id": "lab-practice",
+      "title": "Lab Practice",
+      "file": "topics/lab-practice.json"
+    }
+  ]
+}

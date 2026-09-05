@@ -1,0 +1,1805 @@
+{
+  "id": "linear-models",
+  "title": "Linear Models",
+  "summary": "Parametric models: a fixed set of coefficients fitted to the data. Linear regression has a closed-form solution; logistic and softmax regression do not and need gradient descent. Polynomial features make the same machinery fit non-linear data, and regularization keeps it from running away.",
+  "formulas": [
+    {
+      "name": "Linear regression prediction",
+      "expression": "ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ⋯ + θₙxₙ",
+      "note": "θ₀ is the bias term; θ₁…θₙ are the feature weights; n is the number of features.",
+      "source": "c3 · slide 3"
+    },
+    {
+      "name": "Vectorised prediction",
+      "expression": "ŷ = h_θ(x) = θ · x",
+      "note": "θ is the parameter vector, x the feature vector with x₀ always equal to 1 so the dot product picks up the bias.",
+      "source": "c3 · slide 4"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "lm-linear-regression",
+      "title": "Linear regression and the normal equation",
+      "emphasis": "core",
+      "summary": "The one model in the course with a closed-form solution: set the derivative of the MSE to zero and solve directly for the coefficients.",
+      "formulas": [
+        {
+          "name": "MSE cost function",
+          "expression": "MSE(X, h_θ) = (1/m) Σᵢ (θᵀx⁽ⁱ⁾ − y⁽ⁱ⁾)²",
+          "note": "Mean over the m training examples of the squared prediction error.",
+          "source": "c3 · slide 5"
+        },
+        {
+          "name": "Normal equation",
+          "expression": "θ̂ = (XᵀX)⁻¹ Xᵀ y",
+          "note": "The value of θ minimising the MSE, computed directly. y is the vector of targets y⁽¹⁾…y⁽ᵐ⁾.",
+          "source": "c3 · slide 5"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lm-normal-equation-recall",
+          "kind": "recall",
+          "prompt": "Write the normal equation and say what it gives you.",
+          "answer": "`θ̂ = (XᵀX)⁻¹ Xᵀ y`\n\nIt gives the value of θ that **minimises the MSE cost function** — the best-fitting coefficients, computed in closed form with no iteration.",
+          "source": "c3 · slide 5"
+        },
+        {
+          "id": "lm-mse-formula",
+          "kind": "cloze",
+          "prompt": "The MSE cost function is (1/{{1}}) Σ (θᵀx⁽ⁱ⁾ − y⁽ⁱ⁾){{2}}, where m is the number of training examples.",
+          "blanks": [
+            [
+              "m"
+            ],
+            [
+              "2",
+              "²",
+              "squared"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slide 5"
+        },
+        {
+          "id": "lm-x0-equals-one",
+          "kind": "mcq",
+          "prompt": "In the vectorised form ŷ = θ · x, why is x₀ always set to 1?",
+          "options": [
+            "So the dot product includes the bias term θ₀",
+            "To normalise the feature vector",
+            "To make the matrix invertible",
+            "To avoid dividing by zero"
+          ],
+          "answerIndex": 0,
+          "explanation": "θ₀ × 1 = θ₀, so the intercept falls out of the same dot product as the weights. That is what `np.c_[np.ones((100,1)), X]` is doing in the code.",
+          "source": "c3 · slides 4, 7"
+        },
+        {
+          "id": "lm-theta-meaning",
+          "kind": "recall",
+          "prompt": "In ŷ = h_θ(x) = θ · x, what are θ and x?",
+          "answer": "**θ** is the model's *parameter vector*: the bias term θ₀ together with the feature weights θ₁ … θₙ.\n\n**x** is the instance's *feature vector*, x₀ … xₙ, with x₀ always equal to 1.\n\n**h_θ** is the hypothesis function using the parameters θ.",
+          "source": "c3 · slide 4"
+        },
+        {
+          "id": "lm-linear-predict-compute",
+          "kind": "computation",
+          "prompt": "A fitted model is ŷ = {{b}} + {{w}}x. What does it predict at x = {{x}}?",
+          "vars": {
+            "b": {
+              "type": "int",
+              "min": 1,
+              "max": 12
+            },
+            "w": {
+              "type": "int",
+              "min": 2,
+              "max": 9
+            },
+            "x": {
+              "type": "int",
+              "min": 0,
+              "max": 10
+            }
+          },
+          "steps": [
+            {
+              "text": "Linear prediction is `ŷ = θ₀ + θ₁x`."
+            },
+            {
+              "text": "Substituting: `{{b}} + {{w}} × {{x}}`."
+            },
+            {
+              "text": "`ŷ = {{b + w*x}}`"
+            }
+          ],
+          "answer": {
+            "expr": "b + w*x",
+            "tolerance": 0.001,
+            "decimals": 3
+          },
+          "source": "c3 · slide 3"
+        },
+        {
+          "id": "lm-two-feature-predict",
+          "kind": "computation",
+          "prompt": "A model has θ₀ = {{b}}, θ₁ = {{w1}}, θ₂ = {{w2}}. Predict for the instance x₁ = {{x1}}, x₂ = {{x2}}.",
+          "vars": {
+            "b": {
+              "type": "int",
+              "min": -5,
+              "max": 10
+            },
+            "w1": {
+              "type": "int",
+              "min": 1,
+              "max": 8
+            },
+            "w2": {
+              "type": "int",
+              "min": -6,
+              "max": 6
+            },
+            "x1": {
+              "type": "int",
+              "min": 0,
+              "max": 9
+            },
+            "x2": {
+              "type": "int",
+              "min": 0,
+              "max": 9
+            }
+          },
+          "steps": [
+            {
+              "text": "`ŷ = θ₀ + θ₁x₁ + θ₂x₂`."
+            },
+            {
+              "text": "Substituting: `{{b}} + {{w1}}×{{x1}} + {{w2}}×{{x2}}`."
+            },
+            {
+              "text": "`= {{b}} + {{w1*x1}} + {{w2*x2}} = {{b + w1*x1 + w2*x2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "b + w1*x1 + w2*x2",
+            "tolerance": 0.001,
+            "decimals": 3
+          },
+          "source": "c3 · slide 3"
+        },
+        {
+          "id": "lm-mse-compute",
+          "kind": "computation",
+          "prompt": "Three predictions miss their targets by {{e1}}, {{e2}} and {{e3}}. Give the MSE, to 3 dp.",
+          "vars": {
+            "e1": {
+              "type": "int",
+              "min": -6,
+              "max": 6
+            },
+            "e2": {
+              "type": "int",
+              "min": -6,
+              "max": 6
+            },
+            "e3": {
+              "type": "int",
+              "min": -6,
+              "max": 6
+            }
+          },
+          "steps": [
+            {
+              "text": "MSE is the mean of the **squared** errors, so signs disappear."
+            },
+            {
+              "text": "Squares: `{{e1^2}}`, `{{e2^2}}`, `{{e3^2}}`, summing to `{{e1^2 + e2^2 + e3^2}}`."
+            },
+            {
+              "text": "`MSE = {{e1^2 + e2^2 + e3^2}} / 3 = {{(e1^2 + e2^2 + e3^2)/3 | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "(e1^2 + e2^2 + e3^2)/3",
+            "tolerance": 0.005,
+            "decimals": 3
+          },
+          "source": "c3 · slide 5"
+        },
+        {
+          "id": "lm-sklearn-svd",
+          "kind": "mcq",
+          "prompt": "What does scikit-learn's LinearRegression use internally, and why?",
+          "options": [
+            "SVD — more robust than matrix inversion",
+            "The normal equation with explicit matrix inversion",
+            "Stochastic gradient descent",
+            "The Cholesky decomposition of XᵀX"
+          ],
+          "answerIndex": 0,
+          "explanation": "SVD still works when #features > #examples, or when features are redundant — both cases where XᵀX is not invertible.",
+          "source": "c3 · slide 9"
+        },
+        {
+          "id": "lm-svd-advantages",
+          "kind": "recall",
+          "prompt": "Give the two situations where SVD works but matrix inversion does not.",
+          "answer": "1. When **#features > #examples**.\n2. When there are **redundant features**.\n\nIn both, `XᵀX` is singular and cannot be inverted, so the normal equation as written fails — but SVD still produces a solution.",
+          "source": "c3 · slide 9"
+        },
+        {
+          "id": "lm-linreg-complexity",
+          "kind": "cloze",
+          "prompt": "The complexity of the scikit-learn linear regression is {{1}} in the number of examples and {{2}} in the number of features.",
+          "blanks": [
+            [
+              "linear"
+            ],
+            [
+              "quadratic"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "So doubling the rows doubles the work, but doubling the columns quadruples it — features are the expensive axis.",
+          "source": "c3 · slide 9"
+        },
+        {
+          "id": "lm-numpy-normal-eq",
+          "kind": "mcq",
+          "prompt": "Which numpy expression implements the normal equation?",
+          "options": [
+            "np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)",
+            "np.linalg.inv(X_b.dot(X_b.T)).dot(y)",
+            "np.linalg.solve(X_b, y)",
+            "X_b.T.dot(y) / X_b.T.dot(X_b)"
+          ],
+          "answerIndex": 0,
+          "explanation": "Reading it against θ̂ = (XᵀX)⁻¹Xᵀy: `X_b.T.dot(X_b)` is XᵀX, inverted, then dotted with Xᵀ and y.",
+          "source": "c3 · slide 7"
+        },
+        {
+          "id": "lm-closed-form-meaning",
+          "kind": "short",
+          "prompt": "What term describes a solution computed directly by formula rather than iteratively?",
+          "answers": [
+            "closed form",
+            "closed-form",
+            "closed form solution",
+            "analytic"
+          ],
+          "tier": 2,
+          "source": "c3 · slide 2"
+        },
+        {
+          "id": "lm-parametric-meaning",
+          "kind": "mcq",
+          "prompt": "Why are linear models called parametric?",
+          "options": [
+            "They have a fixed set of parameters, independent of the training set size",
+            "They require hyperparameter tuning",
+            "They only work on parametrised curves",
+            "They store the training data as parameters"
+          ],
+          "answerIndex": 0,
+          "explanation": "Contrast with kNN, which effectively keeps the whole training set — the model grows with the data.",
+          "source": "c3 · slide 2"
+        },
+        {
+          "id": "lm-under-the-hood-why",
+          "kind": "recall",
+          "prompt": "Why does the course say it is worth understanding the simpler algorithms in detail?",
+          "answer": "It is useful **especially when things go wrong**, or when you want to **develop your own novel algorithm**.",
+          "source": "c3 · slide 2"
+        },
+        {
+          "id": "lm-sklearn-fit-attrs",
+          "kind": "mcq",
+          "prompt": "After `lin_reg.fit(X, y)`, which attributes hold the fitted bias and weights?",
+          "options": [
+            "lin_reg.intercept_ and lin_reg.coef_",
+            "lin_reg.bias_ and lin_reg.weights_",
+            "lin_reg.theta0_ and lin_reg.theta_",
+            "lin_reg.b_ and lin_reg.w_"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 9"
+        },
+        {
+          "id": "lm-residual-sign",
+          "kind": "recall",
+          "prompt": "Why does the MSE square the errors rather than just summing them?",
+          "answer": "Because raw errors **cancel**: an overprediction of +5 and an underprediction of −5 would sum to zero and look like a perfect fit.\n\nSquaring makes every error contribute positively, and additionally **penalises large errors disproportionately** — a single error of 10 costs more than ten errors of 1.",
+          "source": "c3 · slide 5"
+        }
+      ]
+    },
+    {
+      "id": "lm-logistic",
+      "title": "Logistic regression",
+      "emphasis": "core",
+      "summary": "Despite the name, a classifier. It runs a linear model through the sigmoid to produce a probability, and has no closed form — so it is trained by gradient descent on the log loss.",
+      "formulas": [
+        {
+          "name": "Sigmoid (logistic) function",
+          "expression": "σ(t) = 1 / (1 + e^(−t))",
+          "note": "Maps any real number into (0, 1). σ(0) = 0.5.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "name": "Logistic regression prediction",
+          "expression": "p̂ = h_θ(x) = σ(xᵀθ)",
+          "note": "A probability between 0 and 1, thresholded at 0.5 to give a class.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "name": "Log loss (per example)",
+          "expression": "c(θ) = −log(p̂)     if y = 1\nc(θ) = −log(1 − p̂) if y = 0",
+          "source": "c3 · slide 11"
+        },
+        {
+          "name": "Log loss (averaged)",
+          "expression": "J(θ) = −(1/m) Σᵢ [ y⁽ⁱ⁾ log(p̂⁽ⁱ⁾) + (1 − y⁽ⁱ⁾) log(1 − p̂⁽ⁱ⁾) ]",
+          "note": "The two cases combined into one expression; one term is always multiplied by zero.",
+          "source": "c3 · slide 11"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lm-logistic-is-classifier",
+          "kind": "mcq",
+          "prompt": "The course calls 'logistic regression' very bad naming. Why?",
+          "options": [
+            "It is a classifier, not a regression method",
+            "It is not logistic, but exponential",
+            "It performs regression but is used for clustering",
+            "It has nothing to do with the logistic function"
+          ],
+          "answerIndex": 0,
+          "explanation": "It uses something that *looks like* linear regression inside the logistic function, but its output is a class probability.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "id": "lm-sigmoid-formula",
+          "kind": "recall",
+          "prompt": "Write the sigmoid function and describe its shape.",
+          "answer": "`σ(t) = 1 / (1 + e^(−t))` — equivalently `1 / (1 + exp(−t))`.\n\nAn S-shaped curve mapping all real numbers into **(0, 1)**. It passes through **0.5 at t = 0**, tends to 0 as t → −∞ and to 1 as t → +∞.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "id": "lm-sigmoid-compute",
+          "kind": "computation",
+          "prompt": "A logistic model computes xᵀθ = {{t}}. Using the standard 0.5 threshold, which class does it predict — 1 or 0?",
+          "vars": {
+            "t": {
+              "type": "choice",
+              "values": [
+                -3.2,
+                -2.5,
+                -1.4,
+                -0.8,
+                -0.3,
+                0.3,
+                0.9,
+                1.6,
+                2.4,
+                3.1
+              ]
+            }
+          },
+          "derived": {
+            "c": "max(0, sign(t))"
+          },
+          "steps": [
+            {
+              "text": "`σ(t) = 1 / (1 + e^(−t))` is increasing, and `σ(0) = 0.5`."
+            },
+            {
+              "text": "So `p̂ > 0.5` exactly when `t > 0` — the sign of xᵀθ decides the class, no exponentials needed."
+            },
+            {
+              "text": "Here `t = {{t}}`, so the prediction is class **{{c}}**."
+            }
+          ],
+          "answer": {
+            "expr": "max(0, sign(t))",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Three values are worth carrying in: `σ(0) = 0.5`, `σ(t) → 1` as t → +∞, `σ(t) → 0` as t → −∞. Everything between is monotone, so a decision at the 0.5 threshold is just a question about the sign of xᵀθ.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "id": "lm-sigmoid-at-zero",
+          "kind": "mcq",
+          "prompt": "What is σ(0)?",
+          "options": [
+            "0.5",
+            "0",
+            "1",
+            "e"
+          ],
+          "answerIndex": 0,
+          "explanation": "1/(1 + e⁰) = 1/2. This is why the decision boundary sits where xᵀθ = 0.",
+          "source": "c3 · slide 10"
+        },
+        {
+          "id": "lm-no-closed-form",
+          "kind": "mcq",
+          "prompt": "How is logistic regression trained, and why?",
+          "options": [
+            "Gradient descent — there is no closed-form solution",
+            "The normal equation, as for linear regression",
+            "SVD of the feature matrix",
+            "By maximising the Gini index"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 11"
+        },
+        {
+          "id": "lm-log-loss-cases",
+          "kind": "recall",
+          "prompt": "Write the per-example logistic cost for each class, and explain its shape.",
+          "answer": "`c(θ) = −log(p̂)` when `y = 1`\n`c(θ) = −log(1 − p̂)` when `y = 0`\n\nWhen y = 1 and p̂ is near 1, −log(p̂) is near 0 — almost no cost. As p̂ → 0 the cost goes to **infinity**: being confidently wrong is punished without limit.",
+          "source": "c3 · slide 11"
+        },
+        {
+          "id": "lm-logloss-compute",
+          "kind": "short",
+          "tier": 2,
+          "prompt": "A single example has true label y = 1 and the model predicts p̂ = 0.2. Write down its log loss (you are not expected to evaluate the log).",
+          "answers": [
+            "-ln(0.2)",
+            "−ln(0.2)",
+            "-log(0.2)",
+            "-ln 0.2",
+            "-log 0.2",
+            "ln(1/0.2)",
+            "ln(5)",
+            "-ln(0.2) = ln 5"
+          ],
+          "source": "c3 · slide 11",
+          "explanation": "The per-example log loss is `c(θ) = −log(p̂)` when `y = 1` and `−log(1 − p̂)` when `y = 0`. Only the probability assigned to the **true** label enters.\n\nThe shape is what matters: the loss is **0 when p̂ = 1** and grows without bound as p̂ → 0, so a confident wrong answer is punished far harder than a hedged one."
+        },
+        {
+          "id": "lm-logloss-y0-compute",
+          "kind": "mcq",
+          "tier": 2,
+          "prompt": "A single example has true label y = 0 and the model predicts p̂ = 0.9. Which expression is its log loss?",
+          "options": [
+            "−log(0.1)",
+            "−log(0.9)",
+            "log(0.9)",
+            "−log(0.9) − log(0.1)"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 11",
+          "explanation": "For `y = 0` the loss is `−log(1 − p̂) = −log(0.1)`. The model put 90% on the wrong class, so this is a large loss — which is the point of the check: substitute into the wrong branch and you get `−log(0.9)`, a small loss, and conclude the model did well."
+        },
+        {
+          "id": "lm-combined-logloss",
+          "kind": "recall",
+          "prompt": "Write the averaged log loss over m examples, and explain why the two-case definition collapses into it.",
+          "answer": "`J(θ) = −(1/m) Σᵢ [ y⁽ⁱ⁾ log(p̂⁽ⁱ⁾) + (1 − y⁽ⁱ⁾) log(1 − p̂⁽ⁱ⁾) ]`\n\nBecause y is 0 or 1, exactly **one term survives** per example: with y = 1 the second term is multiplied by 0, and with y = 0 the first is. It is the two-case definition written without an `if`.",
+          "source": "c3 · slide 11"
+        },
+        {
+          "id": "lm-iris-boundary",
+          "kind": "mcq",
+          "prompt": "In the Iris example using petal width to detect Iris-Virginica, roughly where does the decision boundary fall?",
+          "options": [
+            "About 1.6 cm",
+            "About 0.5 cm",
+            "About 2.5 cm",
+            "About 3.0 cm"
+          ],
+          "answerIndex": 0,
+          "explanation": "Where the two probability curves cross at 0.5. `log_reg.predict([[1.7], [1.5]])` returns `[1, 0]`, straddling it.",
+          "source": "c3 · slide 13"
+        },
+        {
+          "id": "lm-c-parameter",
+          "kind": "mcq",
+          "prompt": "In sklearn's LogisticRegression, what does a **high** value of C mean?",
+          "options": [
+            "Little regularization — C is the cost of prediction errors",
+            "Strong regularization",
+            "More iterations of gradient descent",
+            "A higher classification threshold"
+          ],
+          "answerIndex": 0,
+          "explanation": "The direction is the trap: C is the *inverse* of regularization strength, unlike alpha in Ridge and Lasso where higher means more.",
+          "source": "c3 · slide 14"
+        },
+        {
+          "id": "lm-c-vs-alpha",
+          "kind": "recall",
+          "prompt": "Contrast the direction of C in LogisticRegression with alpha in Ridge regression.",
+          "answer": "They run in **opposite directions**.\n\n**C** stands for the *cost of prediction errors*: a high C means errors matter more than small coefficients, so there is **little regularization**.\n\n**alpha** is the weight on the penalty term: a high alpha means **more regularization**, pulling coefficients toward zero.",
+          "source": "c3 · slides 14, 28"
+        },
+        {
+          "id": "lm-predict-proba",
+          "kind": "mcq",
+          "prompt": "Which method returns the probabilities rather than the class labels?",
+          "options": [
+            "predict_proba",
+            "predict",
+            "decision_function",
+            "score"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 13"
+        },
+        {
+          "id": "lm-sigmoid-threshold",
+          "kind": "cloze",
+          "prompt": "Logistic regression predicts class 1 when p̂ ≥ {{1}}, which corresponds to xᵀθ ≥ {{2}}.",
+          "blanks": [
+            [
+              "0.5",
+              ".5"
+            ],
+            [
+              "0",
+              "zero"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slides 10, 13"
+        },
+        {
+          "id": "lm-iris-target-code",
+          "kind": "mcq",
+          "prompt": "The Iris example uses `y = (iris[\"target\"] == 2).astype(np.int)`. What does this produce?",
+          "options": [
+            "1 if Iris-Virginica, else 0 — a binary target",
+            "The original three-class target",
+            "A probability for each class",
+            "The petal width column"
+          ],
+          "answerIndex": 0,
+          "explanation": "It collapses a three-class problem into a binary one, which is what plain logistic regression needs.",
+          "source": "c3 · slide 12"
+        },
+        {
+          "id": "lm-linear-inside",
+          "kind": "recall",
+          "prompt": "Where exactly is the 'linear' part of logistic regression?",
+          "answer": "**Inside** the sigmoid. The model computes the linear combination `xᵀθ` exactly as linear regression would, then passes that single number through `σ` to squash it into a probability.\n\nSo the **decision boundary is still linear** — it is the set of points where `xᵀθ = 0` — even though the output is a curved probability.",
+          "source": "c3 · slide 10"
+        }
+      ]
+    },
+    {
+      "id": "lm-softmax",
+      "title": "Softmax regression",
+      "emphasis": "core",
+      "summary": "The generalisation of logistic regression to K classes. The sigmoid becomes softmax, and the log loss becomes cross-entropy.",
+      "formulas": [
+        {
+          "name": "Softmax function",
+          "expression": "p̂_k = σ(s(x))_k = exp(s_k(x)) / Σⱼ₌₁ᴷ exp(s_j(x))",
+          "note": "s_k is the score for class k. The K outputs are positive and sum to 1.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "name": "Cross-entropy cost",
+          "expression": "J(Θ) = −(1/m) Σᵢ Σₖ y_k⁽ⁱ⁾ log(p̂_k⁽ⁱ⁾)",
+          "note": "The generalisation of log loss to K classes.",
+          "source": "c3 · slide 15"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lm-softmax-names",
+          "kind": "recall",
+          "prompt": "Give the two names for the multi-class generalisation of logistic regression.",
+          "answer": "**Softmax regression** and **Multinomial Logistic Regression**.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-formula",
+          "kind": "recall",
+          "prompt": "Write the softmax function and state its two defining properties.",
+          "answer": "`p̂_k = exp(s_k(x)) / Σⱼ exp(s_j(x))` over K classes.\n\nProperties: every output is **positive** (exp is always positive), and the outputs **sum to 1** (the denominator is the sum of all the numerators). So the vector is a valid probability distribution.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-sums-to-one",
+          "kind": "mcq",
+          "prompt": "Why do the softmax outputs necessarily sum to 1?",
+          "options": [
+            "Every output is divided by the sum of all the numerators",
+            "Because exp is a monotone function",
+            "Because the scores are normalised before the exponential",
+            "They do not — they are only guaranteed to be positive"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-two-class",
+          "kind": "computation",
+          "prompt": "A two-class softmax has scores s₁ = {{a}} and s₂ = {{b}}. Which class does it predict — 1 or 2?",
+          "vars": {
+            "a": {
+              "type": "choice",
+              "values": [
+                -2.4,
+                -1.1,
+                -0.5,
+                0.6,
+                1.3,
+                2.2,
+                3
+              ]
+            },
+            "b": {
+              "type": "choice",
+              "values": [
+                -2.9,
+                -1.6,
+                -0.2,
+                0.9,
+                1.8,
+                2.7
+              ]
+            }
+          },
+          "derived": {
+            "k": "1 + max(0, sign(b - a))"
+          },
+          "steps": [
+            {
+              "text": "`p̂_k = exp(s_k) / Σⱼ exp(s_j)`. Every term shares the same denominator, and `exp` is increasing."
+            },
+            {
+              "text": "So the **largest score gets the largest probability** — argmax of the probabilities is argmax of the scores."
+            },
+            {
+              "text": "`{{a}}` vs `{{b}}` ⇒ class **{{k}}**."
+            }
+          ],
+          "answer": {
+            "expr": "1 + max(0, sign(b - a))",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "This is the reason c4 can call `np.argmax(some_digit_scores)` on raw decision-function scores and get the predicted class without ever normalising them.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-three-class",
+          "kind": "computation",
+          "prompt": "A three-class softmax outputs p̂₁ = {{p1}} and p̂₂ = {{p2}}. What is p̂₃?",
+          "vars": {
+            "p1": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.15,
+                0.25,
+                0.4,
+                0.5,
+                0.6
+              ]
+            },
+            "p2": {
+              "type": "choice",
+              "values": [
+                0.05,
+                0.1,
+                0.2,
+                0.25,
+                0.3
+              ]
+            }
+          },
+          "derived": {
+            "p3": "1 - p1 - p2"
+          },
+          "steps": [
+            {
+              "text": "Softmax divides by `Σⱼ exp(s_j)`, so the outputs are guaranteed to lie in [0, 1] and **sum to 1**."
+            },
+            {
+              "text": "`p̂₃ = 1 − {{p1}} − {{p2}}`"
+            },
+            {
+              "text": "`= {{p3 | 2}}`"
+            }
+          ],
+          "answer": {
+            "expr": "1 - p1 - p2",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c3 · slide 15",
+          "explanation": "c6a makes the same point about the last Keras layer: softmax is there \"to ensure all values are in [0.0, 1.0], and sum to 1.0\". Predicted class is the argmax — here, whichever of the three is largest."
+        },
+        {
+          "id": "lm-cross-entropy-name",
+          "kind": "short",
+          "prompt": "What is the cost function used with softmax regression called?",
+          "answers": [
+            "cross entropy",
+            "cross-entropy",
+            "cross entropy cost",
+            "cross entropy loss"
+          ],
+          "tier": 2,
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-cross-entropy-formula",
+          "kind": "cloze",
+          "prompt": "Cross-entropy is J(Θ) = −(1/{{1}}) Σᵢ Σₖ y_k⁽ⁱ⁾ {{2}}(p̂_k⁽ⁱ⁾).",
+          "blanks": [
+            [
+              "m"
+            ],
+            [
+              "log",
+              "ln"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-sklearn",
+          "kind": "mcq",
+          "prompt": "How is softmax regression invoked in the sklearn example?",
+          "options": [
+            "LogisticRegression(multi_class=\"multinomial\", solver=\"lbfgs\", C=10)",
+            "SoftmaxRegression(classes=3)",
+            "LogisticRegression(multi_class=\"ovr\")",
+            "MultinomialNB()"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same class as binary logistic regression, switched into multinomial mode.",
+          "source": "c3 · slide 16"
+        },
+        {
+          "id": "lm-softmax-argmax",
+          "kind": "mcq",
+          "prompt": "Given softmax probabilities, how is the predicted class chosen?",
+          "options": [
+            "The class with the highest probability",
+            "The class whose probability exceeds 0.5",
+            "By sampling from the distribution",
+            "The class with the highest raw score before exponentiation"
+          ],
+          "answerIndex": 0,
+          "explanation": "Note the second option fails whenever no class reaches 0.5, which is common with many classes.",
+          "source": "c3 · slide 16"
+        },
+        {
+          "id": "lm-softmax-cross-entropy-single",
+          "kind": "mcq",
+          "tier": 2,
+          "prompt": "Model A assigns probability 0.9 to the true class; model B assigns it 0.3. Which incurs the larger cross-entropy loss on that example, and why?",
+          "options": [
+            "B — the loss is −log(p̂) of the true class, which grows as p̂ falls",
+            "A — the loss rises with the probability assigned to the true class",
+            "They are equal — cross-entropy only counts whether the argmax is right",
+            "Neither — cross-entropy is only defined over a whole batch"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 15",
+          "explanation": "The cross-entropy cost `J(Θ) = −(1/m) ΣᵢΣₖ y_k log(p̂_k)` keeps only the term for the true class, because every other `y_k` is 0. So a single example contributes `−log(p̂_true)`: **0 when the model is certain and right**, and unbounded as the true class's probability approaches 0."
+        },
+        {
+          "id": "lm-softmax-generalises",
+          "kind": "recall",
+          "prompt": "How does softmax regression relate to logistic regression?",
+          "answer": "It is the **generalisation to K classes**.\n\n- The **sigmoid** generalises to the **softmax** function.\n- The **log loss** generalises to the **cross-entropy** cost.\n\nWith K = 2 the two coincide.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-probs-check",
+          "kind": "mcq",
+          "prompt": "A softmax layer outputs [0.2, 0.5, 0.4]. What is wrong?",
+          "options": [
+            "They sum to 1.1, so they cannot be softmax outputs",
+            "Nothing — softmax outputs need not sum to 1",
+            "The largest should be first",
+            "Softmax cannot output values above 0.5"
+          ],
+          "answerIndex": 0,
+          "explanation": "Softmax outputs sum to exactly 1 by construction. A sum of 1.1 means these came from something else — sigmoids applied independently, for instance.",
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-scores-term",
+          "kind": "short",
+          "prompt": "In the softmax formula, what does s_k(x) denote?",
+          "answers": [
+            "the score for class k",
+            "score for class k",
+            "the score of class k",
+            "class k score"
+          ],
+          "tier": 2,
+          "source": "c3 · slide 15"
+        },
+        {
+          "id": "lm-softmax-iris-output",
+          "kind": "mcq",
+          "prompt": "`softmax_reg.predict_proba([[5, 2]])` returns `[[6.38e-07, 5.75e-02, 9.43e-01]]`. What is predicted?",
+          "options": [
+            "Class 2, with about 94% probability",
+            "Class 0, since it is listed first",
+            "Class 1, with about 5.7% probability",
+            "No class, since none reaches 0.99"
+          ],
+          "answerIndex": 0,
+          "explanation": "argmax of the three probabilities. And they sum to ~1, as softmax outputs must.",
+          "source": "c3 · slide 16"
+        },
+        {
+          "id": "lm-softmax-largest-score",
+          "kind": "recall",
+          "prompt": "Does softmax ever change which class has the highest value, compared with the raw scores?",
+          "answer": "No. `exp` is **monotonically increasing** and the denominator is the same for every class, so the ordering of the probabilities matches the ordering of the scores.\n\nSoftmax changes the *values* into a probability distribution; it does not change *which* is largest. That is why `np.argmax` on raw scores gives the same prediction.",
+          "source": "c3 · slide 15; c4 · slide 27"
+        }
+      ]
+    },
+    {
+      "id": "lm-polynomial",
+      "title": "Polynomial regression",
+      "emphasis": "standard",
+      "summary": "Non-linear data fitted with a linear model, by adding powers of the existing features. The model stays linear in its parameters; only the features change.",
+      "questions": [
+        {
+          "id": "lm-poly-trick",
+          "kind": "recall",
+          "prompt": "How does polynomial regression fit non-linear data with a linear model?",
+          "answer": "By **adding derived features** — powers of the existing ones — and then running ordinary **linear regression** on the expanded feature set.\n\nThe model is still linear *in the parameters*; it is the feature space that has changed.",
+          "source": "c3 · slides 17–19"
+        },
+        {
+          "id": "lm-polyfeatures-call",
+          "kind": "mcq",
+          "prompt": "What does `PolynomialFeatures(degree=2, include_bias=False)` do to a single feature x?",
+          "options": [
+            "Produces [x, x²]",
+            "Produces [1, x, x²]",
+            "Produces [x², x³]",
+            "Produces [x, 2x]"
+          ],
+          "answerIndex": 0,
+          "explanation": "`include_bias=False` drops the constant 1 column, since LinearRegression adds its own intercept. The example shows −0.7528 becoming [−0.7528, 0.5666] — and 0.5666 ≈ 0.7528².",
+          "source": "c3 · slide 18"
+        },
+        {
+          "id": "lm-poly-degree-300",
+          "kind": "mcq",
+          "prompt": "In the 'too many new features' plot, the degree-300 curve:",
+          "options": [
+            "Oscillates wildly, passing near individual points — badly overfitted",
+            "Is nearly a straight line",
+            "Matches the degree-2 curve closely",
+            "Fails to fit the training data at all"
+          ],
+          "answerIndex": 0,
+          "explanation": "Degree 1 underfits (a straight line), degree 2 fits well, degree 300 overfits spectacularly.",
+          "source": "c3 · slide 20"
+        },
+        {
+          "id": "lm-poly-underlying",
+          "kind": "mcq",
+          "prompt": "The data is generated as `y = 0.5 * X**2 + X + 2 + noise`. Which polynomial degree should fit best?",
+          "options": [
+            "2",
+            "1",
+            "10",
+            "300"
+          ],
+          "answerIndex": 0,
+          "explanation": "Matching the true generating degree. Higher degrees have the capacity to fit but start modelling the noise.",
+          "source": "c3 · slides 17, 20"
+        },
+        {
+          "id": "lm-poly-still-linear",
+          "kind": "recall",
+          "prompt": "Why is polynomial regression still called a linear model?",
+          "answer": "Because it is **linear in the parameters**. The fitted function `ŷ = θ₀ + θ₁x + θ₂x²` is a curve in x, but the coefficients θ enter linearly — so the normal equation and everything else about linear regression still applies.\n\nOnly the *features* changed; the *model* did not.",
+          "source": "c3 · slides 18–19"
+        },
+        {
+          "id": "lm-poly-pipeline",
+          "kind": "mcq",
+          "prompt": "How does the course combine polynomial features with linear regression?",
+          "options": [
+            "With a `Pipeline` holding poly_features then lin_reg",
+            "By calling fit twice in sequence",
+            "By passing degree= to LinearRegression",
+            "By subclassing LinearRegression"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 23"
+        },
+        {
+          "id": "lm-poly-feature-count",
+          "kind": "computation",
+          "prompt": "A single feature x is expanded with `PolynomialFeatures(degree={{d}}, include_bias=False)`. How many features result?",
+          "vars": {
+            "d": {
+              "type": "int",
+              "min": 2,
+              "max": 10
+            }
+          },
+          "steps": [
+            {
+              "text": "With one input feature, the expansion produces `x, x², …, x^d`."
+            },
+            {
+              "text": "`include_bias=False` means no constant column is added."
+            },
+            {
+              "text": "So the count is simply `{{d}}`."
+            }
+          ],
+          "answer": {
+            "expr": "d",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "With more than one input feature the count grows much faster, because cross terms like x₁x₂ appear too.",
+          "source": "c3 · slide 18"
+        },
+        {
+          "id": "lm-poly-predict-compute",
+          "kind": "computation",
+          "prompt": "A degree-2 model is ŷ = {{c}} + {{b}}x + {{a}}x². Predict at x = {{x}}.",
+          "vars": {
+            "c": {
+              "type": "int",
+              "min": 1,
+              "max": 6
+            },
+            "b": {
+              "type": "int",
+              "min": 1,
+              "max": 5
+            },
+            "a": {
+              "type": "int",
+              "min": 1,
+              "max": 4
+            },
+            "x": {
+              "type": "int",
+              "min": -4,
+              "max": 4
+            }
+          },
+          "steps": [
+            {
+              "text": "Substitute x into each term."
+            },
+            {
+              "text": "`x² = {{x^2}}`, so the terms are `{{c}}`, `{{b*x}}` and `{{a*(x^2)}}`."
+            },
+            {
+              "text": "`ŷ = {{c + b*x + a*(x^2)}}`"
+            }
+          ],
+          "answer": {
+            "expr": "c + b*x + a*(x^2)",
+            "tolerance": 0.001,
+            "decimals": 3
+          },
+          "source": "c3 · slide 19"
+        },
+        {
+          "id": "lm-poly-degree-complexity",
+          "kind": "cloze",
+          "prompt": "Increasing the polynomial degree {{1}} model complexity and {{2}} the risk of overfitting.",
+          "blanks": [
+            [
+              "increases",
+              "raises"
+            ],
+            [
+              "increases",
+              "raises"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slide 20"
+        },
+        {
+          "id": "lm-poly-degree-1",
+          "kind": "mcq",
+          "prompt": "What is degree-1 polynomial regression equivalent to?",
+          "options": [
+            "Ordinary linear regression",
+            "Logistic regression",
+            "kNN with k = 1",
+            "A decision stump"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slides 19–20"
+        },
+        {
+          "id": "lm-poly-derived-feature",
+          "kind": "short",
+          "prompt": "What does the course call the extra x² column added before fitting?",
+          "answers": [
+            "a derived feature",
+            "derived feature",
+            "derived features"
+          ],
+          "tier": 2,
+          "source": "c3 · slide 18"
+        },
+        {
+          "id": "lm-poly-overfit-fix",
+          "kind": "recall",
+          "prompt": "A degree-10 polynomial is overfitting. Give two ways to address it without changing the degree.",
+          "answer": "1. **More training data** — a larger sample constrains the extra capacity.\n2. **Regularization** — Ridge or Lasso shrink the high-degree coefficients toward zero, so the extra terms are available but not freely used.\n\nc3 shows exactly this: the same degree-10 model with `α = 0`, `1e-05` and `1`.",
+          "source": "c3 · slides 25, 29"
+        },
+        {
+          "id": "lm-poly-two-features",
+          "kind": "mcq",
+          "prompt": "With two input features x₁ and x₂ at degree 2, what does PolynomialFeatures add beyond the squares?",
+          "options": [
+            "The cross term x₁x₂",
+            "Nothing — only squares are added",
+            "The reciprocals 1/x₁ and 1/x₂",
+            "The logs of each feature"
+          ],
+          "answerIndex": 0,
+          "explanation": "Interaction terms are why the feature count explodes so quickly with several inputs.",
+          "source": "c3 · slide 18"
+        },
+        {
+          "id": "lm-poly-plot-reading",
+          "kind": "mcq",
+          "prompt": "In the 'too many new features' plot the legend reads 300, 2, 1. Which line is closest to the underlying data-generating function?",
+          "options": [
+            "2",
+            "300",
+            "1",
+            "All three fit equally"
+          ],
+          "answerIndex": 0,
+          "explanation": "The data was generated from a quadratic, so degree 2 is the honest fit; 1 underfits and 300 overfits.",
+          "source": "c3 · slides 17, 20"
+        },
+        {
+          "id": "lm-poly-scaling",
+          "kind": "recall",
+          "prompt": "Why does polynomial expansion make feature scaling more important?",
+          "answer": "Because raising a feature to a power **magnifies scale differences**. A feature around 100 becomes 10 000 when squared and 10⁶ when cubed, while a feature around 1 stays near 1.\n\nThe resulting columns differ by orders of magnitude, which matters for both gradient descent and any regularization penalty that treats all coefficients alike.",
+          "source": "c3 · slides 18, 28"
+        }
+      ]
+    },
+    {
+      "id": "lm-learning-curves",
+      "title": "Learning curves",
+      "emphasis": "core",
+      "summary": "Training and validation error plotted against training set size. The gap between the two curves, and the height they settle at, diagnose which of over- or underfitting you have.",
+      "questions": [
+        {
+          "id": "lm-learning-curve-axes",
+          "kind": "mcq",
+          "prompt": "What is plotted on a learning curve?",
+          "options": [
+            "RMSE for train and validation against training set size",
+            "RMSE against model complexity",
+            "Accuracy against number of epochs",
+            "Loss against learning rate"
+          ],
+          "answerIndex": 0,
+          "explanation": "Note the x-axis is training set *size*, not complexity — that is the complexity/error curve in c4.",
+          "source": "c3 · slides 21–22"
+        },
+        {
+          "id": "lm-learning-curve-simple",
+          "kind": "recall",
+          "prompt": "Describe the learning curves for a plain linear model on quadratic data, and what they mean.",
+          "answer": "Training error starts near zero (a couple of points are fitted perfectly), rises quickly, then **plateaus around 1.7–1.8 RMSE**. Validation error starts very high, falls, and **settles at a similar level**.\n\nThe two curves are **close together and both high** — the signature of **underfitting**. The model cannot capture the pattern, so more data does not help.",
+          "source": "c3 · slide 22"
+        },
+        {
+          "id": "lm-learning-curve-complex",
+          "kind": "recall",
+          "prompt": "Describe the learning curves for a degree-10 polynomial, and what they mean.",
+          "answer": "Training error stays **low** (around 0.8 or below). Validation error comes down but settles **noticeably higher**, around 1.1.\n\nThe **gap between the curves** is the signature of **overfitting**: the model does much better on data it has seen than on data it has not.",
+          "source": "c3 · slide 24"
+        },
+        {
+          "id": "lm-curve-gap-meaning",
+          "kind": "mcq",
+          "prompt": "A large persistent gap between training and validation curves indicates:",
+          "options": [
+            "Overfitting",
+            "Underfitting",
+            "A bad learning rate",
+            "Too little data cleaning"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slides 22, 24"
+        },
+        {
+          "id": "lm-curves-both-high",
+          "kind": "mcq",
+          "prompt": "Both curves plateau at a high error, close together. What should you do?",
+          "options": [
+            "Use a more complex model or better features",
+            "Collect more training data",
+            "Add regularization",
+            "Reduce the number of features"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is underfitting. Adding data to an underfitting model changes nothing — the curves have already converged.",
+          "source": "c3 · slides 22, 25"
+        },
+        {
+          "id": "lm-more-data-overfit",
+          "kind": "recall",
+          "prompt": "When does adding more training data help, and when is it wasted?",
+          "answer": "**Helps** when the model is **overfitting** — there is a gap between the curves, and more data pulls the validation curve down toward the training curve.\n\n**Wasted** when the model is **underfitting** — the curves have already met at a high error, so more of the same data cannot close a gap that is not there.",
+          "source": "c3 · slides 22, 24–25"
+        },
+        {
+          "id": "lm-curve-train-starts-low",
+          "kind": "recall",
+          "prompt": "Why does the training curve start at essentially zero error?",
+          "answer": "With only one or two training examples, the model can fit them **exactly** — a straight line through two points has zero error.\n\nAs examples are added the model can no longer pass through all of them, so training error rises and then levels off.",
+          "source": "c3 · slide 22"
+        },
+        {
+          "id": "lm-plot-learning-curves-code",
+          "kind": "mcq",
+          "prompt": "In `plot_learning_curves`, the loop is `for m in range(1, len(X_train))` with `model.fit(X_train[:m], y_train[:m])`. What is it doing?",
+          "options": [
+            "Refitting on progressively larger prefixes of the training set",
+            "Running m epochs of gradient descent",
+            "Cross-validating over m folds",
+            "Trying m different polynomial degrees"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 21"
+        },
+        {
+          "id": "lm-curve-metric",
+          "kind": "mcq",
+          "prompt": "The code appends `mean_squared_error(...)` but plots `np.sqrt(train_errors)`. What is on the y-axis?",
+          "options": [
+            "RMSE",
+            "MSE",
+            "MAE",
+            "R²"
+          ],
+          "answerIndex": 0,
+          "explanation": "The square root of MSE. Plotting RMSE keeps the y-axis in the same units as the target.",
+          "source": "c3 · slide 21"
+        },
+        {
+          "id": "lm-curve-val-starts-high",
+          "kind": "recall",
+          "prompt": "Why does the validation curve start very high?",
+          "answer": "A model fitted to one or two examples **generalises terribly**. It has seen almost nothing, so its predictions on the held-out validation set are close to arbitrary.\n\nAs training data accumulates the model becomes meaningful and the validation error falls.",
+          "source": "c3 · slide 22"
+        },
+        {
+          "id": "lm-underfit-overfit-fixes",
+          "kind": "recall",
+          "prompt": "State the course's summary of how to fix underfitting and overfitting.",
+          "answer": "**Underfitting:** use a more complex model, or use better (and more) features.\n\n**Overfitting:** use more data, or a less complex / more constrained model.",
+          "source": "c3 · slide 25"
+        },
+        {
+          "id": "lm-curve-gap-compute",
+          "kind": "computation",
+          "prompt": "At the right-hand end of a learning curve, training RMSE is {{tr}} and validation RMSE is {{va}}. How large is the generalization gap?",
+          "vars": {
+            "tr": {
+              "type": "float",
+              "min": 0.4,
+              "max": 1.2,
+              "decimals": 2
+            },
+            "va": {
+              "type": "float",
+              "min": 1.4,
+              "max": 2.6,
+              "decimals": 2
+            }
+          },
+          "steps": [
+            {
+              "text": "The gap is validation error minus training error."
+            },
+            {
+              "text": "`{{va}} − {{tr}}`"
+            },
+            {
+              "text": "`= {{va - tr | 2}}` — a clear gap, so this model is overfitting."
+            }
+          ],
+          "answer": {
+            "expr": "va - tr",
+            "tolerance": 0.005,
+            "decimals": 2
+          },
+          "source": "c3 · slide 24; c4 · slide 2"
+        },
+        {
+          "id": "lm-curve-diagnosis-scenario",
+          "kind": "recall",
+          "prompt": "Training RMSE plateaus at 0.8 and validation RMSE at 1.1, with the gap not closing as data is added. Diagnose it and give two fixes.",
+          "answer": "**Overfitting** — the persistent gap says the model does better on seen data than unseen.\n\nFixes: **more training data** (the gap is the kind that closes with data), or a **less complex / more constrained model** — a lower polynomial degree, or Ridge/Lasso regularization.",
+          "source": "c3 · slides 24–25"
+        },
+        {
+          "id": "lm-curve-vs-complexity-curve",
+          "kind": "recall",
+          "prompt": "Distinguish a learning curve from the training-vs-test-error-against-complexity curve in c4.",
+          "answer": "A **learning curve** plots error against **training set size**, holding the model fixed. It tells you whether more *data* would help.\n\nThe **c4 complexity curve** plots error against **model complexity**, holding the data fixed. It tells you whether a different *model* would help.\n\nDifferent x-axes, different questions.",
+          "source": "c3 · slide 22; c4 · slide 2"
+        },
+        {
+          "id": "lm-curve-test-size",
+          "kind": "mcq",
+          "prompt": "The learning curve code calls `train_test_split(X, y, test_size=0.2)`. What proportion is held out for validation?",
+          "options": [
+            "20%",
+            "80%",
+            "10%",
+            "50%"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 21"
+        }
+      ]
+    },
+    {
+      "id": "lm-bias-variance",
+      "title": "Bias–variance tradeoff",
+      "emphasis": "core",
+      "summary": "Generalization error decomposes into three parts. Two of them trade against each other along the complexity axis; the third cannot be reduced by any choice of model.",
+      "formulas": [
+        {
+          "name": "Error decomposition",
+          "expression": "Generalization error = Bias + Variance + Irreducible error",
+          "source": "c3 · slide 26; c4 · slide 5"
+        }
+      ],
+      "keyFacts": [
+        {
+          "term": "Bias",
+          "definition": "Error from **wrong assumptions**, e.g. assuming linear when the truth is quadratic. High bias ⇒ underfitting.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "term": "Variance",
+          "definition": "Sensitivity to **small changes in the data**. A complex model has high variance ⇒ overfitting.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "term": "Irreducible error",
+          "definition": "**Noise in the data**. Cleaning the data might improve it; no choice of model can.",
+          "source": "c3 · slide 26"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lm-decomposition-three",
+          "kind": "recall",
+          "prompt": "Write the error decomposition and define each term.",
+          "answer": "`Generalization error = Bias + Variance + Irreducible error`\n\n**Bias** — wrong assumptions, e.g. fitting linear to quadratic data. High bias ⇒ underfitting.\n**Variance** — sensitivity to small data changes. Complex model ⇒ high variance ⇒ overfitting.\n**Irreducible error** — noise in the data. Only cleaning the data can help.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-bias-underfit",
+          "kind": "cloze",
+          "prompt": "High bias leads to {{1}}fitting; high variance leads to {{2}}fitting.",
+          "blanks": [
+            [
+              "under"
+            ],
+            [
+              "over"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-complexity-direction",
+          "kind": "mcq",
+          "prompt": "As model complexity increases, what happens to bias and variance?",
+          "options": [
+            "Bias falls, variance rises",
+            "Bias rises, variance falls",
+            "Both rise",
+            "Both fall"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide states it both ways: high complexity ⇒ high variance, low bias; low complexity ⇒ low variance, high bias.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-irreducible-fix",
+          "kind": "mcq",
+          "prompt": "What, if anything, can reduce the irreducible error?",
+          "options": [
+            "Cleaning the data",
+            "A more complex model",
+            "More training examples",
+            "Nothing at all"
+          ],
+          "answerIndex": 0,
+          "explanation": "It is irreducible with respect to the *model*, not with respect to the *data*. The slide says cleaning the data might improve the result.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-bullseye-lowbias-highvar",
+          "kind": "mcq",
+          "prompt": "In the bullseye diagram, which quadrant shows shots scattered widely but centred on the target?",
+          "options": [
+            "Low bias, high variance",
+            "High bias, low variance",
+            "Low bias, low variance",
+            "High bias, high variance"
+          ],
+          "answerIndex": 0,
+          "explanation": "Centred = low bias; scattered = high variance. Tightly grouped but off-centre would be high bias, low variance.",
+          "source": "c3 · slide 27"
+        },
+        {
+          "id": "lm-bullseye-highbias-lowvar",
+          "kind": "mcq",
+          "prompt": "Shots tightly grouped but well away from the centre correspond to:",
+          "options": [
+            "High bias, low variance",
+            "Low bias, high variance",
+            "Low bias, low variance",
+            "High irreducible error"
+          ],
+          "answerIndex": 0,
+          "explanation": "Consistent (low variance) but consistently wrong (high bias) — an underfitting model.",
+          "source": "c3 · slide 27"
+        },
+        {
+          "id": "lm-linear-on-quadratic",
+          "kind": "recall",
+          "prompt": "A linear model is fitted to quadratic data. Which error term is large, and why?",
+          "answer": "**Bias** is large. The assumption that the relationship is linear is simply **wrong**, and no amount of data will fix a model that cannot represent a curve.\n\nVariance is low — refitting on a different sample gives a similar line — but it is a similarly wrong line every time.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-best-model-tradeoff",
+          "kind": "mcq",
+          "prompt": "The most performant model on new data is the one with:",
+          "options": [
+            "The best tradeoff between bias and variance",
+            "The lowest bias regardless of variance",
+            "The lowest variance regardless of bias",
+            "Zero irreducible error"
+          ],
+          "answerIndex": 0,
+          "source": "c4 · slide 4"
+        },
+        {
+          "id": "lm-underfit-combination",
+          "kind": "cloze",
+          "prompt": "High bias plus low variance is {{1}}fitting. Low bias plus high variance is {{2}}fitting.",
+          "blanks": [
+            [
+              "under"
+            ],
+            [
+              "over"
+            ]
+          ],
+          "tier": 2,
+          "source": "c4 · slide 4"
+        },
+        {
+          "id": "lm-variance-definition",
+          "kind": "short",
+          "prompt": "Which error component measures a model's sensitivity to small changes in the training data?",
+          "answers": [
+            "variance"
+          ],
+          "tier": 2,
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-tree-instability-variance",
+          "kind": "recall",
+          "prompt": "Decision trees are called 'unstable' in c2. Which error component is that, and what does it imply?",
+          "answer": "**High variance** — a small change in the training data produces a very different tree, which is exactly the definition of variance.\n\nIt implies a fully grown tree tends to **overfit**, and it is why averaging many trees in an ensemble helps: averaging reduces variance without raising bias much.",
+          "source": "c2 · slide 14; c3 · slide 26"
+        },
+        {
+          "id": "lm-decomposition-compute",
+          "kind": "computation",
+          "prompt": "A model has bias contribution {{b}}, variance contribution {{v}} and irreducible error {{i}}. Give the generalization error, to 3 dp.",
+          "vars": {
+            "b": {
+              "type": "float",
+              "min": 0.1,
+              "max": 2.5,
+              "decimals": 2
+            },
+            "v": {
+              "type": "float",
+              "min": 0.1,
+              "max": 2.5,
+              "decimals": 2
+            },
+            "i": {
+              "type": "float",
+              "min": 0.05,
+              "max": 0.8,
+              "decimals": 2
+            }
+          },
+          "steps": [
+            {
+              "text": "The decomposition is `Generalization error = Bias + Variance + Irreducible error`."
+            },
+            {
+              "text": "`{{b}} + {{v}} + {{i}}`"
+            },
+            {
+              "text": "`= {{b + v + i | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "b + v + i",
+            "tolerance": 0.005,
+            "decimals": 3
+          },
+          "explanation": "Only the first two terms respond to changing the model; the third sets the floor no model can go below.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-irreducible-floor",
+          "kind": "recall",
+          "prompt": "A dataset has irreducible error 0.4. What does that tell you about the best achievable generalization error?",
+          "answer": "It **cannot go below 0.4**, whatever model you choose. Bias and variance are non-negative, so the decomposition puts a floor under the achievable error.\n\nPractically: if you are near 0.4, stop tuning the model. The remaining error is noise, and the only route further down is better or cleaner data.",
+          "source": "c3 · slide 26"
+        },
+        {
+          "id": "lm-knn-k-bias-variance",
+          "kind": "recall",
+          "prompt": "Express the choice of k in kNN in bias–variance terms.",
+          "answer": "**Small k** — low bias, high variance. The prediction follows individual points, so it makes few assumptions but shifts a lot with the sample.\n\n**Large k** — high bias, low variance. Averaging over a wide neighbourhood is stable but smooths away real structure.\n\nChoosing k *is* choosing a point on the bias–variance tradeoff.",
+          "source": "c2 · slides 8–9; c3 · slide 26"
+        },
+        {
+          "id": "lm-tradeoff-link",
+          "kind": "mcq",
+          "prompt": "Which external reference does the course give for the bias–variance tradeoff?",
+          "options": [
+            "scott.fortmann-roe.com/docs/BiasVariance.html",
+            "distill.pub/2017/momentum",
+            "playground.tensorflow.org",
+            "tylervigen.com/spurious-correlations"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 26"
+        }
+      ]
+    },
+    {
+      "id": "lm-regularization",
+      "title": "Ridge, Lasso and Elastic Net",
+      "emphasis": "core",
+      "summary": "Three penalties added to the MSE. Ridge shrinks coefficients, Lasso zeroes the unimportant ones, Elastic Net mixes the two. All require scaled data.",
+      "formulas": [
+        {
+          "name": "Ridge regression cost",
+          "expression": "J(θ) = MSE(θ) + α · ½ · Σᵢ₌₁ⁿ θᵢ²",
+          "note": "L2 penalty. α = 0 gives plain linear regression; α → ∞ gives a flat line through the mean.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "name": "Ridge closed form",
+          "expression": "θ̂ = (XᵀX + αA)⁻¹ Xᵀ y",
+          "note": "The normal equation with αA added, which also makes the matrix invertible.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "name": "Lasso regression cost",
+          "expression": "J(θ) = MSE(θ) + α · Σᵢ₌₁ⁿ |θᵢ|",
+          "note": "L1 penalty. Tends to set coefficients of unimportant features to exactly 0.",
+          "source": "c3 · slide 31"
+        }
+      ],
+      "keyFacts": [
+        {
+          "term": "Lasso",
+          "definition": "**L**east **a**bsolute **s**hrinkage **a**nd **s**election **o**perator regression.",
+          "source": "c3 · slide 31"
+        },
+        {
+          "term": "Elastic Net",
+          "definition": "Ridge + Lasso combined. Two hyperparameters: **alpha** and **r**, the mixing ratio. Better for many features and highly correlated features.",
+          "source": "c3 · slide 33"
+        }
+      ],
+      "questions": [
+        {
+          "id": "lm-ridge-cost",
+          "kind": "recall",
+          "prompt": "Write the Ridge cost function and describe what alpha does at its extremes.",
+          "answer": "`J(θ) = MSE(θ) + α · ½ · Σ θᵢ²`\n\n**α = 0** — the penalty vanishes, giving standard linear regression.\n**α → ∞** — the penalty dominates, driving all coefficients to zero and leaving a **flat line through the mean**.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "id": "lm-lasso-cost",
+          "kind": "recall",
+          "prompt": "Write the Lasso cost function and state its distinctive behaviour.",
+          "answer": "`J(θ) = MSE(θ) + α · Σ |θᵢ|`\n\nIt uses **L1**, the absolute values, as the penalty. Its distinctive behaviour is that it **sets coefficients for unimportant features to exactly 0.0** — so it performs feature selection as a side effect of fitting.",
+          "source": "c3 · slide 31"
+        },
+        {
+          "id": "lm-ridge-vs-lasso-penalty",
+          "kind": "mcq",
+          "prompt": "What distinguishes the Ridge penalty from the Lasso penalty?",
+          "options": [
+            "Ridge sums squared coefficients (L2); Lasso sums absolute values (L1)",
+            "Ridge sums absolute values; Lasso sums squares",
+            "Ridge penalises the intercept; Lasso does not",
+            "Ridge is applied before fitting; Lasso after"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slides 28, 31"
+        },
+        {
+          "id": "lm-lasso-zeros",
+          "kind": "mcq",
+          "prompt": "Which regularizer drives unimportant coefficients to exactly zero?",
+          "options": [
+            "Lasso",
+            "Ridge",
+            "Both equally",
+            "Neither — they only shrink"
+          ],
+          "answerIndex": 0,
+          "explanation": "Ridge shrinks coefficients toward zero without reaching it; Lasso can land on exactly 0, which is why it doubles as feature selection.",
+          "source": "c3 · slide 31"
+        },
+        {
+          "id": "lm-must-scale",
+          "kind": "mcq",
+          "prompt": "The Ridge slide says you MUST do what before regularizing?",
+          "options": [
+            "Scale the data",
+            "Remove outliers",
+            "One-hot encode categorical features",
+            "Split into three sets"
+          ],
+          "answerIndex": 0,
+          "explanation": "The penalty treats all coefficients alike, so a feature on a large scale gets an artificially small coefficient and is under-penalised.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "id": "lm-why-scale-regularization",
+          "kind": "recall",
+          "prompt": "Why must data be scaled before applying a regularization penalty?",
+          "answer": "The penalty is applied **uniformly to every coefficient**. A feature measured on a large scale needs only a small coefficient to have the same effect, so it is penalised **less** than an equally important feature on a small scale.\n\nThe result is that the penalty's strength depends on your choice of units, which is arbitrary. Scaling first removes that.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "id": "lm-l2-not-twelve",
+          "kind": "mcq",
+          "prompt": "The course flags `SGDRegressor(penalty=\"l2\")` with a warning. What is it?",
+          "options": [
+            "It is a lower-case L and a 2, not the number 12",
+            "It must be uppercase L2",
+            "It only works with the Cholesky solver",
+            "It is deprecated in favour of alpha="
+          ],
+          "answerIndex": 0,
+          "explanation": "In many fonts `l2` and `12` are near identical, and the resulting error is confusing.",
+          "source": "c3 · slide 30"
+        },
+        {
+          "id": "lm-sgd-penalties",
+          "kind": "cloze",
+          "prompt": "Ridge via SGD is `SGDRegressor(penalty=\"{{1}}\")`; Lasso via SGD is `SGDRegressor(penalty=\"{{2}}\")`.",
+          "blanks": [
+            [
+              "l2"
+            ],
+            [
+              "l1"
+            ]
+          ],
+          "tier": 2,
+          "source": "c3 · slides 30–31"
+        },
+        {
+          "id": "lm-elastic-net-why",
+          "kind": "recall",
+          "prompt": "What is Elastic Net, why use it, and what are its hyperparameters?",
+          "answer": "**Ridge + Lasso** combined — both penalties at once.\n\n**Why:** better for **many features**, and for **highly correlated features**.\n\n**Hyperparameters:** `alpha` (overall penalty strength) and `r`, the **mixing ratio** between the two penalties.",
+          "source": "c3 · slide 33"
+        },
+        {
+          "id": "lm-ridge-penalty-compute",
+          "kind": "computation",
+          "prompt": "A Ridge model with α = {{a}} has coefficients {{t1}}, {{t2}} and {{t3}}. Give the value of the penalty term α·½·Σθᵢ², to 3 dp.",
+          "vars": {
+            "a": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.5,
+                1,
+                2,
+                10
+              ]
+            },
+            "t1": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            },
+            "t2": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            },
+            "t3": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            }
+          },
+          "derived": {
+            "ss": "t1^2 + t2^2 + t3^2"
+          },
+          "steps": [
+            {
+              "text": "The Ridge penalty is `α · ½ · Σ θᵢ²`."
+            },
+            {
+              "text": "Squares: `{{t1^2 | 2}}`, `{{t2^2 | 2}}`, `{{t3^2 | 2}}`, summing to `{{ss | 3}}`."
+            },
+            {
+              "text": "`{{a}} × 0.5 × {{ss | 3}} = {{a * 0.5 * ss | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "a * 0.5 * (t1^2 + t2^2 + t3^2)",
+            "tolerance": 0.005,
+            "decimals": 3
+          },
+          "explanation": "Squaring means signs do not matter, and large coefficients are punished disproportionately.",
+          "source": "c3 · slide 28"
+        },
+        {
+          "id": "lm-lasso-penalty-compute",
+          "kind": "computation",
+          "prompt": "A Lasso model with α = {{a}} has coefficients {{t1}}, {{t2}} and {{t3}}. Give the value of the penalty term α·Σ|θᵢ|, to 3 dp.",
+          "vars": {
+            "a": {
+              "type": "choice",
+              "values": [
+                0.1,
+                0.5,
+                1,
+                2
+              ]
+            },
+            "t1": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            },
+            "t2": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            },
+            "t3": {
+              "type": "float",
+              "min": -3,
+              "max": 3,
+              "decimals": 1
+            }
+          },
+          "derived": {
+            "sa": "abs(t1) + abs(t2) + abs(t3)"
+          },
+          "steps": [
+            {
+              "text": "The Lasso penalty is `α · Σ |θᵢ|` — absolute values, not squares."
+            },
+            {
+              "text": "`|{{t1}}| + |{{t2}}| + |{{t3}}| = {{sa | 3}}`"
+            },
+            {
+              "text": "`{{a}} × {{sa | 3}} = {{a * sa | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "a * (abs(t1) + abs(t2) + abs(t3))",
+            "tolerance": 0.005,
+            "decimals": 3
+          },
+          "explanation": "Note the absence of the ½ that Ridge carries — a common slip when writing the two from memory.",
+          "source": "c3 · slide 31"
+        },
+        {
+          "id": "lm-alpha-effect-plot",
+          "kind": "mcq",
+          "prompt": "In the Ridge example plots, increasing α from 0 to 100 on the linear data:",
+          "options": [
+            "Flattens the fitted line toward a horizontal line at the mean",
+            "Steepens the fitted line",
+            "Makes the line pass through more data points",
+            "Has no visible effect"
+          ],
+          "answerIndex": 0,
+          "explanation": "α = 0, 10, 100 in the left plot: as α rises the slope is pulled toward zero, exactly as the α → ∞ limit predicts.",
+          "source": "c3 · slides 28–29"
+        },
+        {
+          "id": "lm-ridge-solver",
+          "kind": "mcq",
+          "prompt": "Which solver does the course show for the closed-form Ridge?",
+          "options": [
+            "Ridge(alpha=1, solver=\"cholesky\")",
+            "Ridge(alpha=1, solver=\"svd\")",
+            "Ridge(alpha=1, solver=\"sgd\")",
+            "Ridge(alpha=1, solver=\"lbfgs\")"
+          ],
+          "answerIndex": 0,
+          "source": "c3 · slide 30"
+        },
+        {
+          "id": "lm-ridge-invertibility",
+          "kind": "recall",
+          "prompt": "Besides regularizing, what practical problem does adding αA to XᵀX solve?",
+          "answer": "It makes the matrix **invertible**. Plain `(XᵀX)⁻¹` fails when features are redundant or when there are more features than examples, because XᵀX is singular.\n\nAdding αA (for any α > 0) shifts it away from singularity, so the closed form always has a solution.",
+          "source": "c3 · slides 9, 28"
+        },
+        {
+          "id": "lm-lasso-alpha-small",
+          "kind": "mcq",
+          "prompt": "In the Lasso example, the degree-10 plot uses α = 0, 1e-07 and 1. What does α = 1 produce?",
+          "options": [
+            "An almost flat line — the penalty has crushed the high-degree coefficients",
+            "The wiggliest of the three curves",
+            "A curve identical to α = 0",
+            "A model that fails to converge"
+          ],
+          "answerIndex": 0,
+          "explanation": "α = 1 is heavy regularization for this data; α = 1e-07 is nearly none, so it wiggles like the unregularized fit.",
+          "source": "c3 · slide 32"
+        },
+        {
+          "id": "lm-choose-regularizer",
+          "kind": "recall",
+          "prompt": "You have many features, several of them highly correlated. Which regularizer does the course recommend, and why?",
+          "answer": "**Elastic Net** — the slide gives exactly this case as its motivation: 'better for many features, and highly correlated features'.\n\nIt combines Ridge's stable handling of correlated features with Lasso's ability to zero out the useless ones, with `r` controlling the balance.",
+          "source": "c3 · slide 33"
+        }
+      ]
+    }
+  ]
+}

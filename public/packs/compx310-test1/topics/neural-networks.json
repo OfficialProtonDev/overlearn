@@ -1,0 +1,1359 @@
+{
+  "id": "neural-networks",
+  "title": "Neural Networks",
+  "summary": "From the perceptron — which cannot learn XOR — to multi-layer networks that can, trained by backpropagation and built in Keras in three steps: define, compile, train.",
+  "keyFacts": [
+    {
+      "term": "The three waves",
+      "definition": "**1960s** — too simple, only linear. **1980s** — breakthroughs: non-linear (XOR), back-prop invented, but too slow with too little data; much fundamental research. **2010s** — much better hardware (GPUs), large labelled datasets, and some new ideas and algorithmic improvements.",
+      "source": "c6a · slide 2"
+    }
+  ],
+  "subtopics": [
+    {
+      "id": "nn-perceptron-xor",
+      "title": "The perceptron and XOR",
+      "emphasis": "core",
+      "summary": "A single perceptron thresholds a weighted sum, so it can only draw a straight line. XOR is not linearly separable, which is why a second layer is needed.",
+      "formulas": [
+        {
+          "name": "Perceptron",
+          "expression": "h_w(x) = step(xᵀw)",
+          "note": "Threshold the weighted sum z = xᵀw of the inputs.",
+          "source": "c6a · slide 4"
+        },
+        {
+          "name": "Heaviside step",
+          "expression": "heaviside(z) = 0 if z < 0, 1 if z ≥ 0",
+          "source": "c6a · slide 4"
+        },
+        {
+          "name": "Sign function",
+          "expression": "sgn(z) = −1 if z < 0, 0 if z = 0, +1 if z > 0",
+          "source": "c6a · slide 4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nn-perceptron-definition",
+          "kind": "recall",
+          "prompt": "What does a perceptron compute?",
+          "answer": "It **thresholds the weighted sum of the inputs**.\n\nThe weighted sum is `z = xᵀw`, and the output is `h_w(x) = step(xᵀw)`.",
+          "source": "c6a · slide 4"
+        },
+        {
+          "id": "nn-heaviside",
+          "kind": "mcq",
+          "prompt": "What is heaviside(z) for z ≥ 0?",
+          "options": [
+            "1",
+            "0",
+            "−1",
+            "z"
+          ],
+          "answerIndex": 0,
+          "explanation": "heaviside is 0 for z < 0 and 1 for z ≥ 0. sgn is the three-valued version, giving −1, 0 or +1.",
+          "source": "c6a · slide 4"
+        },
+        {
+          "id": "nn-sgn-three-values",
+          "kind": "recall",
+          "prompt": "Give the three cases of the sgn function.",
+          "answer": "`sgn(z) = −1` if z < 0\n`sgn(z) = 0` if z = 0\n`sgn(z) = +1` if z > 0",
+          "source": "c6a · slide 4"
+        },
+        {
+          "id": "nn-xor-single",
+          "kind": "mcq",
+          "prompt": "What can a single perceptron not learn?",
+          "options": [
+            "XOR",
+            "AND",
+            "OR",
+            "NOT"
+          ],
+          "answerIndex": 0,
+          "explanation": "XOR is not linearly separable — no single straight line separates its two classes. A multi-layer perceptron can.",
+          "source": "c6a · slide 5"
+        },
+        {
+          "id": "nn-xor-why",
+          "kind": "recall",
+          "prompt": "Why can a single perceptron not learn XOR, and what fixes it?",
+          "answer": "A perceptron thresholds a weighted sum, so its decision boundary is a **single straight line**. XOR's positive cases sit at opposite corners of the square, and **no straight line separates them**.\n\nThe fix is a **multi-layer** perceptron: a hidden layer builds intermediate features that make the problem linearly separable at the output layer.",
+          "source": "c6a · slide 5"
+        },
+        {
+          "id": "nn-xor-weights",
+          "kind": "mcq",
+          "prompt": "In the XOR network figure, which weights are labelled?",
+          "options": [
+            "−0.5, −1, −1.5 and −0.5",
+            "1, 1, 1 and 1",
+            "0.5, 1.5, 2 and 2.5",
+            "No weights are shown"
+          ],
+          "answerIndex": 0,
+          "explanation": "Two bias units of 1 feed in with weights −0.5 and −1.5, and the hidden-to-output weights are −1 and −0.5.",
+          "source": "c6a · slide 5"
+        },
+        {
+          "id": "nn-three-waves",
+          "kind": "recall",
+          "prompt": "Describe the three waves of neural network research.",
+          "answer": "**1960s** — too simple, only **linear**.\n\n**1980s** — breakthroughs: can do **non-linear (XOR)**, **back-prop invented**. But too slow and too little data, though a lot of fundamental research came out of it.\n\n**2010s** — much better hardware, **GPUs** ('thank you gamers!'), **large labelled datasets**, and some new ideas and algorithmic improvements.",
+          "source": "c6a · slide 2"
+        },
+        {
+          "id": "nn-wave-1980s",
+          "kind": "mcq",
+          "prompt": "Which wave saw backpropagation invented?",
+          "options": [
+            "The 1980s",
+            "The 1960s",
+            "The 2010s",
+            "The 1990s"
+          ],
+          "answerIndex": 0,
+          "explanation": "The idea was available decades before it became practical — the 2010s wave supplied the hardware and data, not the algorithm.",
+          "source": "c6a · slide 2"
+        },
+        {
+          "id": "nn-gpus-credit",
+          "kind": "mcq",
+          "prompt": "What does the course credit for the hardware that enabled the 2010s wave?",
+          "options": [
+            "GPUs — 'thank you gamers!'",
+            "Cloud computing",
+            "Custom ASICs",
+            "Faster CPUs"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 2"
+        },
+        {
+          "id": "nn-biological-neurons",
+          "kind": "mcq",
+          "prompt": "How many neurons does the course say humans have?",
+          "options": [
+            "100 billion",
+            "100 million",
+            "1 trillion",
+            "10 billion"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 3"
+        },
+        {
+          "id": "nn-biological-latency",
+          "kind": "mcq",
+          "prompt": "How does the course characterise biological neurons?",
+          "options": [
+            "They send and integrate electrical signals, with high latency",
+            "They compute faster than transistors",
+            "They are purely chemical, with no electrical component",
+            "They fire at a constant rate"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 3"
+        },
+        {
+          "id": "nn-perceptron-linear-boundary",
+          "kind": "recall",
+          "prompt": "What shape of decision boundary can a single perceptron produce, and how does that relate to logistic regression?",
+          "answer": "A **linear** boundary — the set of points where `xᵀw = 0`, a straight line in 2D and a hyperplane in general.\n\nIt is the same boundary logistic regression produces. The difference is the output: the perceptron applies a **hard step**, logistic regression applies a **smooth sigmoid** giving a probability. Same geometry, different output function.",
+          "source": "c3 · slide 10; c6a · slide 4"
+        },
+        {
+          "id": "nn-step-z-cloze",
+          "kind": "cloze",
+          "prompt": "In the perceptron, the weighted sum is written z = {{1}}, and the output is step({{2}}).",
+          "blanks": [
+            [
+              "xᵀw",
+              "x^T w",
+              "xTw"
+            ],
+            [
+              "z",
+              "xᵀw",
+              "x^T w"
+            ]
+          ],
+          "tier": 2,
+          "source": "c6a · slide 4"
+        },
+        {
+          "id": "nn-perceptron-weighted-sum",
+          "kind": "computation",
+          "prompt": "A perceptron has weights w₁ = {{w1}}, w₂ = {{w2}}, w₃ = {{w3}} and inputs x₁ = {{x1}}, x₂ = {{x2}}, x₃ = {{x3}}. Give the weighted sum z.",
+          "vars": {
+            "w1": {
+              "type": "int",
+              "min": -3,
+              "max": 3
+            },
+            "w2": {
+              "type": "int",
+              "min": -3,
+              "max": 3
+            },
+            "w3": {
+              "type": "int",
+              "min": -3,
+              "max": 3
+            },
+            "x1": {
+              "type": "int",
+              "min": 0,
+              "max": 5
+            },
+            "x2": {
+              "type": "int",
+              "min": 0,
+              "max": 5
+            },
+            "x3": {
+              "type": "int",
+              "min": 0,
+              "max": 5
+            }
+          },
+          "steps": [
+            {
+              "text": "The weighted sum is `z = Σ wᵢxᵢ`."
+            },
+            {
+              "text": "`{{w1}}×{{x1}} + {{w2}}×{{x2}} + {{w3}}×{{x3}} = {{w1*x1}} + {{w2*x2}} + {{w3*x3}}`"
+            },
+            {
+              "text": "`z = {{w1*x1 + w2*x2 + w3*x3}}`. Heaviside then outputs 1 if this is ≥ 0, and 0 otherwise."
+            }
+          ],
+          "answer": {
+            "expr": "w1*x1 + w2*x2 + w3*x3",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "source": "c6a · slide 4"
+        },
+        {
+          "id": "nn-deep-definition",
+          "kind": "mcq",
+          "prompt": "When is a feed-forward network called a Deep NN?",
+          "options": [
+            "When many layers are stacked",
+            "When it has more than 1000 units",
+            "When it uses ReLU activations",
+            "When it is trained on a GPU"
+          ],
+          "answerIndex": 0,
+          "explanation": "c6b adds the caveat that there is no consensus on exactly what counts as 'deep'.",
+          "source": "c6a · slide 6; c6b · slide 2"
+        },
+        {
+          "id": "nn-mlp-name",
+          "kind": "short",
+          "prompt": "What does MLP stand for?",
+          "answers": [
+            "multi-layer perceptron",
+            "multilayer perceptron",
+            "multi layer perceptron"
+          ],
+          "tier": 1,
+          "source": "c6a · slide 6"
+        }
+      ]
+    },
+    {
+      "id": "nn-mlp-structure",
+      "title": "MLP structure and activation functions",
+      "emphasis": "core",
+      "summary": "Input layer, hidden layers, output layer, with a bias unit feeding each. The activation function is what makes stacking layers worthwhile.",
+      "keyFacts": [
+        {
+          "term": "Standard activation functions",
+          "definition": "**Sigmoid**, **Tanh** and **ReLU**. They are smooth versions of the step function.",
+          "source": "c6a · slides 7, 11"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nn-mlp-layers",
+          "kind": "recall",
+          "prompt": "Name the three kinds of layer in a feed-forward network.",
+          "answer": "**Input layer**, one or more **hidden layers**, and the **output layer**.\n\nA bias unit (drawn as a circle containing 1) feeds into each layer beyond the input.",
+          "source": "c6a · slide 6"
+        },
+        {
+          "id": "nn-standard-activations",
+          "kind": "multi",
+          "prompt": "Which are listed as the standard activation functions?",
+          "options": [
+            "Sigmoid",
+            "Tanh",
+            "ReLU",
+            "Softmax"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "Softmax is an output-layer function for multiclass problems, not one of the three standard hidden activations.",
+          "source": "c6a · slide 7"
+        },
+        {
+          "id": "nn-relu-compute",
+          "kind": "computation",
+          "prompt": "A unit's pre-activation value is {{z}}. What does ReLU output?",
+          "vars": {
+            "z": {
+              "type": "float",
+              "min": -6,
+              "max": 6,
+              "decimals": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "ReLU is `max(0, z)` — it passes positives through and clamps negatives to zero."
+            },
+            {
+              "text": "Here `z = {{z}}`."
+            },
+            {
+              "text": "`ReLU({{z}}) = {{max(0, z)}}`"
+            }
+          ],
+          "answer": {
+            "expr": "max(0, z)",
+            "tolerance": 0.001,
+            "decimals": 2
+          },
+          "explanation": "The flat region for negative z is why ReLU units can 'die' — the gradient there is exactly zero.",
+          "source": "c6a · slide 7"
+        },
+        {
+          "id": "nn-tanh-range",
+          "kind": "mcq",
+          "prompt": "From the activation-function plot, what is the output range of tanh?",
+          "options": [
+            "(−1, 1)",
+            "(0, 1)",
+            "[0, ∞)",
+            "(−∞, ∞)"
+          ],
+          "answerIndex": 0,
+          "explanation": "The plot runs tanh from −1 to 1, while sigmoid runs 0 to 1 and ReLU rises without bound.",
+          "source": "c6a · slide 7"
+        },
+        {
+          "id": "nn-sigmoid-range",
+          "kind": "mcq",
+          "prompt": "What is the output range of the sigmoid activation?",
+          "options": [
+            "(0, 1)",
+            "(−1, 1)",
+            "[0, ∞)",
+            "(−∞, ∞)"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 7"
+        },
+        {
+          "id": "nn-activations-smooth-step",
+          "kind": "recall",
+          "prompt": "How does the backpropagation slide describe activation functions, and why does it matter?",
+          "answer": "As **smooth versions of the step function**.\n\nIt matters because backpropagation needs **first derivatives**. The step function's derivative is zero everywhere it is defined and undefined at the jump, so there is no gradient to propagate. Smooth activations give a usable gradient at every point.",
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-why-nonlinear",
+          "kind": "recall",
+          "prompt": "What happens if every layer of an MLP uses a linear activation?",
+          "answer": "The whole network **collapses to a single linear model**. A composition of linear maps is itself linear, so no number of layers adds any expressive power — you would have an expensive way to write linear regression.\n\nThe **non-linear** activation is what makes depth worth having, and it is why the 1960s wave, being 'only linear', stalled.",
+          "source": "c6a · slides 2, 7"
+        },
+        {
+          "id": "nn-dense-meaning",
+          "kind": "mcq",
+          "prompt": "What does a Dense layer mean in Keras?",
+          "options": [
+            "Fully connected — every unit is connected to all inputs",
+            "The layer has more units than the previous one",
+            "The weights are stored in a dense matrix format",
+            "No dropout is applied"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-flatten-why",
+          "kind": "recall",
+          "prompt": "Why does the FashionMNIST model start with a Flatten layer?",
+          "answer": "Because **Dense expects 1-dimensional vectors**, and the images are 2-dimensional (28 × 28).\n\nFlatten reshapes each 28 × 28 image into a 784-element vector. `input_shape` must be defined for this first layer, since it is where the network learns what shape to expect.",
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-input-shape-first",
+          "kind": "mcq",
+          "prompt": "Which layer must have `input_shape` specified?",
+          "options": [
+            "The first layer only",
+            "Every layer",
+            "The output layer",
+            "Every Dense layer"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-cifar-shape",
+          "kind": "recall",
+          "prompt": "What shape is a CIFAR-10 image, and what do the numbers mean?",
+          "answer": "**32 × 32 × 3** — 32 by 32 pixels with **3 colour channels** for RGB. All values run from 0 up to and including **255**.\n\nThe course notes that Keras benchmark datasets come in different shapes: grayscale images are 2-dimensional, colour ones 3-dimensional.",
+          "source": "c6a · slide 12"
+        },
+        {
+          "id": "nn-bias-unit",
+          "kind": "mcq",
+          "prompt": "In the MLP diagrams, what does the circle containing '1' represent?",
+          "options": [
+            "The bias unit feeding that layer",
+            "The first input feature",
+            "The learning rate",
+            "A unit with weight 1"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same role as x₀ = 1 in the linear-model vector form — it supplies the constant term.",
+          "source": "c3 · slide 4; c6a · slide 6"
+        },
+        {
+          "id": "nn-tanh-vs-sigmoid",
+          "kind": "recall",
+          "prompt": "From the derivative plot, how do the sigmoid and tanh derivatives compare?",
+          "answer": "Both are **bell-shaped**, peaking at zero and falling to near zero in both tails — but **tanh's peak is higher** (1.0 against sigmoid's 0.25).\n\nBoth **saturate**: for large positive or negative inputs the derivative approaches zero, which is the vanishing-gradient mechanism c6b describes.",
+          "source": "c6a · slide 7; c6b · slide 3"
+        },
+        {
+          "id": "nn-relu-derivative",
+          "kind": "recall",
+          "prompt": "What is ReLU's derivative, and why is that an advantage in a deep network?",
+          "answer": "**1 for positive inputs, 0 for negative** — a step, not a bell.\n\nThe advantage: for any active unit the gradient passes through **undiminished**. Sigmoid multiplies the gradient by at most 0.25 at every layer, so through ten layers it is scaled by 0.25¹⁰ — vanishingly small. ReLU does not shrink it.",
+          "source": "c6a · slide 7; c6b · slide 3"
+        },
+        {
+          "id": "nn-relu-inside",
+          "kind": "mcq",
+          "prompt": "What does the course recommend as the activation for hidden layers?",
+          "options": [
+            "ReLU",
+            "Sigmoid",
+            "Softmax",
+            "Step"
+          ],
+          "answerIndex": 0,
+          "explanation": "'ReLU inside, last layer depends on type of problem'. c6b's defaults table repeats it, overriding the book's SELU in red.",
+          "source": "c6a · slide 29; c6b · slide 15"
+        }
+      ]
+    },
+    {
+      "id": "nn-output-layers",
+      "title": "Output layers and losses by problem type",
+      "emphasis": "core",
+      "summary": "The two hyperparameter tables. Everything up to the last layer is the same across problem types; the output layer and the loss are what change.",
+      "keyFacts": [
+        {
+          "term": "Classification MLP output layers",
+          "definition": "**Binary** — 1 output neuron, Logistic. **Multilabel binary** — 1 per label, Logistic. **Multiclass** — 1 per class, Softmax. Loss is **Cross-Entropy** in all three.",
+          "source": "c6a · slide 10"
+        },
+        {
+          "term": "Regression MLP output layer",
+          "definition": "1 output neuron per prediction dimension. Output activation: None, or ReLU/Softplus for positive outputs, or Logistic/Tanh for bounded outputs. Loss: MSE, or MAE/Huber if there are outliers.",
+          "source": "c6a · slide 8"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nn-classification-table",
+          "kind": "recall",
+          "prompt": "Give the output layer and loss for each of the three classification cases.",
+          "answer": "| | Binary | Multilabel binary | Multiclass |\n|---|---|---|---|\n| **# output neurons** | 1 | 1 per label | 1 per class |\n| **Output activation** | Logistic | Logistic | **Softmax** |\n| **Loss** | Cross-Entropy | Cross-Entropy | Cross-Entropy |\n\nInput and hidden layers are the same as for regression in all three cases.",
+          "source": "c6a · slide 10"
+        },
+        {
+          "id": "nn-multiclass-output",
+          "kind": "mcq",
+          "prompt": "For a 10-class classification problem, what should the output layer be?",
+          "options": [
+            "10 units with softmax",
+            "1 unit with sigmoid",
+            "10 units with sigmoid",
+            "1 unit with softmax"
+          ],
+          "answerIndex": 0,
+          "explanation": "The FashionMNIST model does exactly this: `Dense(10, activation=\"softmax\")`, ensuring the outputs lie in [0,1] and sum to 1.",
+          "source": "c6a · slides 10, 14"
+        },
+        {
+          "id": "nn-multilabel-output",
+          "kind": "mcq",
+          "prompt": "For a multilabel binary problem with 5 labels, what should the output layer be?",
+          "options": [
+            "5 units with logistic activation",
+            "5 units with softmax",
+            "1 unit with logistic",
+            "10 units with softmax"
+          ],
+          "answerIndex": 0,
+          "explanation": "Logistic per label, not softmax — the labels are independent, so the outputs must not be forced to sum to 1.",
+          "source": "c6a · slide 10"
+        },
+        {
+          "id": "nn-softmax-vs-sigmoid-output",
+          "kind": "recall",
+          "prompt": "Why softmax for multiclass but logistic for multilabel?",
+          "answer": "**Softmax** forces the outputs to **sum to 1** — a probability distribution over mutually exclusive classes. That is right when exactly one class applies.\n\n**Multilabel** labels are **independent**: an example can carry several, or none. Forcing them to sum to 1 would be wrong, so each label gets its own independent logistic unit.",
+          "source": "c6a · slide 10; c4 · slide 33"
+        },
+        {
+          "id": "nn-binary-output-config",
+          "kind": "recall",
+          "prompt": "How is a binary classifier configured in Keras?",
+          "answer": "Use **only 1 output** unit with **sigmoid** activation, and specify `loss=\"binary_crossentropy\"`.",
+          "source": "c6a · slide 18"
+        },
+        {
+          "id": "nn-sparse-categorical",
+          "kind": "recall",
+          "prompt": "When is `sparse_categorical_crossentropy` the right loss, and what is the alternative?",
+          "answer": "When the class values in `y_train` are **integers** — 0 … 9 for ten output units. It 'does the right thing' with integer labels directly.\n\nThe alternative: one-hot-encode the targets with `keras.utils.to_categorical(y_train)` and use **`categorical_crossentropy`** instead.",
+          "source": "c6a · slide 18"
+        },
+        {
+          "id": "nn-loss-choice-mcq",
+          "kind": "mcq",
+          "prompt": "Your labels are integers 0–9 and your output layer has 10 softmax units. Which loss?",
+          "options": [
+            "sparse_categorical_crossentropy",
+            "categorical_crossentropy",
+            "binary_crossentropy",
+            "mean_squared_error"
+          ],
+          "answerIndex": 0,
+          "explanation": "`categorical_crossentropy` expects one-hot targets. Passing integers to it is a common and confusing error.",
+          "source": "c6a · slide 18"
+        },
+        {
+          "id": "nn-regression-output-activation",
+          "kind": "recall",
+          "prompt": "What output activation does a regression MLP use?",
+          "answer": "**None** in the general case — the output should be free to take any value.\n\nBut: **ReLU or Softplus** if the outputs must be **positive**, and **Logistic or Tanh** if they must be **bounded**.",
+          "source": "c6a · slide 8"
+        },
+        {
+          "id": "nn-regression-loss",
+          "kind": "mcq",
+          "prompt": "Which loss does the regression MLP table give?",
+          "options": [
+            "MSE, or MAE/Huber if there are outliers",
+            "Cross-entropy",
+            "Hinge loss",
+            "Binary cross-entropy"
+          ],
+          "answerIndex": 0,
+          "explanation": "The same robustness reasoning as the c5 loss families: MAE and Huber resist outliers that MSE would chase.",
+          "source": "c5 · slide 9; c6a · slide 8"
+        },
+        {
+          "id": "nn-regression-input-neurons",
+          "kind": "mcq",
+          "prompt": "How many input neurons does the regression MLP table specify?",
+          "options": [
+            "One per input feature — 784 for MNIST",
+            "One per class",
+            "One per hidden layer",
+            "10 to 100, depending on the problem"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 8"
+        },
+        {
+          "id": "nn-hidden-layer-typical",
+          "kind": "mcq",
+          "prompt": "How many hidden layers does the regression table give as typical?",
+          "options": [
+            "1 to 5",
+            "1 to 2",
+            "10 to 100",
+            "100 or more"
+          ],
+          "answerIndex": 0,
+          "explanation": "And 10 to 100 neurons per hidden layer, depending on the problem.",
+          "source": "c6a · slide 8"
+        },
+        {
+          "id": "nn-california-net",
+          "kind": "recall",
+          "prompt": "Describe the California housing regression network.",
+          "answer": "```\nSequential([\n  Dense(30, activation=\"relu\", input_shape=X_train.shape[1:]),\n  Dense(1)\n])\ncompile(loss=\"mean_squared_error\", optimizer=\"sgd\")\n```\n\nOne hidden layer of 30 ReLU units, then a **single output with no activation** — the regression default. MSE as the loss.\n\nThe data is split twice (train/test, then train/valid) and passed through a **StandardScaler**.",
+          "source": "c6a · slides 22–23"
+        },
+        {
+          "id": "nn-output-cloze",
+          "kind": "cloze",
+          "prompt": "For multiclass classification the output activation is {{1}}; for binary it is {{2}}.",
+          "blanks": [
+            [
+              "softmax"
+            ],
+            [
+              "logistic",
+              "sigmoid"
+            ]
+          ],
+          "tier": 2,
+          "source": "c6a · slide 10"
+        },
+        {
+          "id": "nn-softmax-purpose-keras",
+          "kind": "mcq",
+          "prompt": "Why does the FashionMNIST model use softmax on its last layer?",
+          "options": [
+            "To ensure all values are in [0.0, 1.0] and sum to 1.0",
+            "To speed up training",
+            "Because Dense layers require it",
+            "To prevent overfitting"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-output-count-scenario",
+          "kind": "recall",
+          "prompt": "You are predicting, for each photo, which of 8 possible objects appear — several may appear at once. Specify the output layer and loss.",
+          "answer": "This is **multilabel binary** with 8 labels.\n\n- **8 output neurons**, one per label\n- **Logistic (sigmoid)** activation — independent per label, *not* softmax\n- **Cross-entropy** loss (`binary_crossentropy` in Keras, applied per label)\n\nSoftmax would be wrong: it would force the eight probabilities to sum to 1, when several objects can be present simultaneously.",
+          "source": "c6a · slides 10, 18"
+        }
+      ]
+    },
+    {
+      "id": "nn-backpropagation",
+      "title": "Backpropagation",
+      "emphasis": "core",
+      "summary": "A forward pass that stores everything, then a backward pass that uses the chain rule to apportion blame and nudge every weight.",
+      "questions": [
+        {
+          "id": "nn-backprop-two-passes",
+          "kind": "recall",
+          "prompt": "Describe the two passes of backpropagation.",
+          "answer": "**Forward pass** — compute and **store** all intermediate and final values.\n\n**Backward pass** — using **first derivatives and the chain rule**, go back and adjust all weights a little bit in the 'right' direction.",
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-backprop-two-params",
+          "kind": "recall",
+          "prompt": "What two parameters does backpropagation have?",
+          "answer": "**Mini-batch size** and **learning rate**.",
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-backprop-similar-to",
+          "kind": "mcq",
+          "prompt": "Backpropagation is described as a training procedure similar to what?",
+          "options": [
+            "SGD",
+            "The normal equation",
+            "Grid search",
+            "Cross-validation"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-backprop-init",
+          "kind": "recall",
+          "prompt": "How does backpropagation start, and what is the caveat?",
+          "answer": "**Initialize weights randomly**, being **careful with scaling**.\n\nRandom initialisation matters: with all weights identical, every unit in a layer would compute the same thing and receive the same gradient, so they could never differentiate. Scaling matters because badly scaled initial weights push activations into their saturating regions.",
+          "source": "c6a · slide 11; c6b · slide 3"
+        },
+        {
+          "id": "nn-chain-rule",
+          "kind": "mcq",
+          "prompt": "Which mathematical rule does the backward pass rely on?",
+          "options": [
+            "The chain rule",
+            "The product rule alone",
+            "Bayes' rule",
+            "L'Hôpital's rule"
+          ],
+          "answerIndex": 0,
+          "explanation": "It composes derivatives layer by layer, which is also why long chains of small derivatives cause vanishing gradients.",
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-why-store-forward",
+          "kind": "recall",
+          "prompt": "Why must the forward pass store its intermediate values?",
+          "answer": "The backward pass needs them to compute the gradients. Each layer's weight gradient depends on the **activations that fed into it**, so those values must still be available when the backward pass reaches that layer.\n\nThis is also the memory cost c6b highlights for convolutional networks: **all** intermediate results must be held for backpropagation, which is where the 12 GB figure comes from.",
+          "source": "c6a · slide 11; c6b · slide 25"
+        },
+        {
+          "id": "nn-backprop-direction",
+          "kind": "mcq",
+          "prompt": "In which direction does the backward pass move?",
+          "options": [
+            "From the output layer back toward the input",
+            "From the input toward the output",
+            "Both directions simultaneously",
+            "Randomly through the layers"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 11"
+        },
+        {
+          "id": "nn-backprop-epoch",
+          "kind": "recall",
+          "prompt": "What is an epoch, in terms of backpropagation?",
+          "answer": "**One complete pass through the training data**. In Keras, `model.fit(..., epochs=30)` runs thirty such passes.\n\nWithin an epoch the data is processed in **mini-batches**, each triggering a forward pass, a backward pass and a weight update.",
+          "source": "c6a · slides 11, 19"
+        },
+        {
+          "id": "nn-epoch-updates-compute",
+          "kind": "computation",
+          "prompt": "A training set has {{n}} examples and the mini-batch size is {{b}}. How many weight updates occur in one epoch?",
+          "vars": {
+            "n": {
+              "type": "choice",
+              "values": [
+                1000,
+                5000,
+                10000,
+                50000
+              ]
+            },
+            "b": {
+              "type": "choice",
+              "values": [
+                10,
+                20,
+                50,
+                100
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "One update happens per mini-batch."
+            },
+            {
+              "text": "Number of mini-batches per epoch is `{{n}} / {{b}}`."
+            },
+            {
+              "text": "`= {{n / b}}` updates."
+            }
+          ],
+          "answer": {
+            "expr": "n / b",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "Smaller batches mean more updates per epoch but noisier gradients — exactly the c5 batch/stochastic trade-off. When the batch size does not divide the training set the last batch is partial, so the count is **rounded up**: 55,000 examples at batch 32 gives 1,719 updates, not 1,718.75.",
+          "source": "c5 · slide 23; c6a · slide 11"
+        },
+        {
+          "id": "nn-total-updates-compute",
+          "kind": "computation",
+          "prompt": "Training runs for {{e}} epochs on {{n}} examples with mini-batch size {{b}}. How many weight updates in total?",
+          "vars": {
+            "e": {
+              "type": "int",
+              "min": 5,
+              "max": 50,
+              "step": 5
+            },
+            "n": {
+              "type": "choice",
+              "values": [
+                1000,
+                5000,
+                10000,
+                50000
+              ]
+            },
+            "b": {
+              "type": "choice",
+              "values": [
+                10,
+                20,
+                50,
+                100
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "Updates per epoch: `{{n}} / {{b}} = {{n / b}}`."
+            },
+            {
+              "text": "Over `{{e}}` epochs: `{{e}} × {{n / b}}`."
+            },
+            {
+              "text": "`= {{e * n / b}}` updates."
+            }
+          ],
+          "answer": {
+            "expr": "e * n / b",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c6a · slides 11, 19"
+        },
+        {
+          "id": "nn-training-output",
+          "kind": "mcq",
+          "prompt": "The training output shows `loss: 1.4948 - acc: 0.5757 - val_loss: 1.0042 - val_acc: 0.7166` after epoch 1. What is `val_acc`?",
+          "options": [
+            "Accuracy on the validation set",
+            "Accuracy on the training set",
+            "The average of training and test accuracy",
+            "The validation loss"
+          ],
+          "answerIndex": 0,
+          "explanation": "By epoch 50 it reaches 0.8728 against a training accuracy of 0.8752 — very close, so this model is not badly overfitting.",
+          "source": "c6a · slide 19"
+        },
+        {
+          "id": "nn-validation-data-arg",
+          "kind": "mcq",
+          "prompt": "How is a validation set supplied to `model.fit`?",
+          "options": [
+            "validation_data=(X_valid, y_valid)",
+            "validate=True",
+            "cv=3",
+            "It is split automatically and cannot be specified"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 19"
+        },
+        {
+          "id": "nn-history-plot",
+          "kind": "mcq",
+          "prompt": "What does `pd.DataFrame(history.history).plot()` show?",
+          "options": [
+            "loss, acc, val_loss and val_acc across epochs",
+            "The network architecture",
+            "The learned weights",
+            "The confusion matrix"
+          ],
+          "answerIndex": 0,
+          "explanation": "The two accuracies rise and the two losses fall; a gap opening between train and validation curves would signal overfitting.",
+          "source": "c6a · slide 20"
+        },
+        {
+          "id": "nn-backprop-vs-gd",
+          "kind": "recall",
+          "prompt": "What is the relationship between backpropagation and gradient descent?",
+          "answer": "They are **different jobs in the same loop**.\n\n**Backpropagation** computes the **gradients** — how much each weight contributed to the error — using the chain rule.\n\n**Gradient descent** (or Adam, RMSProp, …) then **uses** those gradients to update the weights.\n\nBackprop finds the direction; the optimizer decides the step.",
+          "source": "c6a · slide 11; c6b · slide 5"
+        },
+        {
+          "id": "nn-early-stopping-epochs",
+          "kind": "recall",
+          "prompt": "How does the course say to choose the number of epochs?",
+          "answer": "By **early stopping** — but it also **interacts with the learning rate**: a lower rate needs more epochs.",
+          "source": "c6a · slide 29"
+        }
+      ]
+    },
+    {
+      "id": "nn-keras-workflow",
+      "title": "The Keras workflow",
+      "emphasis": "core",
+      "summary": "Define, compile, train — then evaluate and predict. Everything is a layer.",
+      "keyFacts": [
+        {
+          "term": "The three steps",
+          "definition": "**Define** the network, **compile** the network, **train** the network.",
+          "source": "c6a · slide 13"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nn-three-steps",
+          "kind": "recall",
+          "prompt": "What is the three-step process for neural network training in Keras?",
+          "answer": "1. **Define** network\n2. **Compile** network\n3. **Train** network\n\nFashionMNIST is used as the running example.",
+          "source": "c6a · slide 13"
+        },
+        {
+          "id": "nn-fashionmnist-model",
+          "kind": "recall",
+          "prompt": "Write out the FashionMNIST model definition.",
+          "answer": "```python\nmodel = keras.models.Sequential()\nmodel.add(keras.layers.Flatten(input_shape=[28, 28]))\nmodel.add(keras.layers.Dense(300, activation=\"relu\"))\nmodel.add(keras.layers.Dense(100, activation=\"relu\"))\nmodel.add(keras.layers.Dense(10, activation=\"softmax\"))\n```\n\nFlatten to 784, two ReLU hidden layers of 300 and 100, then 10 softmax outputs for the ten classes.",
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-everything-is-layer",
+          "kind": "mcq",
+          "prompt": "What does the course mean by 'everything is a layer'?",
+          "options": [
+            "Reshaping, activations and connections are all expressed as layer objects",
+            "Every layer has the same number of units",
+            "The network can only be sequential",
+            "Every layer must be Dense"
+          ],
+          "answerIndex": 0,
+          "explanation": "Flatten is a reshape, but it is still added as a layer — as are Dropout and BatchNormalization later.",
+          "source": "c6a · slide 14"
+        },
+        {
+          "id": "nn-compile-args",
+          "kind": "mcq",
+          "prompt": "Which three arguments does the example pass to `model.compile`?",
+          "options": [
+            "loss, optimizer, metrics",
+            "loss, epochs, batch_size",
+            "optimizer, epochs, validation_data",
+            "layers, loss, learning_rate"
+          ],
+          "answerIndex": 0,
+          "explanation": "`compile(loss=\"sparse_categorical_crossentropy\", optimizer=\"sgd\", metrics=[\"accuracy\"])`.",
+          "source": "c6a · slide 18"
+        },
+        {
+          "id": "nn-param-count-first",
+          "kind": "computation",
+          "prompt": "A Dense layer with {{u}} units follows a flattened input of {{i}} values. How many parameters does it have?",
+          "vars": {
+            "i": {
+              "type": "choice",
+              "values": [
+                64,
+                100,
+                128,
+                256,
+                784,
+                1024
+              ]
+            },
+            "u": {
+              "type": "choice",
+              "values": [
+                10,
+                30,
+                50,
+                100,
+                128,
+                300
+              ]
+            }
+          },
+          "derived": {
+            "p": "i * u + u"
+          },
+          "steps": [
+            {
+              "text": "A Dense layer has one weight per (input, unit) pair, plus one bias per unit."
+            },
+            {
+              "text": "Weights: `{{i}} × {{u}} = {{i * u}}`. Biases: `{{u}}`."
+            },
+            {
+              "text": "`total = {{i * u}} + {{u}} = {{p}}`"
+            }
+          ],
+          "answer": {
+            "expr": "i * u + u",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "explanation": "The forgotten bias is the usual error. 784 × 300 = 235,200, but the summary says 235,500 — the extra 300 are the biases.",
+          "source": "c6a · slide 15"
+        },
+        {
+          "id": "nn-summary-total",
+          "kind": "recall",
+          "prompt": "Reproduce the FashionMNIST `model.summary()` figures and show where each comes from.",
+          "answer": "| Layer | Output shape | Params |\n|---|---|---|\n| flatten | (None, 784) | **0** |\n| dense | (None, 300) | **235,500** |\n| dense_1 | (None, 100) | **30,100** |\n| dense_2 | (None, 10) | **1,010** |\n\n**Total: 266,610.**\n\n- Flatten only reshapes, so it has no parameters.\n- 784 × 300 + 300 = 235,500\n- 300 × 100 + 100 = 30,100\n- 100 × 10 + 10 = 1,010",
+          "source": "c6a · slide 15"
+        },
+        {
+          "id": "nn-flatten-zero-params",
+          "kind": "mcq",
+          "prompt": "Why does the Flatten layer show 0 parameters?",
+          "options": [
+            "It only reshapes the data; it learns nothing",
+            "Its parameters are counted in the next layer",
+            "It is not trainable by default",
+            "The summary omits them for brevity"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 15"
+        },
+        {
+          "id": "nn-total-params-compute",
+          "kind": "computation",
+          "prompt": "A network is Flatten({{i}}) → Dense({{h}}, relu) → Dense({{o}}, softmax). How many trainable parameters in total?",
+          "vars": {
+            "i": {
+              "type": "choice",
+              "values": [
+                64,
+                144,
+                256,
+                784
+              ]
+            },
+            "h": {
+              "type": "choice",
+              "values": [
+                16,
+                32,
+                50,
+                100,
+                200
+              ]
+            },
+            "o": {
+              "type": "choice",
+              "values": [
+                2,
+                5,
+                10,
+                20
+              ]
+            }
+          },
+          "derived": {
+            "t": "(i*h + h) + (h*o + o)"
+          },
+          "steps": [
+            {
+              "text": "Flatten contributes 0."
+            },
+            {
+              "text": "First Dense: `{{i}}×{{h}} + {{h}} = {{i*h + h}}`."
+            },
+            {
+              "text": "Second Dense: `{{h}}×{{o}} + {{o}} = {{h*o + o}}`. Total `= {{t}}`."
+            }
+          ],
+          "answer": {
+            "expr": "(i*h + h) + (h*o + o)",
+            "tolerance": 0.5,
+            "decimals": 0
+          },
+          "source": "c6a · slide 15"
+        },
+        {
+          "id": "nn-weights-shape",
+          "kind": "mcq",
+          "prompt": "`weights, biases = model.layers[1].get_weights()` gives `weights.shape` = (784, 300). What is `biases.shape`?",
+          "options": [
+            "(300,)",
+            "(784,)",
+            "(300, 1)",
+            "(784, 300)"
+          ],
+          "answerIndex": 0,
+          "explanation": "One bias per unit in the layer. The slide shows `(300,)` and an array initialised to zeros.",
+          "source": "c6a · slide 17"
+        },
+        {
+          "id": "nn-biases-init",
+          "kind": "mcq",
+          "prompt": "In the inspected layer, the biases are all 0 while the weights are small random values. Why the difference?",
+          "options": [
+            "Weights must be random to break symmetry; biases need not be",
+            "Biases are not trainable",
+            "The layer had not been compiled yet",
+            "Biases are always zero in Keras"
+          ],
+          "answerIndex": 0,
+          "explanation": "Identical weights would make every unit compute the same thing forever. Zero biases cause no such problem because the weights already differ.",
+          "source": "c6a · slides 11, 17"
+        },
+        {
+          "id": "nn-layer-access",
+          "kind": "mcq",
+          "prompt": "Which of these retrieves a layer by name?",
+          "options": [
+            "model.get_layer('dense_2')",
+            "model.layers['dense_2']",
+            "model.dense_2",
+            "model.find_layer('dense_2')"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 16"
+        },
+        {
+          "id": "nn-evaluate-predict",
+          "kind": "recall",
+          "prompt": "How is a trained Keras model used?",
+          "answer": "**`model.evaluate(X_test, y_test)`** — returns the loss and metrics, e.g. `[0.4074, 0.854]`.\n\n**`model.predict(X_new)`** — returns the raw outputs; for a softmax layer these are per-class probabilities, and `y_proba.round(2)` makes them readable.",
+          "source": "c6a · slide 21"
+        },
+        {
+          "id": "nn-functional-api",
+          "kind": "recall",
+          "prompt": "What three things must you do differently for a non-sequential model?",
+          "answer": "1. Must define an **explicit input layer**.\n2. Must **thread layers together explicitly** — use variables to store them and pass them into the subsequent layers.\n3. Must explicitly call **Model** with the input and output definitions.",
+          "source": "c6a · slide 25"
+        },
+        {
+          "id": "nn-wide-deep",
+          "kind": "mcq",
+          "prompt": "In the non-sequential example, what is the Concat layer for?",
+          "options": [
+            "It joins the 'wide' path straight from the input with the 'deep' path through the hidden layers",
+            "It concatenates the training batches",
+            "It merges two separate models",
+            "It flattens multi-dimensional input"
+          ],
+          "answerIndex": 0,
+          "explanation": "Input feeds both Hidden 1 → Hidden 2 (deep) and directly to Concat (wide) — impossible to express as a plain Sequential stack.",
+          "source": "c6a · slide 24"
+        },
+        {
+          "id": "nn-keras-libraries",
+          "kind": "mcq",
+          "prompt": "Keras is described as a high-level library for which backends?",
+          "options": [
+            "tensorflow, mxnet, (theano), pytorch",
+            "tensorflow only",
+            "numpy and scipy",
+            "scikit-learn"
+          ],
+          "answerIndex": 0,
+          "explanation": "The course recommends using it via `import tensorflow as tf` and prefixing keras references with `tf.`.",
+          "source": "c6a · slide 12"
+        },
+        {
+          "id": "nn-colab-gpu",
+          "kind": "mcq",
+          "prompt": "How does the course say to enable GPU support in Colab?",
+          "options": [
+            "runtime → change runtime type → T4 GPU",
+            "Install CUDA manually",
+            "It is enabled by default",
+            "Call tf.enable_gpu()"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 12"
+        }
+      ]
+    },
+    {
+      "id": "nn-sizing",
+      "title": "Sizing the network and hyperparameters",
+      "emphasis": "core",
+      "summary": "How many layers, how many units, and which hyperparameter to tune first. The learning rate matters most.",
+      "questions": [
+        {
+          "id": "nn-how-many-layers",
+          "kind": "recall",
+          "prompt": "What advice does the course give on the number of layers?",
+          "answer": "**Start with 1 or 2**, and increase if necessary. Deep networks for image classification can have **hundreds**.\n\nIn theory **one wide-enough hidden layer can represent any smooth function**, but it might need **millions of units** and be very hard and slow to train.\n\nIn practice, **many smaller layers often work better than one very wide one**.",
+          "source": "c6a · slide 27"
+        },
+        {
+          "id": "nn-universal-approximation",
+          "kind": "mcq",
+          "prompt": "One hidden layer of sufficient width can represent any smooth function. Why is that not the end of the story?",
+          "options": [
+            "It might need millions of units and be very hard and slow to train",
+            "The theorem only applies to linear functions",
+            "It requires an infinite training set",
+            "It only works for classification"
+          ],
+          "answerIndex": 0,
+          "explanation": "Representable is not the same as learnable. Depth is a practical device, not a theoretical necessity.",
+          "source": "c6a · slide 27"
+        },
+        {
+          "id": "nn-how-many-units",
+          "kind": "recall",
+          "prompt": "What advice does the course give on the number of units per layer?",
+          "answer": "Usually **hundreds**, often **powers of 2** (for GPU reasons).\n\n**Old practice:** many units first, fewer later — a pyramid.\n**Current practice:** just use the **same number for every layer**.\n\nThere are many combinations to try.",
+          "source": "c6a · slide 28"
+        },
+        {
+          "id": "nn-stretch-pants",
+          "kind": "recall",
+          "prompt": "What is the 'stretch pants' approach?",
+          "answer": "Use a net that is **too large**, and use **early stopping**.\n\nRather than searching for exactly the right capacity, deliberately over-provision and let early stopping halt training before the excess capacity is used to overfit.",
+          "source": "c6a · slide 28"
+        },
+        {
+          "id": "nn-most-important-hyperparam",
+          "kind": "mcq",
+          "prompt": "Which hyperparameter does the course call the most important?",
+          "options": [
+            "The learning rate",
+            "The number of layers",
+            "The mini-batch size",
+            "The activation function"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 29"
+        },
+        {
+          "id": "nn-lr-simple-approach",
+          "kind": "recall",
+          "prompt": "What simple approach to finding a learning rate does the course give?",
+          "answer": "**Start with a large value.** If training **diverges**, **divide by 3** and repeat.\n\nToo large means no convergence; too small means slow learning. Many smarter alternatives exist (covered in Part B).",
+          "source": "c6a · slide 29"
+        },
+        {
+          "id": "nn-lr-divide-compute",
+          "kind": "computation",
+          "prompt": "You start at a learning rate of {{lr}} and it diverges. Applying the divide-by-3 rule {{n}} times, what rate do you reach?",
+          "vars": {
+            "lr": {
+              "type": "choice",
+              "values": [
+                0.9,
+                0.09,
+                9
+              ]
+            },
+            "n": {
+              "type": "choice",
+              "values": [
+                1,
+                2
+              ]
+            }
+          },
+          "derived": {
+            "out": "lr / 3^n"
+          },
+          "steps": [
+            {
+              "text": "Each step divides the rate by 3, so after n steps it is `lr / 3ⁿ`."
+            },
+            {
+              "text": "`3^{{n}} = {{3^n}}`."
+            },
+            {
+              "text": "`{{lr}} / {{3^n}} = {{out | 3}}`"
+            }
+          ],
+          "answer": {
+            "expr": "lr / 3^n",
+            "tolerance": 0.0005,
+            "decimals": 3
+          },
+          "source": "c6a · slide 29",
+          "explanation": "c6a slide 29: start with a large value, and if training diverges divide by 3 and repeat. It is the crude version of the schedules c6b then replaces it with."
+        },
+        {
+          "id": "nn-batch-size-value",
+          "kind": "mcq",
+          "prompt": "What mini-batch size does the course suggest, and what does it interact with?",
+          "options": [
+            "About 32, interacting with GPU parallelism",
+            "About 1000, interacting with dataset size",
+            "Exactly 1, interacting with the learning rate",
+            "The full dataset, interacting with memory"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slide 29"
+        },
+        {
+          "id": "nn-lr-epochs-interaction",
+          "kind": "mcq",
+          "prompt": "How do the learning rate and number of epochs interact?",
+          "options": [
+            "A lower learning rate needs more epochs",
+            "A lower learning rate needs fewer epochs",
+            "They are independent",
+            "More epochs require a larger batch size"
+          ],
+          "answerIndex": 0,
+          "explanation": "Smaller steps cover less ground per pass, so more passes are needed to reach the same place.",
+          "source": "c6a · slide 29"
+        },
+        {
+          "id": "nn-activation-hyperparam",
+          "kind": "recall",
+          "prompt": "What does the course say about choosing activation functions as a hyperparameter?",
+          "answer": "**ReLU inside**; the **last layer depends on the type of problem** — binary, multi-class, multi-label or regression.\n\nSo the hidden activation is essentially a settled default, and only the output activation needs a decision, which the problem type makes for you.",
+          "source": "c6a · slide 29"
+        },
+        {
+          "id": "nn-powers-of-two",
+          "kind": "mcq",
+          "prompt": "Why are unit counts often powers of 2?",
+          "options": [
+            "GPU reasons",
+            "It guarantees convergence",
+            "It halves the parameter count",
+            "Keras requires it"
+          ],
+          "answerIndex": 0,
+          "explanation": "The slide writes '(? => GPUs)' — flagged as the reason, with a hint of doubt about how much it really matters.",
+          "source": "c6a · slide 28"
+        },
+        {
+          "id": "nn-playground",
+          "kind": "mcq",
+          "prompt": "Which browser tool does the course recommend for experimenting with toy problems?",
+          "options": [
+            "playground.tensorflow.org",
+            "distill.pub",
+            "adamharley.com/nn_vis",
+            "colab.research.google.com"
+          ],
+          "answerIndex": 0,
+          "explanation": "adamharley.com/nn_vis is linked separately, for visualising a CNN in c6b.",
+          "source": "c6a · slide 30; c6b · slide 30"
+        },
+        {
+          "id": "nn-sizing-scenario",
+          "kind": "recall",
+          "prompt": "You are starting a new tabular classification problem. Give a defensible starting architecture and say why.",
+          "answer": "**1 or 2 hidden layers** — the course's advice is to start there and increase if needed.\n**Same number of units in each**, in the low hundreds, a power of 2 (128 or 256) — current practice rather than a pyramid.\n**ReLU** on the hidden layers.\n**Output layer set by the problem type** — softmax with one unit per class for multiclass, sigmoid with one unit for binary.\n**Learning rate tuned first**, starting large and dividing by 3 while it diverges.\n\nThen consider the stretch-pants approach: oversize deliberately and rely on early stopping.",
+          "source": "c6a · slides 27–29"
+        },
+        {
+          "id": "nn-too-few-units",
+          "kind": "mcq",
+          "prompt": "A network with far too few hidden units will most likely:",
+          "options": [
+            "Underfit — it lacks the capacity to represent the pattern",
+            "Overfit — it memorises the few units it has",
+            "Train more slowly but reach the same accuracy",
+            "Fail to compile"
+          ],
+          "answerIndex": 0,
+          "source": "c6a · slides 27–28"
+        },
+        {
+          "id": "nn-hyperparam-list",
+          "kind": "multi",
+          "prompt": "Which of these appear on the hyperparameter slide?",
+          "options": [
+            "Learning rate",
+            "Mini batch size",
+            "Number of epochs",
+            "Number of training examples"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "tier": 2,
+          "explanation": "The fourth listed hyperparameter is the activation function. The size of the dataset is a property of the data, not a hyperparameter.",
+          "source": "c6a · slide 29"
+        }
+      ]
+    }
+  ]
+}
