@@ -92,7 +92,9 @@ export const DEFAULT_SHEET_SETTINGS: SheetSettings = {
   fontPt: 9,
   lineHeight: 1.35,
   autoFit: true,
-  targetPages: 1,
+  // Two pages by default: a cheat sheet allowance is normally "one sheet,
+  // double-sided", which is two printed sides.
+  targetPages: 2,
 
   includeFormulas: true,
   includeDefinitions: true,

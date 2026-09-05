@@ -34,6 +34,33 @@ FUNCTIONS = {
 CONSTANTS = {"pi", "e"}
 
 
+def _safe_namespace(scope: dict[str, float]) -> dict[str, object]:
+    ns: dict[str, object] = dict(scope)
+    ns.update({"pi": math.pi, "e": math.e})
+    ns.update(
+        {
+            "abs": abs, "ceil": math.ceil, "exp": math.exp, "floor": math.floor,
+            "ln": math.log, "log": math.log, "log2": math.log2, "log10": math.log10,
+            "max": max, "min": min, "sign": lambda x: (x > 0) - (x < 0),
+            "sqrt": math.sqrt,
+            "round": lambda x, d=0: round(x, int(d)),
+        }
+    )
+    return ns
+
+
+def _evaluate(source: str, scope: dict[str, float]) -> float:
+    """Evaluate a checked expression. Returns 1.0 if it cannot be evaluated."""
+    cleaned = (
+        source.replace("−", "-").replace("×", "*").replace("·", "*").replace("÷", "/")
+    )
+    try:
+        value = eval(cleaned.replace("^", "**"), {"__builtins__": {}}, _safe_namespace(scope))  # noqa: S307
+        return float(value)
+    except Exception:  # noqa: BLE001
+        return 1.0
+
+
 class Report:
     def __init__(self) -> None:
         self.errors: list[tuple[str, str]] = []
@@ -51,8 +78,16 @@ class Report:
 # --------------------------------------------------------------------------
 
 
-def check_expression(source: str, names: set[str]) -> str | None:
-    """Return an error message, or None when the expression is usable."""
+def check_expression(source: str, scope: dict[str, float]) -> str | None:
+    """
+    Return an error message, or None when the expression is usable.
+
+    `scope` maps each declared variable to a *representative* value drawn from
+    its declared range. Probing with a constant instead would reject perfectly
+    good expressions: `ln(1 - r)` is fine for r in [0.1, 0.9] but not for an
+    arbitrary probe value above 1.
+    """
+    names = set(scope)
     cleaned = (
         source.replace("−", "-").replace("×", "*").replace("·", "*").replace("÷", "/")
     )
@@ -71,9 +106,8 @@ def check_expression(source: str, names: set[str]) -> str | None:
     if cleaned.count("(") != cleaned.count(")"):
         return "unbalanced parentheses"
 
-    # Evaluate with every name bound to a plausible value, using a namespace
-    # that contains only the whitelisted functions.
-    scope = {name: 1.7 for name in names}
+    # Evaluate in a namespace holding only the whitelisted functions.
+    scope = dict(scope)
     scope.update({"pi": math.pi, "e": math.e})
     scope.update(
         {
@@ -192,7 +226,7 @@ def check_computation(q: dict, path: str, r: Report) -> None:
         r.error(path, "answer.expr is required and must be an expression string")
         return
 
-    names: set[str] = set()
+    scope: dict[str, float] = {}
 
     vars_ = q.get("vars")
     if vars_ is not None:
@@ -211,15 +245,19 @@ def check_computation(q: dict, path: str, r: Report) -> None:
                         continue
                     if lo > hi:
                         r.error(path, f"vars.{name} has min greater than max")
+                    scope[name] = (lo + hi) / 2
                 elif kind == "choice":
                     values = spec.get("values")
                     if not isinstance(values, list) or not values:
                         r.error(path, f"vars.{name} needs a non-empty values array")
                         continue
+                    try:
+                        scope[name] = float(values[0])
+                    except (TypeError, ValueError):
+                        scope[name] = 1.0
                 else:
                     r.error(path, f'vars.{name}.type must be "int", "float" or "choice"')
                     continue
-                names.add(name)
 
     derived = q.get("derived")
     if derived is not None:
@@ -230,12 +268,16 @@ def check_computation(q: dict, path: str, r: Report) -> None:
                 if not isinstance(expr, str):
                     r.error(path, f"derived.{name} must be an expression string")
                     continue
-                problem = check_expression(expr, names)
+                problem = check_expression(expr, scope)
                 if problem:
                     r.error(path, f'derived.{name} = "{expr}" {problem}')
-                names.add(name)
+                    scope[name] = 1.0
+                    continue
+                # Bind the real derived value, so expressions built on it are
+                # checked against something realistic rather than a placeholder.
+                scope[name] = _evaluate(expr, scope)
 
-    problem = check_expression(answer["expr"], names)
+    problem = check_expression(answer["expr"], scope)
     if problem:
         r.error(path, f'answer.expr = "{answer["expr"]}" {problem}')
 
@@ -250,7 +292,7 @@ def check_computation(q: dict, path: str, r: Report) -> None:
             expr = match.split("|")[0].strip()
             if not expr:
                 continue
-            problem = check_expression(expr, names)
+            problem = check_expression(expr, scope)
             if problem:
                 r.error(path, f"the expression {{{{{expr}}}}} {problem}")
 

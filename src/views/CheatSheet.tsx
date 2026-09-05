@@ -310,68 +310,28 @@ export function CheatSheet({ pack }: { pack: Pack }) {
       </div>
 
       {/* Hidden measuring column: identical width and typography to a real
-          column, so measured heights describe rendered heights exactly. */}
-      <div className="sheet-measure" aria-hidden="true">
-        <div ref={measureRef} className="sheet-measure-column" />
-      </div>
+          column, so measured heights describe rendered heights exactly.
 
-      {/* React renders the measurable copies into the hidden column above. */}
-      <MeasureContent
-        targetRef={measureRef}
-        items={items}
-        showCitations={settings.includeCitations}
-        showNotes={settings.includeNotes}
-      />
+          The items are rendered directly into the measured element. An earlier
+          version rendered them elsewhere and moved the nodes across, which
+          broke React's reconciliation and silently left the column empty — so
+          every measured height was 0, everything "fitted", and the whole pack
+          was packed onto one page. */}
+      <div className="sheet-measure" aria-hidden="true">
+        <div ref={measureRef} className="sheet-measure-column">
+          {items.map((item) => (
+            <SheetItemView
+              key={item.key}
+              item={item}
+              showCitations={settings.includeCitations}
+              showNotes={settings.includeNotes}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Page geometry has to reach the print engine too. */}
       <style>{`@page { size: ${size.widthMm}mm ${size.heightMm}mm ${settings.orientation}; margin: 0; }`}</style>
-    </div>
-  )
-}
-
-/* ================================================================== *
- * Measuring
- * ================================================================== */
-
-/**
- * Renders the item list into the hidden measuring column via a portal-free
- * approach: the same markup is rendered here, hidden, and the measuring effect
- * reads its children. Keeping it a separate component means changing an item
- * re-renders only this subtree.
- */
-function MeasureContent({
-  targetRef,
-  items,
-  showCitations,
-  showNotes,
-}: {
-  targetRef: React.RefObject<HTMLDivElement | null>
-  items: SheetItem[]
-  showCitations: boolean
-  showNotes: boolean
-}) {
-  const holder = useRef<HTMLDivElement>(null)
-
-  // Move the rendered nodes into the measuring column after each render, so
-  // the measured DOM is exactly the DOM that gets drawn on the page.
-  useLayoutEffect(() => {
-    const source = holder.current
-    const target = targetRef.current
-    if (!source || !target) return
-
-    target.replaceChildren(...Array.from(source.childNodes))
-  })
-
-  return (
-    <div ref={holder} className="sheet-measure" aria-hidden="true">
-      {items.map((item) => (
-        <SheetItemView
-          key={item.key}
-          item={item}
-          showCitations={showCitations}
-          showNotes={showNotes}
-        />
-      ))}
     </div>
   )
 }

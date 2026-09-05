@@ -16,7 +16,7 @@ import {
   type Question,
   type Topic,
 } from '../types/pack'
-import { extractExpressions, isEvaluable } from './expr'
+import { evaluate, extractExpressions, isEvaluable } from './expr'
 
 export interface Issue {
   path: string
@@ -350,8 +350,18 @@ function validateComputation(raw: Record<string, unknown>, path: string, c: Coll
         }
         if (!isEvaluable(expr, scope)) {
           c.error(path, `derived.${name} = "${expr}" could not be evaluated`)
+          scope[name] = 1
+          continue
         }
-        scope[name] = 1
+        // Bind the real derived value, so later expressions are checked
+        // against something realistic. Binding a placeholder here would
+        // reject good expressions — ln(1 - r) is fine for the r this
+        // question actually draws, but not for an arbitrary stand-in.
+        try {
+          scope[name] = evaluate(expr, scope)
+        } catch {
+          scope[name] = 1
+        }
       }
     }
   }
