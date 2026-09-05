@@ -24,10 +24,9 @@ import { Markish } from '../components/Markish'
 import { masteryOf, type PackProgress } from '../lib/progress'
 import {
   DEFAULT_SHEET_SETTINGS,
-  FONT_STEP,
-  MAX_FONT_PT,
-  MIN_FONT_PT,
   PAGE_SIZES,
+  SHEET_LIMITS,
+  SHEET_SETTINGS_KEY,
   countByKind,
   fitToPages,
   geometryOf,
@@ -35,19 +34,17 @@ import {
   mmToPx,
   packBalanced,
   pageSizeById,
+  sanitizeSheetSettings,
   type Geometry,
   type Layout,
   type SheetItem,
   type SheetSettings,
 } from '../lib/sheet'
 
-const STORAGE_KEY = 'overlearn:sheet'
-
 function loadSheetSettings(): SheetSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_SHEET_SETTINGS
-    return { ...DEFAULT_SHEET_SETTINGS, ...(JSON.parse(raw) as Partial<SheetSettings>) }
+    const raw = localStorage.getItem(SHEET_SETTINGS_KEY)
+    return sanitizeSheetSettings(raw ? (JSON.parse(raw) as Partial<SheetSettings>) : {})
   } catch {
     return DEFAULT_SHEET_SETTINGS
   }
@@ -55,13 +52,46 @@ function loadSheetSettings(): SheetSettings {
 
 function saveSheetSettings(settings: SheetSettings): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    localStorage.setItem(SHEET_SETTINGS_KEY, JSON.stringify(settings))
   } catch {
     /* storage unavailable; settings just won't persist */
   }
 }
 
 type ZoomMode = 'fit' | number
+
+/**
+ * A layout, together with the exact items it was computed from.
+ *
+ * The two have to travel as one value. `items` is rebuilt during render,
+ * while the layout that indexes into it is solved afterwards, in a layout
+ * effect. So on any render where a setting has just shortened the list —
+ * definitions switched off, a topic deselected, "only what I'm shaky on" —
+ * the layout still holds indices past the end of the new array, and reading
+ * one of them took the whole app down with it.
+ *
+ * Rendering from this pair makes that unrepresentable: the sheet is always
+ * internally consistent, and simply lags the controls by the one frame it
+ * takes to re-solve. Since the effect runs before paint, nothing is ever
+ * visibly stale.
+ */
+interface Pagination {
+  items: SheetItem[]
+  layout: Layout
+  /** The size the layout was actually solved at. */
+  fontPt: number
+  /** Whether it came in within the page budget. */
+  fits: boolean
+}
+
+function emptyPagination(fontPt: number): Pagination {
+  return {
+    items: [],
+    layout: { pages: [], columnFill: [], hasOverflowingItem: false },
+    fontPt,
+    fits: true,
+  }
+}
 
 /* ================================================================== */
 
@@ -95,21 +125,15 @@ export function CheatSheet({ pack }: { pack: Pack }) {
   /* -- measurement and pagination ------------------------------------- */
 
   const measureRef = useRef<HTMLDivElement>(null)
-  const [layout, setLayout] = useState<Layout>({
-    pages: [],
-    columnFill: [],
-    hasOverflowingItem: false,
-  })
-  const [resolvedFontPt, setResolvedFontPt] = useState(settings.fontPt)
-  const [fits, setFits] = useState(true)
+  const [paginated, setPaginated] = useState<Pagination>(() => emptyPagination(settings.fontPt))
+  const { layout, fontPt: resolvedFontPt, fits } = paginated
 
   useLayoutEffect(() => {
     const node = measureRef.current
     if (!node) return
 
     if (items.length === 0) {
-      setLayout({ pages: [], columnFill: [], hasOverflowingItem: false })
-      setFits(true)
+      setPaginated(emptyPagination(settings.fontPt))
       return
     }
 
@@ -137,9 +161,7 @@ export function CheatSheet({ pack }: { pack: Pack }) {
         settings.columns,
         measure,
       )
-      setLayout(result.layout)
-      setResolvedFontPt(result.fontPt)
-      setFits(result.fits)
+      setPaginated({ items, layout: result.layout, fontPt: result.fontPt, fits: result.fits })
     } else {
       const packed = packBalanced(
         items,
@@ -148,9 +170,12 @@ export function CheatSheet({ pack }: { pack: Pack }) {
         geometry.columnHeightPx,
         settings.columns,
       )
-      setLayout(packed)
-      setResolvedFontPt(settings.fontPt)
-      setFits(packed.pages.length <= targetPages)
+      setPaginated({
+        items,
+        layout: packed,
+        fontPt: settings.fontPt,
+        fits: packed.pages.length <= targetPages,
+      })
     }
   }, [items, geometry, settings])
 
@@ -281,7 +306,7 @@ export function CheatSheet({ pack }: { pack: Pack }) {
               )}
               <Pages
                 pack={pack}
-                items={items}
+                items={paginated.items}
                 layout={layout}
                 settings={settings}
                 fontPt={resolvedFontPt}
@@ -496,8 +521,8 @@ function Controls({
           <Field label="Pages allowed">
             <Stepper
               value={settings.targetPages}
-              min={1}
-              max={12}
+              min={SHEET_LIMITS.targetPages.min}
+              max={SHEET_LIMITS.targetPages.max}
               onChange={(value) => update({ targetPages: value })}
             />
           </Field>
@@ -510,9 +535,9 @@ function Controls({
             <input
               className="slider"
               type="range"
-              min={MIN_FONT_PT}
-              max={MAX_FONT_PT}
-              step={FONT_STEP}
+              min={SHEET_LIMITS.fontPt.min}
+              max={SHEET_LIMITS.fontPt.max}
+              step={SHEET_LIMITS.fontPt.step}
               value={settings.autoFit ? resolvedFontPt : settings.fontPt}
               disabled={settings.autoFit}
               onChange={(e) => update({ fontPt: Number(e.target.value) })}
@@ -523,9 +548,9 @@ function Controls({
             <input
               className="slider"
               type="range"
-              min={1.05}
-              max={1.7}
-              step={0.05}
+              min={SHEET_LIMITS.lineHeight.min}
+              max={SHEET_LIMITS.lineHeight.max}
+              step={SHEET_LIMITS.lineHeight.step}
               value={settings.lineHeight}
               onChange={(e) => update({ lineHeight: Number(e.target.value) })}
             />
@@ -562,9 +587,9 @@ function Controls({
             <input
               className="slider"
               type="range"
-              min={0}
-              max={25}
-              step={1}
+              min={SHEET_LIMITS.marginMm.min}
+              max={SHEET_LIMITS.marginMm.max}
+              step={SHEET_LIMITS.marginMm.step}
               value={settings.marginMm}
               onChange={(e) => update({ marginMm: Number(e.target.value) })}
             />
@@ -575,8 +600,8 @@ function Controls({
           <Field label="Count">
             <Stepper
               value={settings.columns}
-              min={1}
-              max={6}
+              min={SHEET_LIMITS.columns.min}
+              max={SHEET_LIMITS.columns.max}
               onChange={(value) => update({ columns: value })}
             />
           </Field>
@@ -585,9 +610,9 @@ function Controls({
             <input
               className="slider"
               type="range"
-              min={2}
-              max={16}
-              step={1}
+              min={SHEET_LIMITS.columnGapMm.min}
+              max={SHEET_LIMITS.columnGapMm.max}
+              step={SHEET_LIMITS.columnGapMm.step}
               value={settings.columnGapMm}
               onChange={(e) => update({ columnGapMm: Number(e.target.value) })}
             />

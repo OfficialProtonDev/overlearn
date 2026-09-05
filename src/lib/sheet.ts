@@ -48,6 +48,9 @@ export function mmToPx(mm: number): number {
  * Settings
  * ------------------------------------------------------------------ */
 
+/** Where the sheet settings live. Shared so recovery paths can clear them. */
+export const SHEET_SETTINGS_KEY = 'overlearn:sheet'
+
 export type SheetOrder = 'pack' | 'alpha' | 'weakest'
 
 export interface SheetSettings {
@@ -113,6 +116,55 @@ export const DEFAULT_SHEET_SETTINGS: SheetSettings = {
 export const MIN_FONT_PT = 5
 export const MAX_FONT_PT = 14
 export const FONT_STEP = 0.25
+
+/**
+ * The bounds every numeric setting is held to — by the controls that set them,
+ * and again by sanitizeSheetSettings() on the way back in from storage.
+ */
+export const SHEET_LIMITS = {
+  marginMm: { min: 0, max: 25, step: 1 },
+  columns: { min: 1, max: 6 },
+  columnGapMm: { min: 2, max: 16, step: 1 },
+  fontPt: { min: MIN_FONT_PT, max: MAX_FONT_PT, step: FONT_STEP },
+  lineHeight: { min: 1.05, max: 1.7, step: 0.05 },
+  targetPages: { min: 1, max: 12 },
+} as const
+
+/**
+ * Restore settings from storage without trusting them.
+ *
+ * Whatever is under the key was written by some earlier version of this app,
+ * and an out-of-range value survives every reload — which is the difference
+ * between a bad setting and a page you cannot get back. Anything unrecognised
+ * falls back to the default for that one field, so a single bad value costs
+ * the user that value and nothing else.
+ */
+export function sanitizeSheetSettings(raw: Partial<SheetSettings>): SheetSettings {
+  const merged = { ...DEFAULT_SHEET_SETTINGS, ...raw }
+
+  const bounded = (value: number, limit: { min: number; max: number }, fallback: number) =>
+    Number.isFinite(value) ? Math.min(limit.max, Math.max(limit.min, value)) : fallback
+
+  return {
+    ...merged,
+    pageSizeId: PAGE_SIZES.some((size) => size.id === merged.pageSizeId)
+      ? merged.pageSizeId
+      : DEFAULT_SHEET_SETTINGS.pageSizeId,
+    orientation: merged.orientation === 'landscape' ? 'landscape' : 'portrait',
+    marginMm: bounded(merged.marginMm, SHEET_LIMITS.marginMm, DEFAULT_SHEET_SETTINGS.marginMm),
+    columns: Math.round(bounded(merged.columns, SHEET_LIMITS.columns, DEFAULT_SHEET_SETTINGS.columns)),
+    columnGapMm: bounded(merged.columnGapMm, SHEET_LIMITS.columnGapMm, DEFAULT_SHEET_SETTINGS.columnGapMm),
+    fontPt: bounded(merged.fontPt, SHEET_LIMITS.fontPt, DEFAULT_SHEET_SETTINGS.fontPt),
+    lineHeight: bounded(merged.lineHeight, SHEET_LIMITS.lineHeight, DEFAULT_SHEET_SETTINGS.lineHeight),
+    targetPages: Math.round(
+      bounded(merged.targetPages, SHEET_LIMITS.targetPages, DEFAULT_SHEET_SETTINGS.targetPages),
+    ),
+    order: merged.order === 'alpha' || merged.order === 'weakest' ? merged.order : 'pack',
+    topicIds: Array.isArray(merged.topicIds)
+      ? merged.topicIds.filter((id): id is string => typeof id === 'string')
+      : [],
+  }
+}
 
 /* ------------------------------------------------------------------ *
  * Derived geometry

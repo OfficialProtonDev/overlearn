@@ -1472,6 +1472,15 @@
    Empty states, prose blocks
    -------------------------------------------------------------------------- */
 
+/* Error-boundary fallback. The message is arbitrary and can be long, so let
+   it wrap instead of pushing the page sideways. */
+.error-detail {
+  margin: 0;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .empty {
   display: flex;
   flex-direction: column;
