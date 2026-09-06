@@ -139,7 +139,21 @@ even when the ladder has not opened it yet.
 
 `hint` should point at the idea rather than the spelling. Without one, the app
 falls back to showing the shape of the answer — its word count and first
-letters. Either way, taking a hint caps that answer at `partial`.
+letters.
+
+A question whose answer is short enough to sit in an option — `short`, and
+single-blank `cloze` — can also be re-asked as multiple choice on request. The
+prompt and the progress record stay the same; only the form changes. The wrong
+options are real strings from the pack, drawn from the nearest material first
+and filtered to match the answer's shape, so writing good `keyFact` terms and
+good `mcq` distractors improves the fallback for every typed question near
+them.
+
+`recall` is excluded: its answers run to a paragraph, and it is graded by the
+reader rather than by matching. Those step down to a different, easier question
+on the same subtopic instead — never one already answered that sitting.
+
+Any of this help caps the answer at `partial`.
 
 ### `mcq` — pick one
 

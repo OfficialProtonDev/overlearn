@@ -15,6 +15,7 @@ import {
   MODE_LABEL,
   buildQueue,
   defaultLimit,
+  distractorPool,
   requeue,
   stepDown,
   stepDownTarget,
@@ -22,7 +23,7 @@ import {
   type SessionMode,
   type SessionSpec,
 } from '../lib/scheduler'
-import { ASSIST_NOTE, type AssistLevel } from '../lib/assist'
+import { ASSIST_NOTE, buildChoices, canBecomeChoices, type AssistLevel } from '../lib/assist'
 import { paths, useNavigate } from '../lib/router'
 import { useStore } from '../state/store'
 import { QuestionCard } from '../components/QuestionCard'
@@ -68,6 +69,8 @@ export function SessionView({
   const [done, setDone] = useState(false)
   const [plannedTotal, setPlannedTotal] = useState(0)
   const [assist, setAssist] = useState<AssistLevel>(0)
+  // The current question re-offered as options, once you've asked for that.
+  const [choices, setChoices] = useState<string[] | null>(null)
 
   useEffect(() => {
     const spec: SessionSpec = {
@@ -88,6 +91,7 @@ export function SessionView({
     setMarking(null)
     setLog([])
     setAssist(0)
+    setChoices(null)
     setDone(built.length === 0)
     // Rebuilding on every progress change would reshuffle mid-session, so
     // progress is read once at the start and left out of the dependencies.
@@ -183,6 +187,7 @@ export function SessionView({
     setPhase('answering')
     setMarking(null)
     setAssist(0)
+    setChoices(null)
   }, [current, queue, marking, isMock])
 
   const handleReroll = useCallback(() => {
@@ -194,14 +199,37 @@ export function SessionView({
     setAssist((level) => (level < 1 ? 1 : level))
   }, [])
 
+  /** Everything already answered this sitting, so nothing gets handed back. */
+  const answeredIds = useMemo(
+    () => new Set(log.map((entry) => entry.item.question.id)),
+    [log],
+  )
+
   /**
-   * Swap the question you're stuck on for an easier one on the same material.
-   * The hard version is pushed a few slots out rather than dropped, so it
-   * comes back while the easier one is still fresh.
+   * Make the question you're stuck on easier.
+   *
+   * First choice is to re-ask *this* question with options — same prompt,
+   * same material, same progress record, just recognition instead of recall.
+   * That is what being stuck on a typed answer actually calls for.
+   *
+   * Only when the answer is too long to sit in an option — a recall prompt
+   * answered in a paragraph — does it fall back to swapping in a different,
+   * easier question on the same subtopic, pushing the hard one a few slots
+   * out so it comes back while the detour is still fresh.
    */
   const handleStepDown = useCallback(() => {
     if (!current) return
-    const swapped = stepDown(pack, queue, current)
+
+    if (canBecomeChoices(current.question)) {
+      const built = buildChoices(current.question, distractorPool(pack, current))
+      if (built) {
+        setChoices(built)
+        setAssist(2)
+        return
+      }
+    }
+
+    const swapped = stepDown(pack, queue, current, answeredIds)
     if (!swapped) return
 
     setQueue(swapped.queue)
@@ -210,7 +238,8 @@ export function SessionView({
     setPhase('answering')
     setMarking(null)
     setAssist(2)
-  }, [current, queue, pack])
+    setChoices(null)
+  }, [current, queue, pack, answeredIds])
 
   const handleFlag = useCallback(() => {
     if (current) flag(current.question.id)
@@ -305,7 +334,16 @@ export function SessionView({
         flagged={flagged}
         keyboard={settings.keyboardShortcuts}
         assist={assist}
-        canStepDown={!isMock && stepDownTarget(pack, current) !== null}
+        choices={choices}
+        stepDownKind={
+          isMock || choices !== null
+            ? null
+            : canBecomeChoices(current.question)
+              ? 'choices'
+              : stepDownTarget(pack, current, answeredIds) !== null
+                ? 'swap'
+                : null
+        }
         onSubmit={handleSubmit}
         onNext={handleNext}
         onFlag={handleFlag}

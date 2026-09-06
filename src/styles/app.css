@@ -699,6 +699,12 @@
   opacity: 0.78;
 }
 
+/* -- the current question, re-offered as options -- */
+
+.choices-note {
+  margin-top: var(--s2);
+}
+
 /* -- a hint, mid-question -- */
 
 .hint {

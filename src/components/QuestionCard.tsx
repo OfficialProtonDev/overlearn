@@ -43,8 +43,16 @@ interface QuestionCardProps {
   keyboard: boolean
   /** How much help has been taken on this question already. */
   assist: AssistLevel
-  /** True when there is an easier question on this material to fall back to. */
-  canStepDown: boolean
+  /**
+   * This question re-offered as options, once that's been asked for. Answers
+   * are still graded as the typed answer they stand in for.
+   */
+  choices: string[] | null
+  /**
+   * What asking for something easier would do here: re-ask this question with
+   * options, swap in a different easier one, or nothing available.
+   */
+  stepDownKind: 'choices' | 'swap' | null
   onSubmit: (response: Response) => void
   onNext: () => void
   onFlag: () => void
@@ -63,7 +71,8 @@ export function QuestionCard({
   flagged,
   keyboard,
   assist,
-  canStepDown,
+  choices,
+  stepDownKind,
   onSubmit,
   onNext,
   onFlag,
@@ -151,7 +160,7 @@ export function QuestionCard({
   const hint = strandable ? hintFor(q) : null
   const offerHelp = phase === 'answering' && !suppressFeedback && strandable
   const canHint = offerHelp && hint !== null && assist < 1
-  const canDrop = offerHelp && canStepDown
+  const canDrop = offerHelp && stepDownKind !== null
 
   /* -- keyboard ------------------------------------------------------- */
 
@@ -214,6 +223,17 @@ export function QuestionCard({
         // Keys address what's on screen, so map the position back through the
         // shuffle before recording a choice.
         const position = Number(event.key) - 1
+
+        if (choices !== null) {
+          const option = choices[position]
+          if (option !== undefined) {
+            event.preventDefault()
+            if (q.kind === 'cloze') setBlanks([option])
+            else setText(option)
+          }
+          return
+        }
+
         const index = instance.optionMap[position]
         if (index !== undefined && (q.kind === 'mcq' || q.kind === 'multi')) {
           event.preventDefault()
@@ -243,6 +263,7 @@ export function QuestionCard({
     stepsShown,
     instance.steps.length,
     instance.optionMap,
+    choices,
     canHint,
     canDrop,
     onNext,
@@ -284,7 +305,7 @@ export function QuestionCard({
           <ClozePrompt
             prompt={instance.prompt}
             values={blanks}
-            disabled={phase !== 'answering'}
+            disabled={phase !== 'answering' || choices !== null}
             onChange={(i, value) =>
               setBlanks((prev) => {
                 const next = [...prev]
@@ -355,7 +376,7 @@ export function QuestionCard({
         </ul>
       )}
 
-      {(q.kind === 'short' || q.kind === 'computation') && (
+      {(q.kind === 'short' || q.kind === 'computation') && choices === null && (
         <div className="answer-entry">
           <input
             ref={firstInput}
@@ -394,6 +415,41 @@ export function QuestionCard({
             </button>
           )}
         </div>
+      )}
+
+      {/* ---------------- this question, as options ---------------- */}
+
+      {choices !== null && (
+        <>
+          <p className="t-tiny t-dimmer choices-note">
+            Same question, with the options in front of you. It still counts as
+            partial, and you'll be asked it cold again later.
+          </p>
+          <ul className="options">
+            {choices.map((option, position) => {
+              const value = q.kind === 'cloze' ? (blanks[0] ?? '') : text
+              const selected = value === option
+              return (
+                <li key={option}>
+                  <button
+                    type="button"
+                    className={`option ${selected ? 'is-selected' : ''}`}
+                    disabled={phase !== 'answering'}
+                    onClick={() => {
+                      if (q.kind === 'cloze') setBlanks([option])
+                      else setText(option)
+                    }}
+                  >
+                    <span className="option-key kbd">{position + 1}</span>
+                    <span className="option-text">
+                      <MarkishLine>{option}</MarkishLine>
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
 
       {/* ---------------- hint ---------------- */}
@@ -537,10 +593,14 @@ export function QuestionCard({
                 type="button"
                 className="btn btn-outline btn-sm"
                 onClick={onStepDown}
-                title="Swap for an easier question on this material — this one comes back later"
+                title={
+                  stepDownKind === 'choices'
+                    ? 'Re-ask this question with options to choose from'
+                    : 'Swap for an easier question on this material — this one comes back later'
+                }
               >
                 <ChevronsDown size={14} aria-hidden="true" />
-                Easier
+                {stepDownKind === 'choices' ? 'Give me options' : 'Easier question'}
                 <span className="kbd">E</span>
               </button>
             )}

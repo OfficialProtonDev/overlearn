@@ -353,12 +353,71 @@ export function requeue(rest: QueueItem[], item: QueueItem, verdict: Verdict): Q
 const STEP_DOWN_GAP = 5
 
 /**
+ * Wrong-but-plausible strings for re-asking a question as multiple choice.
+ *
+ * Drawn from the pack, nearest material first: the subtopic, then the topic,
+ * then anywhere. Nearby strings make the hardest distractors, because they
+ * come from the same corner of the course — which is exactly where a real
+ * confusion lives.
+ *
+ * Authored multiple-choice options come first within each ring. Someone
+ * already wrote those to be plausible and wrong about this material, which is
+ * a better distractor than anything derivable.
+ */
+export function distractorPool(pack: Pack, item: QueueItem): string[] {
+  const answerId = item.question.id
+  const near: string[] = []
+  const mid: string[] = []
+  const far: string[] = []
+
+  for (const topic of pack.topics) {
+    const topicHasIt = topic.subtopics.some((s) => s.id === item.subtopicId)
+
+    for (const fact of topic.keyFacts ?? []) (topicHasIt ? mid : far).push(fact.term)
+
+    for (const subtopic of topic.subtopics) {
+      const ring =
+        subtopic.id === item.subtopicId ? near : topicHasIt ? mid : far
+
+      for (const fact of subtopic.keyFacts ?? []) ring.push(fact.term)
+
+      for (const question of subtopic.questions) {
+        if (question.id === answerId) continue
+        switch (question.kind) {
+          case 'mcq':
+          case 'multi':
+            ring.push(...question.options)
+            break
+          case 'short':
+            if (question.answers[0]) ring.push(question.answers[0])
+            break
+          case 'cloze':
+            for (const blank of question.blanks) if (blank[0]) ring.push(blank[0])
+            break
+          default:
+            break
+        }
+      }
+    }
+  }
+
+  return [...shuffle(near), ...shuffle(mid), ...shuffle(far)]
+}
+
+/**
  * Is there an easier question on this same material to fall back to?
  *
- * Only questions strictly below the current tier count. Handing someone
- * another cold-recall question when they're stuck on cold recall is not help.
+ * Only questions strictly below the current tier count — handing someone
+ * another cold-recall question when they're stuck on cold recall is not help
+ * — and never one already answered this sitting. Being shown a question you
+ * answered ninety seconds ago is not a step down, it's the app losing its
+ * place, and it teaches nothing either way.
  */
-export function stepDownTarget(pack: Pack, item: QueueItem): Question | null {
+export function stepDownTarget(
+  pack: Pack,
+  item: QueueItem,
+  exclude: ReadonlySet<string> = new Set(),
+): Question | null {
   const tier = tierOf(item.question)
   if (tier <= 1) return null
 
@@ -368,7 +427,7 @@ export function stepDownTarget(pack: Pack, item: QueueItem): Question | null {
   if (!subtopic) return null
 
   const easier = subtopic.questions.filter(
-    (q) => q.id !== item.question.id && tierOf(q) < tier,
+    (q) => q.id !== item.question.id && tierOf(q) < tier && !exclude.has(q.id),
   )
   if (easier.length === 0) return null
 
@@ -397,8 +456,9 @@ export function stepDown(
   pack: Pack,
   rest: QueueItem[],
   item: QueueItem,
+  exclude: ReadonlySet<string> = new Set(),
 ): { next: QueueItem; queue: QueueItem[] } | null {
-  const easier = stepDownTarget(pack, item)
+  const easier = stepDownTarget(pack, item, exclude)
   if (!easier) return null
 
   const next: QueueItem = { ...item, question: easier, attempt: item.attempt + 1 }
