@@ -15,7 +15,7 @@
  *  because for this use there is no tomorrow.
  */
 
-import type { Pack, Question, Subtopic, Topic } from '../types/pack'
+import type { Emphasis, Pack, Question, Subtopic, Topic } from '../types/pack'
 import { tierOf } from '../types/pack'
 import type { Verdict } from './grading'
 import { masteryOf, mistakeQuestions, type PackProgress } from './progress'
@@ -152,6 +152,39 @@ function interleave(groups: Located[][]): Located[] {
   return out
 }
 
+/** How much a subtopic's emphasis holds it back from a capped mock. */
+const MOCK_GROUP_PENALTY: Record<Emphasis, number> = {
+  core: 1,
+  standard: 1.6,
+  background: 3,
+}
+
+/**
+ * Decide which subtopics get to go first.
+ *
+ * This matters far more than it looks. `interleave` walks the groups in order
+ * taking one question from each, so when a mode caps its length — rapid fire
+ * at 25, a mock at 30 — the first N groups are the entire session. Left in
+ * pack order that meant every rapid fire drew from the same first 25
+ * subtopics, and the last 27 of this pack were unreachable in that mode no
+ * matter how many times you ran it.
+ *
+ * So the order is drawn fresh each session. A mock additionally leans on the
+ * pack's emphasis, which is the one place that claim about what's examinable
+ * should decide what you actually get asked.
+ */
+function orderGroups(groups: Located[][], mode: SessionMode): Located[][] {
+  if (mode !== 'mock') return shuffle(groups)
+
+  return [...groups]
+    .map((group) => ({
+      group,
+      key: Math.random() * MOCK_GROUP_PENALTY[group[0].subtopic.emphasis ?? 'standard'],
+    }))
+    .sort((a, b) => a.key - b.key)
+    .map((entry) => entry.group)
+}
+
 function groupBySubtopic(items: Located[]): Located[][] {
   const map = new Map<string, Located[]>()
   for (const item of items) {
@@ -213,7 +246,7 @@ export function buildQueue(pack: Pack, progress: PackProgress, spec: SessionSpec
     case 'mock': {
       // Everything in scope, weighted toward what the pack marks as core.
       const scoped = locateAll(pack).filter(inScope)
-      pool = weightByEmphasis(scoped)
+      pool = weightByEmphasis(scoped, spec.limit)
       break
     }
 
@@ -234,7 +267,7 @@ export function buildQueue(pack: Pack, progress: PackProgress, spec: SessionSpec
   const ordered =
     spec.mode === 'quiz' && wanted.size === 1
       ? shuffle(pool) // a single subtopic can't be interleaved
-      : interleave(groupBySubtopic(pool))
+      : interleave(orderGroups(groupBySubtopic(pool), spec.mode))
 
   const limited = spec.limit ? ordered.slice(0, spec.limit) : ordered
   return limited.map(toQueueItem)
@@ -301,21 +334,41 @@ export function kindsAtTier(subtopic: Subtopic, tier: 1 | 2 | 3): string[] {
   return [...kinds]
 }
 
+/** How likely a question at each emphasis is to make it into a mock. */
+const MOCK_KEEP_RATE: Record<Emphasis, number> = {
+  core: 1,
+  standard: 0.72,
+  background: 0.32,
+}
+
 /**
- * Duplicate core-emphasis questions so they surface more often in a mock,
- * and thin out background material. Marked emphasis is the pack's own claim
- * about what is examinable, so this is where that claim pays off.
+ * Weight a mock toward what the pack marks as examinable.
+ *
+ * This thins the pool rather than duplicating out of it. The earlier version
+ * pushed core questions in twice, which does bias the draw — and also puts
+ * the same question in the same test twice. That was not hypothetical: 41 of
+ * this pack's 52 subtopics are marked core, so a mock scoped to one subtopic
+ * was every question, then every question again.
+ *
+ * Thinning gets the same bias with no repeats. Dropped questions are put back
+ * if the thinning would leave a mock shorter than it asked for, so a narrow
+ * scope still fills its limit.
  */
-function weightByEmphasis(items: Located[]): Located[] {
-  const out: Located[] = []
+function weightByEmphasis(items: Located[], limit?: number): Located[] {
+  const kept: Located[] = []
+  const dropped: Located[] = []
+
   for (const item of items) {
     const emphasis = item.subtopic.emphasis ?? 'standard'
-    if (emphasis === 'core') out.push(item, item)
-    else if (emphasis === 'standard') out.push(item)
-    else if (Math.random() < 0.5) out.push(item)
+    if (Math.random() < MOCK_KEEP_RATE[emphasis]) kept.push(item)
+    else dropped.push(item)
   }
-  // Deduplicate identical questions that landed adjacent after weighting.
-  return out
+
+  if (limit !== undefined && kept.length < limit) {
+    kept.push(...shuffle(dropped).slice(0, limit - kept.length))
+  }
+
+  return kept
 }
 
 /* ------------------------------------------------------------------ *
@@ -330,6 +383,9 @@ const REQUEUE_GAP: Record<number, number> = {
 }
 const MAX_ATTEMPTS = 4
 
+/** Questions that must still be ahead before a miss is worth putting back. */
+const MIN_REQUEUE_ROOM = 4
+
 /**
  * Insert `item` back into the remaining queue after a wrong or partial answer.
  * Returns the queue unchanged once an item has had enough goes — at that point
@@ -338,6 +394,14 @@ const MAX_ATTEMPTS = 4
 export function requeue(rest: QueueItem[], item: QueueItem, verdict: Verdict): QueueItem[] {
   if (verdict === 'correct') return rest
   if (item.attempt + 1 >= MAX_ATTEMPTS) return rest
+
+  // There has to be room to put real distance between the two sightings.
+  // Without this, a short session — one subtopic, three questions — puts the
+  // question you just missed back almost immediately and cycles the same
+  // handful over and over. That isn't a second attempt at recalling it, it's
+  // the same card again, and it's the fastest way to make a session feel
+  // broken. Anything dropped here is still waiting in Mistake review.
+  if (rest.length < MIN_REQUEUE_ROOM) return rest
 
   const gap = REQUEUE_GAP[item.attempt] ?? 16
   const at = Math.min(gap, rest.length)
@@ -464,8 +528,12 @@ export function stepDown(
   const next: QueueItem = { ...item, question: easier, attempt: item.attempt + 1 }
   const back: QueueItem = { ...item, attempt: item.attempt + 1, returning: 'steppedDown' }
 
-  const at = Math.min(STEP_DOWN_GAP, rest.length)
-  return { next, queue: [...rest.slice(0, at), back, ...rest.slice(at)] }
+  // Pulling the easier question forward means dropping it from where it was
+  // waiting, or it gets asked twice in the same sitting for no reason.
+  const remaining = rest.filter((q) => q.question.id !== easier.id)
+
+  const at = Math.min(STEP_DOWN_GAP, remaining.length)
+  return { next, queue: [...remaining.slice(0, at), back, ...remaining.slice(at)] }
 }
 
 /* ------------------------------------------------------------------ *
