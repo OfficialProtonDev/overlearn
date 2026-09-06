@@ -39,7 +39,7 @@
         {
           "id": "dn-saturating-sigmoid",
           "kind": "recall",
-          "prompt": "Using the sigmoid plot, explain how vanishing gradients arise.",
+          "prompt": "The sigmoid squashes its input into (0, 1), flattening toward both ends. Explain how vanishing gradients arise from that shape.",
           "answer": "The sigmoid is **linear near the middle** but **saturates** at both ends, where the curve flattens toward 0 and 1.\n\nIn a saturated region the derivative is close to **zero**. Backpropagation multiplies these derivatives together layer by layer, so a chain of small factors shrinks the gradient toward nothing — and a zero gradient **stops learning** in the early layers.",
           "source": "c6b · slide 3"
         },
@@ -60,7 +60,7 @@
         {
           "id": "dn-batchnorm-keras",
           "kind": "recall",
-          "prompt": "Where do BatchNormalization layers go in the Keras example?",
+          "prompt": "In a Keras `Sequential` MLP for MNIST, where do the `BatchNormalization` layers go?",
           "answer": "Interleaved with the Dense layers, starting right after Flatten:\n\n```python\nSequential([\n  Flatten(input_shape=[28, 28]),\n  BatchNormalization(),\n  Dense(300, activation=\"elu\", kernel_initializer=\"he_normal\"),\n  BatchNormalization(),\n  Dense(100, activation=\"elu\", kernel_initializer=\"he_normal\"),\n  BatchNormalization(),\n  Dense(10, activation=\"softmax\")\n])\n```",
           "source": "c6b · slide 4"
         },
@@ -252,7 +252,7 @@
         {
           "id": "dn-lr-four-outcomes",
           "kind": "recall",
-          "prompt": "Describe the four learning-rate curves in the loss-versus-epoch figure.",
+          "prompt": "Training loss is plotted against epoch for four different learning rates. Describe the four curves and what each says about η.",
           "answer": "**η way too high** — the loss **diverges**, curving upward.\n**η too high** — converges, but to a **suboptimal** level.\n**η too small** — descends far too **slowly**.\n**η just right** — reaches a low loss efficiently.\n\nThe caption adds: **start with a high learning rate then reduce it — perfect.**",
           "source": "c6b · slide 6"
         },
@@ -384,7 +384,7 @@
           ],
           "answer": {
             "expr": "r * 0.1^k",
-            "tolerance": 5e-7,
+            "tolerance": 5e-07,
             "decimals": 5
           },
           "explanation": "Exponential drops far faster than power scheduling — after 3 steps power gives r/3, exponential gives r/1000.",
@@ -428,7 +428,7 @@
         {
           "id": "dn-transfer-procedure",
           "kind": "recall",
-          "prompt": "Describe the transfer learning procedure from the Keras example.",
+          "prompt": "A network A is trained on 8 FashionMNIST classes, and you want a classifier B for shirts vs sandals. Describe the transfer learning procedure in Keras.",
           "answer": "**A** is trained on 8 FashionMNIST classes; **B** is shirts vs sandals.\n\n1. **Copy the model structure**: `model_B_on_A = Sequential(model_A.layers[:-1])`, then add a new `Dense(1, activation=\"sigmoid\")` head.\n2. **Keep a copy of the old A** — training B will also modify A — via `clone_model` and `set_weights`.\n3. **Freeze** most weights: `for layer in model_B_on_A.layers[:-1]: layer.trainable = False`.\n4. **Train a bit**, then **unfreeze all** (`layer.trainable = True`) and **train some more**, with a smaller learning rate.",
           "source": "c6b · slides 9–10"
         },
@@ -442,7 +442,7 @@
         {
           "id": "dn-unfreeze-lr",
           "kind": "mcq",
-          "prompt": "When unfreezing, the example uses `keras.optimizers.SGD(lr=1e-4)` with a comment that the default is 1e-3. Why the smaller rate?",
+          "prompt": "After unfreezing the pretrained layers, training continues with `SGD(lr=1e-4)` rather than the default `1e-3`. Why the smaller rate?",
           "options": [
             "To avoid large updates destroying the pretrained weights",
             "To train faster",
@@ -456,14 +456,14 @@
         {
           "id": "dn-clone-model-why",
           "kind": "recall",
-          "prompt": "Why does the example clone model A before training B?",
+          "prompt": "Model B is built as `Sequential(model_A.layers[:-1])`. Why must A be cloned before B is trained?",
           "answer": "Because **training B will also modify A** — `Sequential(model_A.layers[:-1])` reuses the *same layer objects*, not copies of them, so updates propagate back to A.\n\n`clone_model` plus `set_weights` preserves an independent snapshot of A.",
           "source": "c6b · slide 9"
         },
         {
           "id": "dn-transfer-freeze-code",
           "kind": "mcq",
-          "prompt": "Which line freezes the copied layers?",
+          "prompt": "Which line freezes every copied layer while leaving the newly added output layer trainable?",
           "options": [
             "for layer in model_B_on_A.layers[:-1]: layer.trainable = False",
             "model_B_on_A.freeze()",
@@ -496,7 +496,7 @@
         {
           "id": "dn-keras-applications",
           "kind": "recall",
-          "prompt": "Describe the transfer learning pattern using keras.applications.",
+          "prompt": "Describe the transfer-learning pattern using `keras.applications` and a pretrained ImageNet backbone.",
           "answer": "```python\nbase_model = keras.applications.resnet18(include_top=False, weights='imagenet', pooling='avg')\npretrained_model = tf.keras.models.clone_model(base_model)\npretrained_model.set_weights(base_model.get_weights())\nfor layers in pretrained_model.layers:\n    layers.trainable = False\npredictor_head = tf.keras.layers.Dense(no_classes, activation='softmax')(pretrained_model.output)\nmodel = tf.keras.Model(inputs=pretrained_model.input, outputs=predictor_head)\n```\n\n`include_top=False` drops the original classifier head; `weights='imagenet'` loads the pretrained weights; a new head is attached for your classes.",
           "source": "c6b · slide 34"
         },
@@ -641,14 +641,14 @@
         {
           "id": "dn-defaults-2020s",
           "kind": "recall",
-          "prompt": "Give the course's 'good defaults in the 2020s' for training from scratch, including the lecturer's overrides.",
+          "prompt": "The course gives a table of 'good defaults in the 2020s' for training a network from scratch, overriding three of the textbook's entries. Give the defaults, including the overrides.",
           "answer": "Scale the input, then:\n\n- **Activation:** the book says SELU — the lecturer overrides this in red with **ReLU**\n- **Normalization:** the book says None (self-normalization) — overridden with **BatchNorm / LayerNorm**\n- **Optimizer:** the book says Nadam — overridden with **Adam / AdamW**\n- **Kernel initializer:** LeCun initialization\n- **Regularization:** early stopping\n- **Learning rate schedule:** performance scheduling",
           "source": "c6b · slide 15"
         },
         {
           "id": "dn-defaults-overrides",
           "kind": "multi",
-          "prompt": "Which three rows of the defaults table did the lecturer override in red?",
+          "prompt": "The textbook's 'good defaults' table lists SELU, no normalization, and Nadam. The course replaces three of its entries with different recommendations. Which rows?",
           "options": [
             "Activation function",
             "Normalization",
@@ -667,7 +667,7 @@
         {
           "id": "dn-default-activation-override",
           "kind": "mcq",
-          "prompt": "The defaults table prints SELU as the activation. What did the lecturer write instead?",
+          "prompt": "The textbook recommends SELU as the default activation for a network trained from scratch. What does the course recommend instead?",
           "options": [
             "ReLU",
             "Tanh",
@@ -675,7 +675,7 @@
             "ELU"
           ],
           "answerIndex": 0,
-          "explanation": "Worth remembering as the lecturer's answer rather than the book's — the two differ here.",
+          "explanation": "Worth remembering as the course's answer rather than the book's — the two differ here.",
           "source": "c6b · slide 15"
         },
         {
@@ -725,14 +725,14 @@
         {
           "id": "dn-why-cnn-weights",
           "kind": "recall",
-          "prompt": "Use the 100×100 image figure to explain why CNNs are needed.",
+          "prompt": "A 100×100 RGB image is connected to a Dense layer of 1000 units. How many weights is that, and what does the number motivate?",
           "answer": "A **100×100 image with 3 colour channels** connected to **1000 units** in a Dense layer needs **30 million weights** — for one layer, on a small image.\n\nHumans have evolved **specialised hardware for vision**, and CNNs borrow the idea: two new layer types, **convolutions** and **max-pooling**, that exploit spatial structure instead of connecting everything to everything.",
           "source": "c6b · slide 17"
         },
         {
           "id": "dn-conv-worked",
           "kind": "recall",
-          "prompt": "Work through the 3×3 convolution example from the slides.",
+          "prompt": "Convolve the image `[[1,3,6],[1,5,9],[1,7,11]]` with the kernel `[[1,−1],[0,1]]` at stride 1 with no zero-padding. Give the output and the working.",
           "answer": "Image `[[1,3,6],[1,5,9],[1,7,11]]`, kernel `[[1,−1],[0,1]]`, stride 1, **no** zero-padding — so the output is 2×2.\n\n- `1×1 + 3×−1 + 1×0 + 5×1 = 1 − 3 + 0 + 5 = 3`\n- `3×1 + 6×−1 + 5×0 + 9×1 = 3 − 6 + 0 + 9 = 6`\n- `1×1 + 5×−1 + 1×0 + 7×1 = 1 − 5 + 0 + 7 = 3`\n- `5×1 + 9×−1 + 7×0 + 11×1 = 5 − 9 + 0 + 11 = 7`\n\nResult: `[[3, 6], [3, 7]]`",
           "source": "c6b · slide 21"
         },
@@ -957,7 +957,7 @@
         {
           "id": "dn-maxpool-worked",
           "kind": "recall",
-          "prompt": "Work through the max-pooling example from the slides.",
+          "prompt": "Apply 2×2 max-pooling at stride 1 with no padding to `[[1,3,6],[1,5,9],[1,7,11]]`. Give the output and the working.",
           "answer": "Image `[[1,3,6],[1,5,9],[1,7,11]]`, 2×2 max-pooling, stride 1, **no** zero-padding.\n\n- `Max(1,3,1,5) = 5`\n- `Max(3,6,5,9) = 9`\n- `Max(1,5,1,7) = 7`\n- `Max(5,9,7,11) = 11`\n\nResult: `[[5, 9], [7, 11]]`",
           "source": "c6b · slide 28"
         },
@@ -1049,7 +1049,7 @@
         {
           "id": "dn-pooling-invariance-figure",
           "kind": "mcq",
-          "prompt": "In the invariance figure, three inputs A, B and C differ by small shifts. What do their MaxPool2D outputs show?",
+          "prompt": "Three inputs hold the same pattern, shifted by a pixel or two. What do their max-pooling outputs look like?",
           "options": [
             "The same output despite the shifts",
             "Three completely different outputs",
@@ -1057,7 +1057,8 @@
             "Outputs of different sizes"
           ],
           "answerIndex": 0,
-          "source": "c6b · slide 27"
+          "source": "c6b · slide 27",
+          "explanation": "**Translation invariance.** The maximum over a window is unchanged as long as the largest value stays inside the window, so small shifts wash out."
         },
         {
           "id": "dn-shrinking-two-ways",
@@ -1097,7 +1098,7 @@
         {
           "id": "dn-cnn-mnist-structure",
           "kind": "recall",
-          "prompt": "Describe the CNN for MNIST from the slides.",
+          "prompt": "Sketch the course's CNN for MNIST: the order of layer types, and what happens to the filter count through the network.",
           "answer": "```python\nDefaultConv2D = partial(keras.layers.Conv2D, kernel_size=3,\n                        activation='relu', padding=\"SAME\")\n\nmodel = Sequential([\n  DefaultConv2D(filters=64, kernel_size=7, input_shape=[28,28,1]),\n  MaxPooling2D(pool_size=2),\n  DefaultConv2D(filters=128),\n  DefaultConv2D(filters=128),\n  MaxPooling2D(pool_size=2),\n  DefaultConv2D(filters=256),\n  DefaultConv2D(filters=256),\n  MaxPooling2D(pool_size=2),\n  Flatten(),\n  Dense(units=128, activation='relu'),\n  Dropout(0.5),\n  Dense(units=64, activation='relu'),\n  Dropout(0.5),\n  Dense(units=10, activation='softmax'),\n])\n```\n\nFilter counts **double** after each pooling step (64 → 128 → 256) as the spatial size halves.",
           "source": "c6b · slide 30"
         },
@@ -1125,7 +1126,7 @@
         {
           "id": "dn-lenet-pooling-type",
           "kind": "mcq",
-          "prompt": "What kind of pooling does the LeNet5 table use?",
+          "prompt": "What kind of pooling does LeNet-5 use?",
           "options": [
             "Avg Pooling",
             "Max Pooling",
@@ -1184,23 +1185,9 @@
           "source": "c6b · slide 16"
         },
         {
-          "id": "dn-cnn-vis-link",
-          "kind": "mcq",
-          "prompt": "Which link does the course give for visualising a CNN?",
-          "options": [
-            "adamharley.com/nn_vis/cnn/2d.html",
-            "playground.tensorflow.org",
-            "distill.pub/2017/momentum",
-            "analyticsvidhya.com"
-          ],
-          "answerIndex": 0,
-          "explanation": "playground.tensorflow.org is the c6a link for toy problems; the analyticsvidhya and towardsdatascience links accompany the convolution slide.",
-          "source": "c6b · slide 30"
-        },
-        {
           "id": "dn-dropout-in-cnn",
           "kind": "mcq",
-          "prompt": "Where does the MNIST CNN place its Dropout layers?",
+          "prompt": "In the course's CNN for MNIST, where are the Dropout layers placed, and at what rate?",
           "options": [
             "After the Dense layers at the end, at rate 0.5",
             "After every convolution",

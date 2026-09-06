@@ -914,7 +914,7 @@
         {
           "id": "nn-compile-args",
           "kind": "mcq",
-          "prompt": "Which three arguments does the example pass to `model.compile`?",
+          "prompt": "Which three arguments does `model.compile` take in the course's Keras workflow?",
           "options": [
             "loss, optimizer, metrics",
             "loss, epochs, batch_size",
@@ -1206,7 +1206,7 @@
           "id": "nn-lr-simple-approach",
           "kind": "recall",
           "prompt": "What simple approach to finding a learning rate does the course give?",
-          "answer": "**Start with a large value.** If training **diverges**, **divide by 3** and repeat.\n\nToo large means no convergence; too small means slow learning. Many smarter alternatives exist (covered in Part B).",
+          "answer": "**Start with a large value.** If training **diverges**, **divide by 3** and repeat.\n\nToo large means no convergence; too small means slow learning. Smarter alternatives — adaptive optimizers and learning rate schedules — come with the deep networks material.",
           "source": "c6a · slide 29"
         },
         {

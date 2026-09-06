@@ -194,7 +194,7 @@
         {
           "id": "dg-label-codes-order",
           "kind": "mcq",
-          "prompt": "In the worked example, Auckland gets 0, Dunedin 1, Hamilton 2 and Whangarei 3. What determines the codes?",
+          "prompt": "Label encoding turns the city names Auckland, Dunedin, Hamilton and Whangarei into the codes 0, 1, 2 and 3 respectively. What decides which category gets which code?",
           "options": [
             "Alphabetical order of the category names",
             "Order of first appearance in the data",
@@ -202,7 +202,7 @@
             "Population of the city"
           ],
           "answerIndex": 0,
-          "explanation": "Alphabetical — note Dunedin appears fourth in the table but gets code 1, so it is not order of appearance.",
+          "explanation": "Alphabetical order of the category names. Note it is *not* order of first appearance in the data — part of why the resulting numbers carry no real meaning.",
           "source": "c5 · slide 5"
         },
         {
@@ -251,7 +251,7 @@
         {
           "id": "dg-onehot-row",
           "kind": "recall",
-          "prompt": "In the one-hot table, the row `1, 52, Auckland` becomes what?",
+          "prompt": "A table has columns `id, age, city`, where `city` takes one of Auckland, Whangarei, Hamilton or Dunedin. What does the row `1, 52, Auckland` become after one-hot encoding?",
           "answer": "`id=1, age=52, city_akl=1, city_whg=0, city_ham=0, city_dun=0`.\n\nOne column per city, with a **1** in the column for this row's city and **0** everywhere else — hence 'one hot'.",
           "source": "c5 · slide 6"
         },
@@ -415,7 +415,7 @@
         {
           "id": "dg-loss-axes",
           "kind": "mcq",
-          "prompt": "What is on the x-axis of the two loss plots?",
+          "prompt": "The common regression losses and the common classification losses are each plotted as a family of curves. What quantity is on the x-axis of each plot?",
           "options": [
             "Error ŷ − y for regression, and margin y·f(x) for classification",
             "The learning rate for both",
@@ -423,7 +423,8 @@
             "The parameter value θ for both"
           ],
           "answerIndex": 0,
-          "source": "c5 · slide 9"
+          "source": "c5 · slide 9",
+          "explanation": "A regression loss is a function of the **residual** ŷ − y; a classification loss is a function of the **margin** y·f(x), which is positive when the sign is right and negative when it is wrong."
         },
         {
           "id": "dg-loss-choice-matters",
@@ -455,15 +456,15 @@
         {
           "id": "dg-bonus-slide",
           "kind": "mcq",
-          "prompt": "The c5 slide deriving θ = (XᵀX)⁻¹Xᵀy algebraically is marked how?",
+          "prompt": "How does the course treat the algebraic *derivation* of θ = (XᵀX)⁻¹Xᵀy?",
           "options": [
-            "A bonus slide that will not be tested",
-            "Core examinable material",
-            "Optional reading with a warning that it may appear",
-            "A worked example to reproduce in the test"
+            "As a bonus, explicitly not tested",
+            "As core examinable material",
+            "As optional reading, with a warning that it may still appear",
+            "As a worked example to reproduce in the test"
           ],
           "answerIndex": 0,
-          "explanation": "Explicitly labelled '(BONUS SLIDE, won't be tested)'. Knowing the normal equation still matters — the *derivation* is what is excluded.",
+          "explanation": "Marked '(BONUS SLIDE, won't be tested)'. Knowing the normal equation itself still matters — it is the *derivation* that is excluded.",
           "source": "c5 · slide 11"
         },
         {
@@ -640,7 +641,7 @@
         {
           "id": "dg-comparison-table-outofcore",
           "kind": "multi",
-          "prompt": "According to the comparison table, which algorithms support out-of-core learning?",
+          "prompt": "Which of these algorithms support out-of-core learning — training on data too large to hold in memory at once?",
           "options": [
             "Stochastic GD",
             "Mini-batch GD",
@@ -658,7 +659,7 @@
         {
           "id": "dg-comparison-scaling",
           "kind": "multi",
-          "prompt": "According to the comparison table, which require feature scaling?",
+          "prompt": "Which of these require feature scaling?",
           "options": [
             "Batch GD",
             "Stochastic GD",
@@ -677,7 +678,7 @@
         {
           "id": "dg-comparison-large-n",
           "kind": "mcq",
-          "prompt": "The comparison table marks the Normal Equation and SVD as 'Slow' for large n. What is n here?",
+          "prompt": "The Normal Equation and SVD are fast when m is large but slow when n is large. What is n here?",
           "options": [
             "The number of features",
             "The number of examples",
@@ -740,14 +741,14 @@
         {
           "id": "dg-learning-schedule",
           "kind": "recall",
-          "prompt": "In the SGD code, `learning_schedule(t)` returns `t0 / (t + t1)` with `t0, t1 = 5, 50`. What is it for?",
+          "prompt": "An SGD implementation sets its step size from `learning_schedule(t) = t0 / (t + t1)`, with `t0, t1 = 5, 50`. What is that for?",
           "answer": "It **shrinks the learning rate as training proceeds**. Early on the steps are large, so progress toward the minimum is fast; later they shrink, so the iterates settle rather than bouncing around.\n\nThis is the standard fix for stochastic gradient descent's inability to converge at a fixed step size.",
           "source": "c5 · slide 22"
         },
         {
           "id": "dg-epochs-code",
           "kind": "mcq",
-          "prompt": "The SGD code has `for epoch in range(n_epochs): for i in range(m):`. What does one epoch amount to?",
+          "prompt": "An SGD training loop is written `for epoch in range(n_epochs): for i in range(m):`, with one parameter update in the inner body. What does one epoch amount to?",
           "options": [
             "m single-example updates, one per training example",
             "One update using all m examples",
@@ -761,7 +762,7 @@
         {
           "id": "dg-different-lr-plot",
           "kind": "mcq",
-          "prompt": "The 'different learning rates' figure shows η = 0.02, 0.1 and 0.5. What happens at η = 0.5?",
+          "prompt": "Linear regression is fitted by gradient descent at η = 0.02, 0.1 and 0.5, drawing the fitted line after each of the first few steps. What happens at η = 0.5?",
           "options": [
             "The fitted lines diverge, moving further from the data with each step",
             "It converges fastest and best",
@@ -775,8 +776,8 @@
         {
           "id": "dg-momentum",
           "kind": "recall",
-          "prompt": "What is momentum, in one sentence, and where does c5 point for more?",
-          "answer": "An improvement on plain gradient descent that carries velocity from previous steps, so the search **escapes local minima and pushes across plateaus** rather than stalling.\n\nc5 links to **distill.pub/2017/momentum**; c6b lists it first among the SGD improvements.",
+          "prompt": "What is momentum, in one sentence, and where does it sit relative to plain gradient descent?",
+          "answer": "An improvement on plain gradient descent that **carries velocity from previous steps**: a step is the current gradient plus a fraction of the previous step, rather than the current gradient alone.\n\nIt is still gradient descent — same loss, same derivative, same update point. What changes is only how the step size and direction are decided, which is why it composes with everything else: it is the first and simplest of the SGD improvements that Adam and friends build on.",
           "source": "c5 · slide 25; c6b · slide 5"
         },
         {
@@ -857,7 +858,7 @@
         {
           "id": "dg-grid-example-count",
           "kind": "computation",
-          "prompt": "The example grid has l1_ratio with 5 values, alpha with 4, and eta0 with 2. With {{k}}-fold cross-validation, how many model fits are performed?",
+          "prompt": "A grid searches `l1_ratio` over 5 values, `alpha` over 4 and `eta0` over 2. With {{k}}-fold cross-validation, how many model fits are performed?",
           "vars": {
             "k": {
               "type": "choice",
@@ -890,7 +891,7 @@
         {
           "id": "dg-grid-dict-params",
           "kind": "multi",
-          "prompt": "Which hyperparameters appear in the example `grid_dict`?",
+          "prompt": "A grid search is set up over an `SGDClassifier`. Which of these hyperparameters can appear in its grid?",
           "options": [
             "l1_ratio",
             "alpha",
@@ -903,7 +904,7 @@
             2
           ],
           "tier": 2,
-          "explanation": "`max_depth` is a tree parameter; this grid is over an SGDClassifier.",
+          "explanation": "`max_depth` is a decision-tree parameter — `SGDClassifier` has no such argument, so including it would raise rather than search.",
           "source": "c5 · slide 27"
         },
         {
@@ -923,7 +924,7 @@
         {
           "id": "dg-adaptive-lr",
           "kind": "mcq",
-          "prompt": "The example creates `SGDClassifier(learning_rate='adaptive')`. What does that do?",
+          "prompt": "What does `SGDClassifier(learning_rate='adaptive')` do?",
           "options": [
             "Adjusts the learning rate during training rather than holding it fixed",
             "Searches for the learning rate by grid search",
@@ -937,7 +938,7 @@
         {
           "id": "dg-gridsearch-fit",
           "kind": "mcq",
-          "prompt": "In the example, which data is `clf.fit(...)` called on?",
+          "prompt": "A `GridSearchCV` is constructed and then `.fit(...)` is called. Which data should it be fitted on?",
           "options": [
             "X_train, y_train — the training data",
             "X_test, y_test",
@@ -968,12 +969,12 @@
       "id": "dg-closed-vs-iterative",
       "title": "Closed form versus iterative",
       "emphasis": "standard",
-      "summary": "The comparison table, read as a decision. Which method to reach for depends on how many examples, how many features, and whether the data fits in memory.",
+      "summary": "Which of the five ways to fit a linear regression to reach for, and why. The answer turns on how many examples, how many features, and whether the data fits in memory.",
       "questions": [
         {
           "id": "dg-normal-eq-hyperparams",
           "kind": "mcq",
-          "prompt": "According to the comparison table, how many hyperparameters do the Normal Equation and SVD have?",
+          "prompt": "How many hyperparameters do the Normal Equation and SVD have?",
           "options": [
             "0",
             "1",
@@ -987,7 +988,7 @@
         {
           "id": "dg-batch-gd-hyperparams",
           "kind": "mcq",
-          "prompt": "How many hyperparameters does the table give for Batch GD?",
+          "prompt": "How many hyperparameters does batch gradient descent have?",
           "options": [
             "2",
             "0",
@@ -995,12 +996,13 @@
             "At least 3"
           ],
           "answerIndex": 0,
-          "source": "c5 · slide 24"
+          "source": "c5 · slide 24",
+          "explanation": "The learning rate and the number of iterations. The closed-form methods have none; the stochastic methods have at least two."
         },
         {
           "id": "dg-sklearn-class-column",
           "kind": "mcq",
-          "prompt": "In the comparison table, which scikit-learn class is listed for SVD?",
+          "prompt": "Which scikit-learn class implements the SVD-based solution to linear regression?",
           "options": [
             "LinearRegression",
             "SGDRegressor",
@@ -1008,13 +1010,13 @@
             "Ridge"
           ],
           "answerIndex": 0,
-          "explanation": "The Normal Equation row reads 'n/a' — sklearn does not expose it directly. All three gradient rows list SGDRegressor.",
+          "explanation": "`LinearRegression` uses SVD internally. The Normal Equation is not exposed as a class of its own, and all three gradient methods are `SGDRegressor`.",
           "source": "c5 · slide 24"
         },
         {
           "id": "dg-large-m-slow",
           "kind": "mcq",
-          "prompt": "Which method does the table mark 'Slow' for a large number of examples m?",
+          "prompt": "Which of these becomes slow when the number of training examples m is large?",
           "options": [
             "Batch GD",
             "Stochastic GD",
@@ -1042,7 +1044,7 @@
         {
           "id": "dg-no-closed-form-lasso",
           "kind": "mcq",
-          "prompt": "Which method is given as the example with no closed-form solution?",
+          "prompt": "Which of these regression methods has no closed-form solution?",
           "options": [
             "LASSO regression",
             "Ridge regression",
@@ -1063,14 +1065,14 @@
         {
           "id": "dg-table-recall",
           "kind": "recall",
-          "prompt": "Reproduce the comparison table's columns.",
+          "prompt": "The course compares five ways of fitting a linear regression. Name the five methods, and the six criteria they are compared on.",
           "answer": "The rows are **Normal Equation, SVD, Batch GD, Stochastic GD, Mini-batch GD**, and the columns are:\n\n- **Large m** (many examples)\n- **Out-of-core support**\n- **Large n** (many features)\n- **Hyperparams**\n- **Scaling required**\n- **Scikit-Learn** class",
           "source": "c5 · slide 24"
         },
         {
           "id": "dg-scaling-not-needed",
           "kind": "mcq",
-          "prompt": "Which methods does the table say do **not** require scaling?",
+          "prompt": "Which of these do **not** require feature scaling?",
           "options": [
             "Normal Equation and SVD",
             "Batch GD only",
@@ -1079,6 +1081,13 @@
           ],
           "answerIndex": 0,
           "explanation": "They solve directly rather than following a gradient, so the shape of the cost contours does not affect them.",
+          "source": "c5 · slide 24"
+        }
+      ],
+      "keyFacts": [
+        {
+          "term": "Comparing the five linear-regression solvers",
+          "definition": "Read as: large m · out-of-core · large n · hyperparameters · scaling · scikit-learn.\n\n- **Normal Equation** — fast · no · slow · 0 · not needed · no direct class\n- **SVD** — fast · no · slow · 0 · not needed · `LinearRegression`\n- **Batch GD** — slow · no · fast · 2 · required · `SGDRegressor`\n- **Stochastic GD** — fast · yes · fast · ≥2 · required · `SGDRegressor`\n- **Mini-batch GD** — fast · yes · fast · ≥2 · required · `SGDRegressor`\n\nm is the number of examples, n the number of features.",
           "source": "c5 · slide 24"
         }
       ]

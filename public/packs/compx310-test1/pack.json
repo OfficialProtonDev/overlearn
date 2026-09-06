@@ -4,7 +4,7 @@
   "title": "COMPX310 · Test 1",
   "subtitle": "Machine Learning",
   "description": "Lectures 1–6 of COMPX310-26B plus the first three assignments — both are on the test. Every question cites the deck and slide, or the lab and part, it came from.\n\n**Test format:** 50 minutes, in person, pen on paper. **No devices of any kind, including calculators.** One A4 cheat sheet, double-sided and printed allowed — the Cheat sheet page defaults to exactly that.",
-  "generatedAt": "2026-09-05",
+  "generatedAt": "2026-09-06",
   "source": {
     "label": "7 lecture decks (219 slides) + 3 lab specs and notebooks",
     "detail": "Course material is based on Lindholm et al., *Machine Learning: A First Course for Scientists and Engineers* (CUP 2022), with figures and code from Géron, *Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow* (O'Reilly 2019). The test announcement states that all lecture material from the first six weeks and the first three assignments are examinable.",

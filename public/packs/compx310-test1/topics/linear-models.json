@@ -1175,7 +1175,7 @@
         {
           "id": "lm-curve-metric",
           "kind": "mcq",
-          "prompt": "The code appends `mean_squared_error(...)` but plots `np.sqrt(train_errors)`. What is on the y-axis?",
+          "prompt": "A learning-curve script appends `mean_squared_error(...)` to a list, then plots `np.sqrt(train_errors)`. What is on the y-axis?",
           "options": [
             "RMSE",
             "MSE",

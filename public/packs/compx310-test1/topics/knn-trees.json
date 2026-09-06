@@ -283,7 +283,7 @@
         {
           "id": "kt-knn-toy-nearest",
           "kind": "mcq",
-          "prompt": "In the toy example (query x₁ = 1, x₂ = 2), the sorted distances are √1, √2, √4, √5, √8, √9 for points i = 6, 2, 4, 1, 5, 3 with labels Red, Blue, Blue, Red, Blue, Red. What does k = 1 predict?",
+          "prompt": "A kNN query at (x₁ = 1, x₂ = 2) has neighbours at sorted distances √1, √2, √4, √5, √8, √9, with labels Red, Blue, Blue, Red, Blue, Red respectively. What does k = 1 predict?",
           "options": [
             "Red",
             "Blue",
@@ -291,7 +291,7 @@
             "Cannot be determined"
           ],
           "answerIndex": 0,
-          "explanation": "The single nearest point is i = 6 at distance √1, labelled Red.",
+          "explanation": "The single nearest point is at distance √1 and is labelled Red. k = 3 would take Red, Blue, Blue and predict Blue instead.",
           "source": "c2 · slide 6"
         },
         {
@@ -311,8 +311,8 @@
         {
           "id": "kt-knn-toy-recall",
           "kind": "recall",
-          "prompt": "In the toy example, k = 1 and k = 3 give different answers. What does that illustrate?",
-          "answer": "That **k matters**. k = 1 predicts Red (nearest point is i = 6, √1 away); k = 3 predicts Blue (two of the three nearest are Blue).\n\nSmall k follows individual points and is sensitive to noise; larger k smooths over the neighbourhood.",
+          "prompt": "For a query whose nearest neighbour is Red but whose three nearest are Red, Blue, Blue, k = 1 and k = 3 give different answers. What does that illustrate?",
+          "answer": "That **k matters** — it is the model's complexity dial, not an incidental setting.\n\nk = 1 predicts Red, following the single closest point. k = 3 predicts Blue, because two of the three nearest are Blue.\n\nSmall k follows individual points and is sensitive to noise and mislabelled examples; larger k smooths over the neighbourhood, at the cost of blurring genuine local structure.",
           "source": "c2 · slides 6–7"
         },
         {
@@ -751,8 +751,8 @@
         {
           "id": "kt-why-normalise",
           "kind": "recall",
-          "prompt": "Why is normalisation essential, using the range example from the slide?",
-          "answer": "If x₁ lies in **[0, 1]** and x₂ lies in **[0, 1000000]**, then x₂ completely dominates any distance calculation. The contribution of x₁ is invisible against it, so effectively only x₂ decides which points are 'near'.\n\nNormalisation puts the features on a comparable scale so each gets a say.",
+          "prompt": "One feature ranges over [0, 1] and another over [0, 1000000]. Why is normalisation essential before running kNN?",
+          "answer": "Because the second feature **completely dominates** any distance calculation. The contribution of the first is invisible against it, so effectively only one feature decides which points count as 'near'.\n\nNormalisation puts the features on a comparable scale so each gets a say. Every distance-based method has this problem — it is not specific to kNN.",
           "source": "c2 · slide 10"
         },
         {
@@ -1205,7 +1205,7 @@
         {
           "id": "kt-tree-fig-example",
           "kind": "mcq",
-          "prompt": "In the example tree, the root tests x₂ < 3.0 and the right branch then tests x₁ < 5.0, giving regions R₁, R₂, R₃. How many leaf regions does the tree have?",
+          "prompt": "A regression tree's root tests x₂ < 3.0 and sends its left branch straight to a leaf; the right branch then tests x₁ < 5.0. How many leaf regions does the tree have?",
           "options": [
             "3",
             "2",
@@ -1213,7 +1213,7 @@
             "6"
           ],
           "answerIndex": 0,
-          "explanation": "R₁ (Blue) from the first split, then R₂ (Blue) and R₃ (Red) from the second.",
+          "explanation": "One leaf from the root's left branch and two from the second split: three regions. A binary tree with s internal splits always has s + 1 leaves.",
           "source": "c2 · slide 11"
         },
         {

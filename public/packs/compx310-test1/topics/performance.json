@@ -189,19 +189,6 @@
           "source": "c4 · slides 2, 4"
         },
         {
-          "id": "mp-lab-reference",
-          "kind": "mcq",
-          "prompt": "The validation-vs-test scatter plot in c4 refers you to which practical work?",
-          "options": [
-            "Lab 2",
-            "Lab 1",
-            "Lab 3",
-            "The assignment"
-          ],
-          "answerIndex": 0,
-          "source": "c4 · slide 3"
-        },
-        {
           "id": "mp-complexity-cloze",
           "kind": "cloze",
           "prompt": "As the model becomes more complex, training error generally {{1}}, while at some point test error starts to {{2}}.",
@@ -787,7 +774,7 @@
         {
           "id": "mp-cm-sklearn-call",
           "kind": "mcq",
-          "prompt": "Which call builds the confusion matrix in the example?",
+          "prompt": "Which call builds a confusion matrix in scikit-learn?",
           "options": [
             "confusion_matrix(y_train_5, y_train_pred)",
             "confusion_matrix(y_train_pred, y_train_5)",
@@ -1425,7 +1412,7 @@
         {
           "id": "mp-recall-at-precision-90",
           "kind": "recall",
-          "prompt": "Explain the code `threshold_90_precision = thresholds[np.argmax(precisions >= 0.90)]`.",
+          "prompt": "`precisions`, `recalls` and `thresholds` come from `precision_recall_curve`. Explain what `thresholds[np.argmax(precisions >= 0.90)]` computes.",
           "answer": "`precisions >= 0.90` is a boolean array. `np.argmax` returns the index of the **first True**, since True counts as 1 — so this finds the **lowest threshold that still achieves 90% precision**.\n\nIndexing `thresholds` with it gives that threshold. Applying it yields precision exactly 0.9 and recall about 0.599 — the price paid in recall for the precision demanded.",
           "source": "c4 · slide 21"
         },
@@ -1467,7 +1454,7 @@
         {
           "id": "mp-threshold-zero-default",
           "kind": "mcq",
-          "prompt": "In the example, `threshold = 0` and `y_some_digit_pred = (y_scores > threshold)` returns `array([False])` for a score of −45148. What does that mean?",
+          "prompt": "With `threshold = 0`, the expression `y_scores > threshold` returns `array([False])` for a decision-function score of −45148. What does that mean?",
           "options": [
             "The score is far below the threshold, so it is classified negative",
             "The classifier failed to produce a score",
@@ -1475,12 +1462,13 @@
             "The example is a true positive"
           ],
           "answerIndex": 0,
-          "source": "c4 · slide 18"
+          "source": "c4 · slide 18",
+          "explanation": "The decision function returns a signed distance from the boundary, and this one sits a long way on the negative side. Lowering the threshold far enough would flip it to positive."
         },
         {
           "id": "mp-scores-scale",
           "kind": "recall",
-          "prompt": "The scores in the example run to ±1,600,000. Does the scale matter?",
+          "prompt": "A classifier's `decision_function` returns scores running to ±1,600,000. Does the scale matter?",
           "answer": "No. Only the **ordering** matters, and where the threshold is placed relative to it. The scores are unnormalised distances from the decision boundary, not probabilities.\n\nThis is why thresholds are chosen from the data via `precision_recall_curve` rather than picked as round numbers.",
           "source": "c4 · slides 18–20"
         },
@@ -1813,7 +1801,7 @@
         {
           "id": "mp-ovo-45",
           "kind": "mcq",
-          "prompt": "The example reports `len(ovo_clf.estimators_)` as 45. How many classes does the problem have?",
+          "prompt": "A one-versus-one classifier reports 45 fitted estimators. How many classes does the problem have?",
           "options": [
             "10",
             "45",
