@@ -61,6 +61,12 @@ As you read, keep a working note of:
   "common mistake", emphasis, repetition across lectures
 - the citation key for each document (`c2`, `intro`) and the page numbers
 
+**Transcribe anything you intend to build a question from.** A pack has no
+image field — there is nowhere for a picture to go — so a table, a matrix, a
+plot's axes, a small code listing or a worked example must be written out as
+text in your notes, and later in the prompt itself. If a figure cannot survive
+that transcription in a couple of lines, no question can be built on it.
+
 Report what you found before moving on — document count, page count, and any
 document you could not read.
 
@@ -149,6 +155,10 @@ Write `pack.json` and one file per topic under `topics/`. Follow
 - **Never invent content.** If the source does not cover it, it does not go in
   the pack. A question whose answer isn't in the material is worse than a gap,
   because it teaches something that will be marked wrong.
+- **Every question stands on its own.** The person answering does not have the
+  slides, the notebook or their own results in front of them — that is the
+  entire point of the tool. Anything the question depends on goes *in the
+  prompt*. See "Self-contained prompts" in `references/question-craft.md`.
 
 ### Question mix per subtopic
 
@@ -195,6 +205,43 @@ Rules that matter:
   with sensible rounding is marked wrong, which destroys trust in the tool.
 - Every `{{ … }}` must resolve. An unresolvable one renders as `⟨error⟩`.
 
+### Labs, assignments and projects
+
+Assignment material is examinable as **method**, not as administrivia. Test the
+concept the assignment exercised, not the assignment's own scaffolding. This is
+the single easiest place to generate hundreds of worthless questions, because
+a lab spec is dense with concrete detail that looks testable and isn't.
+
+Do **not** ask about:
+
+- **What the spec required** — submission format, file naming, seeding
+  conventions, pair-programming rules, the marking rubric.
+- **What a particular notebook did** — variable names, cell order, why a
+  specific line reads the way it does.
+- **What the reader's own run produced** — "what shape was your curve", "which
+  feature ended up at the root", "was your validation winner also best on test".
+  They cannot check, and it was never the point.
+- **Dataset trivia** — row counts, column names, which column had the missing
+  values, what the baseline hyperparameter happened to be.
+
+Do ask about:
+
+- the **reasoning** the assignment asked for, phrased as a general question
+- the **methodology** it drilled — quarantining the test set, splitting before
+  scaling, repeating an experiment to see the spread
+- the **interpretation** it marked — telling a real difference from noise, what
+  a truncated axis hides, when a coefficient is not importance
+
+| Instead of | Ask |
+| --- | --- |
+| "Lab 2 asks you to explain why the test set should not be used during model selection. Give that explanation." | "Explain, in 2–3 sentences, why the test set should not be used during model selection." |
+| "In Part 4, the 15 trees are trained on what?" | "Selection is finished and a setting chosen. What data should the final model be refitted on before it is measured on the test set?" |
+| "The notebook computes `best_k = np.argmax(accuracies) + 1`. Why the `+ 1`?" | Cut it. It is a Python indexing quirk, not the subject. |
+| "How many rows does the dataset have before cleaning?" | Cut it. Nothing turns on the number. |
+
+Keep the `source` citation pointing at the lab and part — that is still how a
+suspect question gets checked. It just stops being what the question is *about*.
+
 ---
 
 ## 5. Validate, install, report
@@ -206,6 +253,13 @@ python .claude/skills/study-pack/scripts/validate.py <pack-dir>
 ```
 
 Fix every error. Warnings are judgement calls — read them and decide.
+
+The validator cannot see whether a question is answerable, so read the prompts
+back yourself. Search them for the phrases that give a dependency away —
+*the table, the figure, the plot, the example, the code, the notebook, from the
+slides, in Part 3, the lecturer, your results* — and for each hit either move
+the thing being pointed at into the prompt, or cut the question. A prompt that
+only makes sense with the source open is a question the tool cannot ask.
 
 Then install:
 

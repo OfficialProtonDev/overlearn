@@ -12,6 +12,9 @@ wrong tell you that you didn't know?**
 
 ## The tests a question has to pass
 
+**Can it be answered without the source open?** This is the first test, because
+failing it makes every other quality irrelevant. See below.
+
 **Would someone who understood the material still get it right if the wording
 changed?** If the question is answerable by matching words between prompt and
 option, it tests reading, not knowledge.
@@ -25,6 +28,58 @@ teaches nothing about either.
 **Would the lecturer recognise this as something they taught?** Packs are built
 from a specific course, not from the subject in general. Testing standard
 material the course happened not to cover wastes time and misrepresents scope.
+
+---
+
+## Self-contained prompts
+
+A pack is used *away from* the material. On a phone, on a bus, the night before
+— with no slides open, no notebook running, and no memory of what was on
+page 24. Every question has to carry everything it needs.
+
+This is the failure mode that survives every other quality check, because the
+questions read perfectly well **while you are writing them**, with the source in
+front of you. They only break later, for the one person who matters.
+
+**The tell is a definite article pointing at something absent:**
+
+> "How many hyperparameters does **the table** give for Batch GD?"
+> "Work through the 3×3 convolution example **from the slides**."
+> "Why is normalisation essential, using the range example **from the slide**?"
+> "**In Part 4**, the 15 trees are trained on what?"
+
+Search your prompts for these before you hand anything over: *the table, the
+figure, the plot, the diagram, the example, the code, the notebook, the slide,
+from the slides, in the example, in Part 3, the lecturer, your results*.
+
+### The two fixes
+
+**1. Move it into the prompt.** Almost everything a lecture deck shows
+visually is a few lines of text: a matrix, a small table, a range, an axis
+label, a short listing. Write it out.
+
+| Instead of | Ask |
+| --- | --- |
+| "Work through the 3×3 convolution example from the slides." | "Convolve `[[1,3,6],[1,5,9],[1,7,11]]` with the kernel `[[1,−1],[0,1]]` at stride 1, no padding. Give the output and the working." |
+| "Why is normalisation essential, using the range example from the slide?" | "One feature ranges over [0, 1] and another over [0, 1000000]. Why is normalisation essential before running kNN?" |
+| "What is on the x-axis of the two loss plots?" | "The regression losses and the classification losses are each plotted as a family of curves. What is on the x-axis of each?" |
+| "In the toy example, k = 1 and k = 3 give different answers. What does that illustrate?" | "For a query whose nearest neighbour is Red but whose three nearest are Red, Blue, Blue, k = 1 and k = 3 disagree. What does that illustrate?" |
+
+When several questions lean on the same table, put the table in a subtopic
+`keyFact` as well — then it reaches the cheat sheet, and the questions can
+simply ask about its content.
+
+**2. Cut it.** If the thing pointed at cannot be reproduced in a couple of
+lines, there is no question there. There is no image field in the pack format;
+a picture has nowhere to go, and a prompt that gestures at one it cannot show is
+worse than a gap.
+
+### `source` is not a substitute
+
+`source: "c5 · slide 24"` exists so a suspicious answer can be **checked
+afterwards**. It is never permission for the prompt to depend on that slide.
+A reader who has to open the deck to *attempt* the question has been handed
+homework instead of a question.
 
 ---
 
