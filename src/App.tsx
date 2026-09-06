@@ -2,6 +2,7 @@ import { AppHeader } from './components/AppHeader'
 import {
   paths,
   parseScope,
+  parseTiers,
   useNavigate,
   useNavigationKey,
   useRoute,
@@ -59,10 +60,11 @@ export default function App() {
               <SessionView
                 // Keyed on the navigation, so asking for the same session
                 // again starts a new run rather than showing the old summary.
-                key={`${route.mode}:${route.scope}:${navKey}`}
+                key={`${route.mode}:${route.scope}:${route.tiers}:${navKey}`}
                 pack={activePack}
                 mode={route.mode}
                 scope={parseScope(route.scope)}
+                tiers={parseTiers(route.tiers)}
               />
             )}
             {route.name === 'cheatsheet' && <CheatSheet pack={activePack} />}

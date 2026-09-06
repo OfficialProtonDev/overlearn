@@ -46,19 +46,35 @@ Avoid: joke options, "all of the above", options of conspicuously different
 length (the long one reads as the answer), and negation unless the source
 frames it that way.
 
+**Vary where the answer sits.** Writing the answer first and then three
+distractors is the natural way to think, and it produces packs where
+`answerIndex` is 0 every single time — the first version of the bundled pack
+had it in 300 of 301 questions. Move the answer around as you write: across a
+subtopic, `answerIndex` should be spread over the available positions with no
+position obviously favoured.
+
+The app shuffles options on the way to the screen, so a lopsided pack is no
+longer fatal. Do not treat that as permission to skip this — the raw
+`answerIndex` is what a person sees when they read the JSON, and a pack that is
+right on its own terms survives being read, diffed and exported.
+
 ```json
 {
   "id": "precision-definition",
   "kind": "mcq",
   "prompt": "A classifier flags 8 emails as spam; 6 really are. 4 spam emails were missed. What is its precision?",
-  "options": ["6/8", "6/10", "8/12", "6/12"],
-  "answerIndex": 0,
+  "options": ["6/10", "8/12", "6/8", "6/12"],
+  "answerIndex": 2,
   "explanation": "Precision is TP/(TP+FP) = 6/8. 6/10 is recall — TP/(TP+FN) — which is the usual slip.",
   "source": "c4 · slide 12"
 }
 ```
 
-Every distractor there is a real confusion, and the explanation names the slip.
+Every distractor there is a real confusion, the explanation names the slip, and
+the answer is not sitting in the first slot.
+
+The same applies to `multi`: `answerIndices` of `[0, 1, 2]` every time tells the
+reader the answers are the ones at the top.
 
 ### `short` — supply the term, tier 2
 
@@ -155,6 +171,36 @@ Checklist:
   recognised.
 
 ---
+
+## Hints
+
+Any question that has to be typed or produced — `short`, `cloze`, `recall`,
+`computation` — may carry an optional `hint`. It is shown only when the person
+asks for it, and taking it caps that answer at `partial`, so it never quietly
+inflates mastery.
+
+A hint points at the **idea**, never the spelling:
+
+```json
+{
+  "kind": "short",
+  "prompt": "What is the term for constraining a model in order to reduce overfitting?",
+  "answers": ["regularization", "regularisation"],
+  "hint": "It's the family of techniques that penalise complexity rather than error.",
+  "source": "intro · slide 34"
+}
+```
+
+Good: names the idea's neighbourhood, recalls where it appeared in the course,
+or gives the shape of the reasoning. Bad: "starts with an r", "two words",
+"rhymes with…" — the app already derives that kind of hint from the answer
+itself when no `hint` is written, so spending one on spelling wastes it.
+
+Hints are optional and worth writing for the questions people genuinely get
+stuck on: the tier-3 recall prompts and anything whose answer is a term the
+course introduced once. Do not write one for every question.
+
+`mcq` and `multi` do not take hints — the options are already the help.
 
 ## Formulas and definitions
 

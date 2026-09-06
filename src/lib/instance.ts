@@ -15,6 +15,17 @@ export interface QuestionInstance {
   question: Question
   /** Prompt with any template expressions resolved. */
   prompt: string
+  /**
+   * The options as they should be shown, for `mcq` and `multi`. Empty for
+   * every other kind.
+   */
+  options: string[]
+  /**
+   * Display position -> index into the question's own `options`. Everything
+   * downstream — marking, progress, the model answer — keeps working in the
+   * question's own indices, so only the card needs to know about the shuffle.
+   */
+  optionMap: number[]
   /** Steps with expressions resolved. Empty for non-computation questions. */
   steps: string[]
   /** Explanation with expressions resolved, if there is one. */
@@ -79,6 +90,60 @@ function buildScope(q: ComputationQuestion, rand: () => number): Record<string, 
 }
 
 /* ------------------------------------------------------------------ *
+ * Option order
+ * ------------------------------------------------------------------ */
+
+/**
+ * Options that only make sense where they were written.
+ *
+ * "All of the above" is the obvious case, but so is "both A and C" — anything
+ * whose text refers to the other options by position. Those questions keep
+ * the order the pack gave them.
+ */
+const POSITIONAL_PHRASES = [
+  'of the above',
+  'of the below',
+  'of these',
+  'of those',
+  'of them',
+  'the above answers',
+  'the above options',
+  'both a and',
+  'both b and',
+  'a and c only',
+  'b and d only',
+]
+
+function isPositional(option: string): boolean {
+  const text = option.toLowerCase()
+  return POSITIONAL_PHRASES.some((phrase) => text.includes(phrase))
+}
+
+/**
+ * A display order for a question's options.
+ *
+ * Packs are written by a language model, and a language model writing an
+ * answer followed by three distractors puts the answer first almost every
+ * time — in the bundled pack, 300 of 301. Left alone that makes the whole
+ * multiple-choice layer worthless: you learn the position, not the material.
+ * Shuffling here rather than at generation time means it holds for every pack
+ * the app will ever load, including ones already sitting in a browser.
+ *
+ * A fresh order is drawn each time a question is served, so meeting one again
+ * after a requeue is a second look at the question rather than at the layout.
+ */
+function orderOptions(options: string[]): number[] {
+  const order = options.map((_, i) => i)
+  if (options.some((option) => isPositional(option))) return order
+
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[order[i], order[j]] = [order[j], order[i]]
+  }
+  return order
+}
+
+/* ------------------------------------------------------------------ *
  * Instancing
  * ------------------------------------------------------------------ */
 
@@ -91,9 +156,14 @@ function buildScope(q: ComputationQuestion, rand: () => number): Record<string, 
  */
 export function instantiate(question: Question, seed = 0): QuestionInstance {
   if (question.kind !== 'computation') {
+    const hasOptions = question.kind === 'mcq' || question.kind === 'multi'
+    const optionMap = hasOptions ? orderOptions(question.options) : []
+
     return {
       question,
       prompt: question.prompt,
+      options: hasOptions ? optionMap.map((i) => question.options[i]) : [],
+      optionMap,
       steps: [],
       explanation: question.explanation,
       scope: {},
@@ -121,6 +191,8 @@ export function instantiate(question: Question, seed = 0): QuestionInstance {
   return {
     question,
     prompt: interpolate(question.prompt, scope),
+    options: [],
+    optionMap: [],
     steps: question.steps.map((s) => interpolate(s.text, scope)),
     explanation: question.explanation ? interpolate(question.explanation, scope) : undefined,
     scope,

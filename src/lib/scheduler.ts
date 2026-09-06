@@ -34,6 +34,14 @@ export interface SessionSpec {
   mode: SessionMode
   /** Subtopic ids to draw from. Empty means the whole pack. */
   subtopicIds: string[]
+  /**
+   * Restrict to these difficulty tiers, bypassing escalation.
+   *
+   * This is what the "drill this tier" buttons on a subtopic use: escalation
+   * decides what you get by default, but it should never be the only way to
+   * reach a question you can plainly see listed.
+   */
+  tiers?: (1 | 2 | 3)[]
   /** Cap on questions. Mock tests always use it; other modes may run open. */
   limit?: number
   /** Mock tests only, in minutes. */
@@ -47,6 +55,8 @@ export interface QueueItem {
   topicTitle: string
   /** Bumped each time the item is requeued, so React sees a fresh instance. */
   attempt: number
+  /** Why this came back around, when it did. */
+  returning?: 'missed' | 'steppedDown'
 }
 
 /* ------------------------------------------------------------------ *
@@ -75,7 +85,7 @@ function locateAll(pack: Pack): Located[] {
  * tier 3 does not stop tier 1 questions appearing, it just stops them
  * dominating.
  */
-function unlockedTier(subtopic: Subtopic, progress: PackProgress): 1 | 2 | 3 {
+export function unlockedTier(subtopic: Subtopic, progress: PackProgress): 1 | 2 | 3 {
   const mastery = masteryOf(subtopic.questions, progress)
   if (mastery.state === 'untouched' || mastery.score < 0.35) return 1
   if (mastery.score < 0.7) return 2
@@ -168,7 +178,10 @@ function toQueueItem(located: Located): QueueItem {
 
 export function buildQueue(pack: Pack, progress: PackProgress, spec: SessionSpec): QueueItem[] {
   const wanted = new Set(spec.subtopicIds)
-  const inScope = (item: Located) => wanted.size === 0 || wanted.has(item.subtopic.id)
+  const tiers = spec.tiers && spec.tiers.length > 0 ? new Set<number>(spec.tiers) : null
+  const inScope = (item: Located) =>
+    (wanted.size === 0 || wanted.has(item.subtopic.id)) &&
+    (tiers === null || tiers.has(tierOf(item.question)))
 
   let pool: Located[]
 
@@ -207,8 +220,10 @@ export function buildQueue(pack: Pack, progress: PackProgress, spec: SessionSpec
     case 'quiz':
     default: {
       // The escalating path: serve each subtopic at the tier it has earned.
+      // Asking for specific tiers is a deliberate override of that, so the
+      // ceiling is skipped rather than applied on top.
       const scoped = locateAll(pack).filter(inScope)
-      pool = selectByTier(scoped, progress)
+      pool = tiers ? scoped : selectByTier(scoped, progress)
       if (pool.length === 0) pool = scoped
       break
     }
@@ -223,6 +238,67 @@ export function buildQueue(pack: Pack, progress: PackProgress, spec: SessionSpec
 
   const limited = spec.limit ? ordered.slice(0, spec.limit) : ordered
   return limited.map(toQueueItem)
+}
+
+/* ------------------------------------------------------------------ *
+ * Telling you what a session will actually contain
+ * ------------------------------------------------------------------ */
+
+/**
+ * How many questions this spec would ask right now.
+ *
+ * Built by running the real queue builder rather than by counting questions,
+ * because the two disagree — escalation, emphasis weighting and the mode
+ * filters all change the number. A subtopic listing forty questions and then
+ * handing you a quiz of twelve reads as a bug even when it isn't, so anywhere
+ * the app offers to start something it quotes this, not the raw total.
+ */
+export function plannedCount(pack: Pack, progress: PackProgress, spec: SessionSpec): number {
+  return buildQueue(pack, progress, spec).length
+}
+
+export interface TierSlice {
+  tier: 1 | 2 | 3
+  /** Questions written at this tier. */
+  total: number
+  /** How many of them you've answered at least once. */
+  seen: number
+  /** Sitting on a wrong answer. */
+  failing: number
+  /** Whether escalation currently serves this tier for the subtopic. */
+  unlocked: boolean
+}
+
+/**
+ * The per-tier account of a subtopic: what exists, what you've seen, and what
+ * escalation is currently willing to hand you.
+ */
+export function tierBreakdown(subtopic: Subtopic, progress: PackProgress): TierSlice[] {
+  const ceiling = unlockedTier(subtopic, progress)
+
+  return ([1, 2, 3] as const).map((tier) => {
+    const questions = subtopic.questions.filter((q) => tierOf(q) === tier)
+    let seen = 0
+    let failing = 0
+
+    for (const question of questions) {
+      const record = progress.questions[question.id]
+      if (!record || record.seen === 0) continue
+      seen++
+      if (record.lastVerdict === 'wrong') failing++
+    }
+
+    return { tier, total: questions.length, seen, failing, unlocked: tier <= ceiling }
+  })
+}
+
+/** Which kinds sit at a tier, for describing it in the interface. */
+export function kindsAtTier(subtopic: Subtopic, tier: 1 | 2 | 3): string[] {
+  const kinds = new Set<string>()
+  for (const question of subtopic.questions) {
+    if (tierOf(question) === tier) kinds.add(question.kind)
+  }
+  return [...kinds]
 }
 
 /**
@@ -265,8 +341,71 @@ export function requeue(rest: QueueItem[], item: QueueItem, verdict: Verdict): Q
 
   const gap = REQUEUE_GAP[item.attempt] ?? 16
   const at = Math.min(gap, rest.length)
-  const next: QueueItem = { ...item, attempt: item.attempt + 1 }
+  const next: QueueItem = { ...item, attempt: item.attempt + 1, returning: 'missed' }
   return [...rest.slice(0, at), next, ...rest.slice(at)]
+}
+
+/* ------------------------------------------------------------------ *
+ * Stepping down
+ * ------------------------------------------------------------------ */
+
+/** How far ahead the hard version is put when you step down from it. */
+const STEP_DOWN_GAP = 5
+
+/**
+ * Is there an easier question on this same material to fall back to?
+ *
+ * Only questions strictly below the current tier count. Handing someone
+ * another cold-recall question when they're stuck on cold recall is not help.
+ */
+export function stepDownTarget(pack: Pack, item: QueueItem): Question | null {
+  const tier = tierOf(item.question)
+  if (tier <= 1) return null
+
+  const subtopic = pack.topics
+    .flatMap((topic) => topic.subtopics)
+    .find((s) => s.id === item.subtopicId)
+  if (!subtopic) return null
+
+  const easier = subtopic.questions.filter(
+    (q) => q.id !== item.question.id && tierOf(q) < tier,
+  )
+  if (easier.length === 0) return null
+
+  // Prefer recognition, and among equals prefer something with real options
+  // to choose between — that is the form people actually ask to drop back to.
+  const ranked = [...easier].sort((a, b) => {
+    const byTier = tierOf(a) - tierOf(b)
+    if (byTier !== 0) return byTier
+    const optioned = (q: Question) => (q.kind === 'mcq' || q.kind === 'multi' ? 0 : 1)
+    return optioned(a) - optioned(b)
+  })
+
+  const best = tierOf(ranked[0])
+  const candidates = ranked.filter((q) => tierOf(q) === best)
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+/**
+ * Swap the current question for an easier one on the same material.
+ *
+ * The hard version is not discarded — it goes back a few questions out, so it
+ * comes round again while the easier one is still fresh. That is the whole
+ * point: stepping down is a detour, not an exit.
+ */
+export function stepDown(
+  pack: Pack,
+  rest: QueueItem[],
+  item: QueueItem,
+): { next: QueueItem; queue: QueueItem[] } | null {
+  const easier = stepDownTarget(pack, item)
+  if (!easier) return null
+
+  const next: QueueItem = { ...item, question: easier, attempt: item.attempt + 1 }
+  const back: QueueItem = { ...item, attempt: item.attempt + 1, returning: 'steppedDown' }
+
+  const at = Math.min(STEP_DOWN_GAP, rest.length)
+  return { next, queue: [...rest.slice(0, at), back, ...rest.slice(at)] }
 }
 
 /* ------------------------------------------------------------------ *

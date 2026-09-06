@@ -8,12 +8,13 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, CornerDownLeft, Dice5, Eye, Star, X } from 'lucide-react'
+import { ChevronsDown, Check, CornerDownLeft, Dice5, Eye, Lightbulb, Star, X } from 'lucide-react'
 import type { Question } from '../types/pack'
 import { tierOf } from '../types/pack'
 import type { QuestionInstance } from '../lib/instance'
 import { isTemplated } from '../lib/instance'
 import type { Marking, Response, Verdict } from '../lib/grading'
+import { hintFor, type AssistLevel } from '../lib/assist'
 import { MarkishLine, Markish } from './Markish'
 
 const KIND_LABEL: Record<Question['kind'], string> = {
@@ -40,10 +41,16 @@ interface QuestionCardProps {
   suppressFeedback?: boolean
   flagged: boolean
   keyboard: boolean
+  /** How much help has been taken on this question already. */
+  assist: AssistLevel
+  /** True when there is an easier question on this material to fall back to. */
+  canStepDown: boolean
   onSubmit: (response: Response) => void
   onNext: () => void
   onFlag: () => void
   onReroll: () => void
+  onHint: () => void
+  onStepDown: () => void
   /** Label for the advance button, e.g. "Next" or "Finish". */
   nextLabel: string
 }
@@ -55,10 +62,14 @@ export function QuestionCard({
   suppressFeedback = false,
   flagged,
   keyboard,
+  assist,
+  canStepDown,
   onSubmit,
   onNext,
   onFlag,
   onReroll,
+  onHint,
+  onStepDown,
   nextLabel,
 }: QuestionCardProps) {
   const q = instance.question
@@ -112,7 +123,8 @@ export function QuestionCard({
         if (chosen !== null) onSubmit({ kind: 'mcq', chosen })
         break
       case 'multi':
-        if (chosenMulti.length > 0) onSubmit({ kind: 'multi', chosen: [...chosenMulti].sort() })
+        if (chosenMulti.length > 0)
+          onSubmit({ kind: 'multi', chosen: [...chosenMulti].sort((a, b) => a - b) })
         break
       case 'short':
         if (text.trim()) onSubmit({ kind: 'short', text })
@@ -129,6 +141,17 @@ export function QuestionCard({
   }
 
   const selfGrade = (verdict: Verdict) => onSubmit({ kind: 'recall', selfVerdict: verdict })
+
+  /* -- getting unstuck ------------------------------------------------ */
+
+  // Getting unstuck is offered on the forms that can strand you: anything you
+  // have to type or produce. Multiple choice already gives you somewhere to
+  // start, and a mock test is meant to be uncomfortable.
+  const strandable = q.kind !== 'mcq' && q.kind !== 'multi'
+  const hint = strandable ? hintFor(q) : null
+  const offerHelp = phase === 'answering' && !suppressFeedback && strandable
+  const canHint = offerHelp && hint !== null && assist < 1
+  const canDrop = offerHelp && canStepDown
 
   /* -- keyboard ------------------------------------------------------- */
 
@@ -175,16 +198,30 @@ export function QuestionCard({
         return
       }
 
+      if (event.key.toLowerCase() === 'h' && canHint) {
+        event.preventDefault()
+        onHint()
+        return
+      }
+
+      if (event.key.toLowerCase() === 'e' && canDrop) {
+        event.preventDefault()
+        onStepDown()
+        return
+      }
+
       if (phase === 'answering' && /^[1-9]$/.test(event.key)) {
-        const index = Number(event.key) - 1
-        if (q.kind === 'mcq' && index < q.options.length) {
+        // Keys address what's on screen, so map the position back through the
+        // shuffle before recording a choice.
+        const position = Number(event.key) - 1
+        const index = instance.optionMap[position]
+        if (index !== undefined && (q.kind === 'mcq' || q.kind === 'multi')) {
           event.preventDefault()
-          setChosen(index)
-        } else if (q.kind === 'multi' && index < q.options.length) {
-          event.preventDefault()
-          setChosenMulti((prev) =>
-            prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
-          )
+          if (q.kind === 'mcq') setChosen(index)
+          else
+            setChosenMulti((prev) =>
+              prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+            )
         }
       }
 
@@ -198,7 +235,23 @@ export function QuestionCard({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [keyboard, phase, q, flipped, stepsShown, instance.steps.length, onNext, onFlag, onReroll, submit])
+  }, [
+    keyboard,
+    phase,
+    q,
+    flipped,
+    stepsShown,
+    instance.steps.length,
+    instance.optionMap,
+    canHint,
+    canDrop,
+    onNext,
+    onFlag,
+    onReroll,
+    onHint,
+    onStepDown,
+    submit,
+  ])
 
   /* -- rendering ------------------------------------------------------ */
 
@@ -250,7 +303,10 @@ export function QuestionCard({
 
       {(q.kind === 'mcq' || q.kind === 'multi') && (
         <ul className="options">
-          {q.options.map((option, index) => {
+          {instance.options.map((option, position) => {
+            // The card shows a shuffled order; everything it reports upward is
+            // in the question's own indices, so marking never sees the shuffle.
+            const index = instance.optionMap[position]
             const selected =
               q.kind === 'mcq' ? chosen === index : chosenMulti.includes(index)
             const isAnswer =
@@ -278,7 +334,7 @@ export function QuestionCard({
                       )
                   }}
                 >
-                  <span className="option-key kbd">{index + 1}</span>
+                  <span className="option-key kbd">{position + 1}</span>
                   <span className="option-text">
                     <MarkishLine>{option}</MarkishLine>
                   </span>
@@ -337,6 +393,20 @@ export function QuestionCard({
               <span className="kbd">SPACE</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* ---------------- hint ---------------- */}
+
+      {assist >= 1 && hint !== null && (
+        <div className="hint">
+          <span className="t-label hint-label">
+            <Lightbulb size={13} aria-hidden="true" />
+            Hint
+          </span>
+          <span className="hint-body">
+            {q.hint ? <MarkishLine>{hint}</MarkishLine> : <span className="t-mono">{hint}</span>}
+          </span>
         </div>
       )}
 
@@ -448,6 +518,32 @@ export function QuestionCard({
             )}
 
             <span className="spacer" />
+
+            {canHint && (
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={onHint}
+                title="Show the shape of the answer"
+              >
+                <Lightbulb size={14} aria-hidden="true" />
+                Hint
+                <span className="kbd">H</span>
+              </button>
+            )}
+
+            {canDrop && (
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={onStepDown}
+                title="Swap for an easier question on this material — this one comes back later"
+              >
+                <ChevronsDown size={14} aria-hidden="true" />
+                Easier
+                <span className="kbd">E</span>
+              </button>
+            )}
 
             {isTemplated(q) && (
               <button type="button" className="btn btn-outline btn-sm" onClick={onReroll}>

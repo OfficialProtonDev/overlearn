@@ -16,10 +16,13 @@ import {
   buildQueue,
   defaultLimit,
   requeue,
+  stepDown,
+  stepDownTarget,
   type QueueItem,
   type SessionMode,
   type SessionSpec,
 } from '../lib/scheduler'
+import { ASSIST_NOTE, type AssistLevel } from '../lib/assist'
 import { paths, useNavigate } from '../lib/router'
 import { useStore } from '../state/store'
 import { QuestionCard } from '../components/QuestionCard'
@@ -34,7 +37,17 @@ interface LogEntry {
 
 const MOCK_MINUTES = 30
 
-export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; scope: string[] }) {
+export function SessionView({
+  pack,
+  mode,
+  scope,
+  tiers = [],
+}: {
+  pack: Pack
+  mode: string
+  scope: string[]
+  tiers?: (1 | 2 | 3)[]
+}) {
   const { progress, settings, answer, flag, finishSession } = useStore()
   const navigate = useNavigate()
 
@@ -54,11 +67,13 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
   const [log, setLog] = useState<LogEntry[]>([])
   const [done, setDone] = useState(false)
   const [plannedTotal, setPlannedTotal] = useState(0)
+  const [assist, setAssist] = useState<AssistLevel>(0)
 
   useEffect(() => {
     const spec: SessionSpec = {
       mode: sessionMode,
       subtopicIds: scope,
+      tiers,
       limit: defaultLimit(sessionMode, 999),
     }
     const built = buildQueue(pack, progress, spec)
@@ -72,11 +87,12 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
     setPhase('answering')
     setMarking(null)
     setLog([])
+    setAssist(0)
     setDone(built.length === 0)
     // Rebuilding on every progress change would reshuffle mid-session, so
     // progress is read once at the start and left out of the dependencies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pack, sessionMode, scope.join(',')])
+  }, [pack, sessionMode, scope.join(','), tiers.join(',')])
 
   /* -- mock timer ----------------------------------------------------- */
 
@@ -117,7 +133,7 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
   // A new session in the same mode needs the guard released.
   useEffect(() => {
     finished.current = false
-  }, [sessionMode, scope.join(',')])
+  }, [sessionMode, scope.join(','), tiers.join(',')])
 
   /* -- actions -------------------------------------------------------- */
 
@@ -125,13 +141,22 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
     (response: Response) => {
       if (!current || !instance) return
 
-      const result = mark(instance, response)
+      const marked = mark(instance, response)
+
+      // Help is fine; help that counts as mastery is not. A right answer that
+      // needed a hint or a step down is logged as partial, which keeps the
+      // question in circulation and stops it building a streak.
+      const result: Marking =
+        assist !== 0 && marked.verdict === 'correct'
+          ? { verdict: 'partial', note: ASSIST_NOTE[assist] }
+          : marked
+
       setMarking(result)
       setPhase('revealed')
       setLog((prev) => [...prev, { item: current, instance, marking: result }])
       answer(current.question.id, result.verdict)
     },
-    [current, instance, answer],
+    [current, instance, answer, assist],
   )
 
   const handleNext = useCallback(() => {
@@ -157,12 +182,35 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
     setInstance(instantiate(next.question, next.attempt))
     setPhase('answering')
     setMarking(null)
+    setAssist(0)
   }, [current, queue, marking, isMock])
 
   const handleReroll = useCallback(() => {
     if (!current) return
     setInstance(instantiate(current.question, Date.now()))
   }, [current])
+
+  const handleHint = useCallback(() => {
+    setAssist((level) => (level < 1 ? 1 : level))
+  }, [])
+
+  /**
+   * Swap the question you're stuck on for an easier one on the same material.
+   * The hard version is pushed a few slots out rather than dropped, so it
+   * comes back while the easier one is still fresh.
+   */
+  const handleStepDown = useCallback(() => {
+    if (!current) return
+    const swapped = stepDown(pack, queue, current)
+    if (!swapped) return
+
+    setQueue(swapped.queue)
+    setCurrent(swapped.next)
+    setInstance(instantiate(swapped.next.question, swapped.next.attempt))
+    setPhase('answering')
+    setMarking(null)
+    setAssist(2)
+  }, [current, queue, pack])
 
   const handleFlag = useCallback(() => {
     if (current) flag(current.question.id)
@@ -256,16 +304,22 @@ export function SessionView({ pack, mode, scope }: { pack: Pack; mode: string; s
         suppressFeedback={isMock}
         flagged={flagged}
         keyboard={settings.keyboardShortcuts}
+        assist={assist}
+        canStepDown={!isMock && stepDownTarget(pack, current) !== null}
         onSubmit={handleSubmit}
         onNext={handleNext}
         onFlag={handleFlag}
         onReroll={handleReroll}
+        onHint={handleHint}
+        onStepDown={handleStepDown}
         nextLabel={isLast ? 'Finish' : 'Next'}
       />
 
-      {current.attempt > 0 && phase === 'answering' && (
+      {current.returning && phase === 'answering' && (
         <p className="t-tiny t-dimmer session-repeat">
-          Back again — you missed this one earlier in the session.
+          {current.returning === 'steppedDown'
+            ? 'Back again — this is the one you stepped down from.'
+            : 'Back again — you missed this one earlier in the session.'}
         </p>
       )}
     </div>

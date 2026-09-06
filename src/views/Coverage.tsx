@@ -30,6 +30,7 @@ import {
   type Mastery,
   type PackProgress,
 } from '../lib/progress'
+import { defaultLimit, plannedCount, type SessionMode } from '../lib/scheduler'
 import { paths, useNavigate } from '../lib/router'
 import { useStore } from '../state/store'
 import { Markish } from '../components/Markish'
@@ -49,6 +50,23 @@ export function Coverage({ pack }: { pack: Pack }) {
 
   const untouched = stats.filter((s) => s.mastery.state === 'untouched').length
   const weakCount = stats.filter((s) => s.mastery.state === 'weak').length
+
+  // Every mode quotes what it would actually ask, not the pack total. The
+  // modes filter and the quiz escalates, so those two numbers rarely agree.
+  const counts = useMemo(() => {
+    const of = (mode: SessionMode) =>
+      plannedCount(pack, progress, {
+        mode,
+        subtopicIds: [],
+        limit: defaultLimit(mode, 999),
+      })
+    return {
+      quiz: of('quiz'),
+      flashcards: of('flashcards'),
+      rapidfire: of('rapidfire'),
+      mock: of('mock'),
+    }
+  }, [pack, progress])
 
   return (
     <div className="shell shell-wide view">
@@ -90,6 +108,7 @@ export function Coverage({ pack }: { pack: Pack }) {
         <ModeCard
           icon={ListChecks}
           title="Quiz"
+          count={counts.quiz}
           detail={
             untouched > 0 || weakCount > 0
               ? `Escalating, weakest first — ${untouched + weakCount} subtopic${untouched + weakCount === 1 ? '' : 's'} need attention`
@@ -101,24 +120,28 @@ export function Coverage({ pack }: { pack: Pack }) {
         <ModeCard
           icon={Layers}
           title="Flashcards"
+          count={counts.flashcards}
           detail="Cold recall, graded by you"
           onStart={() => navigate(paths.session('flashcards'))}
         />
         <ModeCard
           icon={Zap}
           title="Rapid fire"
+          count={counts.rapidfire}
           detail="Recognition only — find gaps fast"
           onStart={() => navigate(paths.session('rapidfire'))}
         />
         <ModeCard
           icon={Timer}
           title="Mock test"
+          count={counts.mock}
           detail="Timed, mixed, no feedback until the end"
           onStart={() => navigate(paths.session('mock'))}
         />
         <ModeCard
           icon={RotateCcw}
           title="Mistake review"
+          count={mistakes.length}
           detail={
             mistakes.length === 0
               ? 'Nothing wrong or flagged yet'
@@ -184,6 +207,7 @@ function ModeCard({
   icon: Icon,
   title,
   detail,
+  count,
   onStart,
   primary,
   disabled,
@@ -191,6 +215,8 @@ function ModeCard({
   icon: LucideIcon
   title: string
   detail: string
+  /** How many questions this mode would actually ask, right now. */
+  count: number
   onStart: () => void
   primary?: boolean
   disabled?: boolean
@@ -200,11 +226,13 @@ function ModeCard({
       type="button"
       className={`mode-card ${primary ? 'mode-card-primary' : ''}`}
       onClick={onStart}
-      disabled={disabled}
+      disabled={disabled || count === 0}
     >
       <span className="mode-card-title">
         <Icon size={16} aria-hidden="true" strokeWidth={1.9} />
         <span className="t-h3">{title}</span>
+        <span className="spacer" />
+        <span className="t-mono t-tiny t-dimmer mode-card-count">{count}</span>
       </span>
       <span className="t-tiny t-dim mode-card-detail">{detail}</span>
     </button>

@@ -136,6 +136,14 @@ interface QuestionBase {
    * Defaults are derived from `kind` when omitted.
    */
   tier?: 1 | 2 | 3
+  /**
+   * A nudge shown when you ask for one, before the answer is revealed.
+   *
+   * Points at the idea, never at the spelling: "think about what happens to
+   * the variance", not "starts with 'over'". Optional — without one the app
+   * falls back to the shape of the answer, which is weaker but always there.
+   */
+  hint?: string
   /** Citation into the source material, e.g. "c2 · slide 15". */
   source?: string
   /** Shown after answering. Supports the same light markup as summaries. */

@@ -611,10 +611,118 @@
   max-width: 70ch;
 }
 
-.kind-list {
+/* -- the tier ladder on a subtopic -- */
+
+.tier-list {
   display: flex;
+  flex-direction: column;
   gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+.tier-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
   flex-wrap: wrap;
+  padding: var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+/* Held-back tiers read as available-but-not-yet, never as broken. */
+.tier-row.is-held {
+  background: none;
+  border-style: dashed;
+}
+
+.tier-rank {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.tier-row.is-open .tier-rank {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tier-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 14ch;
+}
+
+.tier-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tier-counts {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  flex: none;
+}
+
+.tier-counts .tile-failing {
+  margin-left: 0;
+}
+
+/* -- the question count carried on a start button -- */
+
+.btn-count {
+  display: inline-block;
+  padding: 0 6px;
+  margin-left: 2px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.mode-card-count {
+  flex: none;
+}
+
+.mode-card-primary .mode-card-count {
+  color: var(--accent-ink);
+  opacity: 0.78;
+}
+
+/* -- a hint, mid-question -- */
+
+.hint {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: var(--s3);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-md);
+  background: none;
+}
+
+.hint-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  color: var(--ink-2);
+}
+
+.hint-body {
+  color: var(--ink-1);
+  letter-spacing: 0.04em;
 }
 
 /* -- formulas and definitions -- */

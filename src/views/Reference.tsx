@@ -8,13 +8,38 @@
  * rather than taken on faith.
  */
 
-import { ChevronRight } from 'lucide-react'
+import { useMemo } from 'react'
+import { ChevronRight, Lock } from 'lucide-react'
 import type { Formula, KeyFact, Pack, Subtopic, Topic } from '../types/pack'
 import { emphasisOf } from '../types/pack'
 import { STATE_LABEL, masteryOf, topicQuestions, type PackProgress } from '../lib/progress'
+import { kindsAtTier, plannedCount, tierBreakdown, type TierSlice } from '../lib/scheduler'
 import { paths, useNavigate } from '../lib/router'
 import { useStore } from '../state/store'
 import { Markish } from '../components/Markish'
+
+/* ------------------------------------------------------------------ *
+ * Tiers, described
+ * ------------------------------------------------------------------ */
+
+const TIER_TITLE: Record<1 | 2 | 3, string> = {
+  1: 'Recognise',
+  2: 'Supply',
+  3: 'Produce',
+}
+
+const TIER_BLURB: Record<1 | 2 | 3, string> = {
+  1: 'Pick the right answer from options.',
+  2: 'Type or complete the answer with a prompt in front of you.',
+  3: 'Produce it cold, with nothing to go on.',
+}
+
+/** What escalation is waiting for before it serves this tier by default. */
+const TIER_UNLOCK: Record<1 | 2 | 3, string> = {
+  1: 'Open from the start',
+  2: 'Opens once tier 1 is landing (35%)',
+  3: 'Opens once this subtopic is solid (70%)',
+}
 
 /* ------------------------------------------------------------------ *
  * Topic
@@ -29,6 +54,7 @@ export function TopicView({ pack, topicId }: { pack: Pack; topicId: string }) {
 
   const mastery = masteryOf(topicQuestions(topic), progress)
   const subtopicIds = topic.subtopics.map((s) => s.id)
+  const quizNow = plannedCount(pack, progress, { mode: 'quiz', subtopicIds })
 
   return (
     <div className="shell view">
@@ -50,8 +76,11 @@ export function TopicView({ pack, topicId }: { pack: Pack; topicId: string }) {
           type="button"
           className="btn btn-primary"
           onClick={() => navigate(paths.session('quiz', subtopicIds))}
+          disabled={quizNow === 0}
+          title={`${quizNow} of ${mastery.total} questions are open to a quiz right now`}
         >
           Quiz this topic
+          <span className="btn-count t-mono">{quizNow}</span>
         </button>
       </header>
 
@@ -75,6 +104,9 @@ export function TopicView({ pack, topicId }: { pack: Pack; topicId: string }) {
 function SubtopicRow({ subtopic, progress }: { subtopic: Subtopic; progress: PackProgress }) {
   const navigate = useNavigate()
   const mastery = masteryOf(subtopic.questions, progress)
+  const open = tierBreakdown(subtopic, progress)
+    .filter((slice) => slice.unlocked)
+    .reduce((n, slice) => n + slice.total, 0)
 
   return (
     <li>
@@ -92,7 +124,10 @@ function SubtopicRow({ subtopic, progress }: { subtopic: Subtopic; progress: Pac
           {subtopic.summary && <span className="t-tiny t-dimmer subtopic-row-hint">{subtopic.summary}</span>}
         </span>
         <span className="spacer" />
-        <span className="t-mono t-tiny t-dimmer">
+        <span
+          className="t-mono t-tiny t-dimmer"
+          title={`${mastery.seen} of ${mastery.total} seen · ${open} open to a quiz right now`}
+        >
           {mastery.seen}/{mastery.total}
         </span>
       </button>
@@ -123,10 +158,19 @@ export function SubtopicView({ pack, subtopicId }: { pack: Pack; subtopicId: str
   const mastery = masteryOf(subtopic.questions, progress)
   const emphasis = emphasisOf(subtopic)
 
-  const kinds = subtopic.questions.reduce<Record<string, number>>((acc, q) => {
-    acc[q.kind] = (acc[q.kind] ?? 0) + 1
-    return acc
-  }, {})
+  // What a quiz would actually ask right now, rather than what the subtopic
+  // contains. The two differ because escalation holds back the higher tiers,
+  // and quoting the wrong one is what makes a quiz look broken.
+  const quizNow = plannedCount(pack, progress, {
+    mode: 'quiz',
+    subtopicIds: [subtopic.id],
+  })
+  const cardsNow = plannedCount(pack, progress, {
+    mode: 'flashcards',
+    subtopicIds: [subtopic.id],
+  })
+  const tiers = tierBreakdown(subtopic, progress)
+  const held = mastery.total - quizNow
 
   return (
     <div className="shell view">
@@ -159,15 +203,19 @@ export function SubtopicView({ pack, subtopicId }: { pack: Pack; subtopicId: str
             type="button"
             className="btn btn-outline"
             onClick={() => navigate(paths.session('flashcards', [subtopic.id]))}
+            disabled={cardsNow === 0}
           >
             Flashcards
+            <span className="btn-count t-mono">{cardsNow}</span>
           </button>
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => navigate(paths.session('quiz', [subtopic.id]))}
+            disabled={quizNow === 0}
           >
             Quiz this
+            <span className="btn-count t-mono">{quizNow}</span>
           </button>
         </div>
       </header>
@@ -178,20 +226,104 @@ export function SubtopicView({ pack, subtopicId }: { pack: Pack; subtopicId: str
       <FactBlock facts={subtopic.keyFacts} />
 
       <section className="ref-section">
-        <h2 className="t-label">What you'll be asked</h2>
-        <ul className="kind-list">
-          {Object.entries(kinds).map(([kind, count]) => (
-            <li key={kind} className="chip">
-              {count} × {kind}
-            </li>
+        <div className="row-baseline gap-2 wrap">
+          <h2 className="t-label">What you'll be asked</h2>
+          <span className="spacer" />
+          <span className="t-tiny t-dimmer">
+            {quizNow} of {mastery.total} open to a quiz right now
+          </span>
+        </div>
+
+        <ul className="tier-list">
+          {tiers.map((slice) => (
+            <TierRow key={slice.tier} subtopic={subtopic} slice={slice} />
           ))}
         </ul>
+
         <p className="t-tiny t-dimmer ref-note">
-          Questions escalate as you go: recognition first, then supplying the answer, then
-          producing it cold.
+          {held > 0 ? (
+            <>
+              A quiz escalates: it serves the tiers this subtopic has unlocked, which is why it
+              asks {quizNow} rather than all {mastery.total}. The other {held} open up as you
+              land the earlier ones — or go straight at them with the drill buttons above, which
+              ignore the ladder.
+            </>
+          ) : (
+            <>
+              Every tier is unlocked, so a quiz draws on all {mastery.total}. The drill buttons
+              above narrow it to one tier at a time.
+            </>
+          )}
         </p>
       </section>
     </div>
+  )
+}
+
+/**
+ * One tier of a subtopic: what's written at it, how much you've seen, whether
+ * escalation is serving it yet, and a way in regardless.
+ *
+ * The "regardless" is the point. Escalation decides the default path, but a
+ * question you can see listed should never be unreachable — being told a
+ * subtopic has forty questions and then handed twelve, with no way to find
+ * the rest, reads as the app losing them.
+ */
+function TierRow({ subtopic, slice }: { subtopic: Subtopic; slice: TierSlice }) {
+  const navigate = useNavigate()
+  const kinds = useMemo(() => kindsAtTier(subtopic, slice.tier), [subtopic, slice.tier])
+
+  if (slice.total === 0) return null
+
+  return (
+    <li className={`tier-row ${slice.unlocked ? 'is-open' : 'is-held'}`}>
+      <span className="tier-rank t-mono" aria-hidden="true">
+        {slice.tier}
+      </span>
+
+      <span className="tier-body">
+        <span className="row-baseline gap-2 wrap">
+          <span className="t-h3">{TIER_TITLE[slice.tier]}</span>
+          <span className="t-tiny t-dimmer">{kinds.join(' · ')}</span>
+          {!slice.unlocked && (
+            <span className="chip tier-lock">
+              <Lock size={11} aria-hidden="true" />
+              Held back
+            </span>
+          )}
+        </span>
+        <span className="t-tiny t-dimmer">
+          {TIER_BLURB[slice.tier]} {slice.unlocked ? '' : `${TIER_UNLOCK[slice.tier]}.`}
+        </span>
+      </span>
+
+      <span className="spacer" />
+
+      <span className="tier-counts">
+        <span className="t-mono t-tiny t-dimmer" title="Seen at least once, of the total">
+          {slice.seen}/{slice.total}
+        </span>
+        {slice.failing > 0 && (
+          <span className="t-mono t-tiny tile-failing" title="Sitting on a wrong answer">
+            {slice.failing} wrong
+          </span>
+        )}
+      </span>
+
+      <button
+        type="button"
+        className="btn btn-outline btn-sm"
+        onClick={() => navigate(paths.session('quiz', [subtopic.id], [slice.tier]))}
+        title={
+          slice.unlocked
+            ? `Drill the ${slice.total} tier ${slice.tier} questions`
+            : `Skip the ladder and drill these ${slice.total} now`
+        }
+      >
+        {slice.unlocked ? 'Drill' : 'Drill anyway'}
+        <span className="btn-count t-mono">{slice.total}</span>
+      </button>
+    </li>
   )
 }
 

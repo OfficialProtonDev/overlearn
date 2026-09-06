@@ -125,12 +125,21 @@ Optional on all kinds:
 | `tier` | `1` recognise · `2` supply · `3` produce. Defaults from `kind`. |
 | `source` | `"c2 · slide 15"`. Shown on the card so anything suspect can be checked. |
 | `explanation` | Shown after answering. |
+| `hint` | Shown on request when someone is stuck. Ignored on `mcq` and `multi`. |
 | `tags` | Free-form labels. |
 
 Tier drives the escalating quiz: an untouched subtopic is served tier 1, and
 higher tiers unlock as it gets solid. A subtopic with nothing at or below its
 current tier still gets asked at its lowest available tier, so a subtopic
 written entirely as tier 3 is never unreachable.
+
+Escalation decides the *default* path only. Every subtopic page lists its tiers
+with a drill button per tier, so a question that exists is always reachable
+even when the ladder has not opened it yet.
+
+`hint` should point at the idea rather than the spelling. Without one, the app
+falls back to showing the shape of the answer — its word count and first
+letters. Either way, taking a hint caps that answer at `partial`.
 
 ### `mcq` — pick one
 
@@ -139,17 +148,27 @@ written entirely as tier 3 is never unreachable.
   "id": "knn-vote",
   "kind": "mcq",
   "prompt": "In kNN classification, how is the prediction formed from the k neighbours?",
-  "options": ["Majority vote", "Mean of their labels", "The nearest one wins", "Weighted sum of distances"],
-  "answerIndex": 0,
+  "options": ["Mean of their labels", "The nearest one wins", "Majority vote", "Weighted sum of distances"],
+  "answerIndex": 2,
   "explanation": "Regression takes the mean; classification takes a majority vote.",
   "source": "c2 · slide 5"
 }
 ```
 
+Options are shuffled before they reach the screen, and a fresh order is drawn
+each time the question is served — so `answerIndex` is a fact about the JSON,
+not about what position the person sees. Options whose text refers to the
+others by position ("all of the above", "both A and C") are detected and left
+in the order the pack gave them.
+
+That is a safety net, not a licence. Write `answerIndex` spread across the
+positions anyway: the validator warns when 60% or more of a pack's answers land
+in the same slot, because a pack should also be right when read as JSON.
+
 ### `multi` — pick all that apply
 
 `answerIndices` instead of `answerIndex`. Partial answers are reported as
-partial and neither build nor break a streak.
+partial and neither build nor break a streak. The same shuffling applies.
 
 ### `short` — type it, checked leniently
 

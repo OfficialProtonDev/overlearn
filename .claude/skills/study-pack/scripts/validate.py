@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import math
 import re
@@ -153,6 +154,12 @@ def check_question(q: object, path: str, r: Report) -> None:
 
     if "tier" in q and q["tier"] not in (1, 2, 3):
         r.error(path, "tier must be 1, 2 or 3")
+
+    if "hint" in q:
+        if not isinstance(q["hint"], str) or not q["hint"].strip():
+            r.error(path, "hint, when present, must be a non-empty string")
+        elif kind in {"mcq", "multi"}:
+            r.warn(path, "hint is ignored on mcq and multi — the options are already the help")
 
     if kind in {"mcq", "multi"}:
         options = q.get("options")
@@ -343,6 +350,32 @@ def check_topic(data: object, file_label: str, r: Report) -> dict | None:
     return data
 
 
+def check_answer_spread(positions: "Counter[int]", r: Report) -> None:
+    """
+    Warn when the right answer almost always sits in the same slot.
+
+    Writing the answer first and the distractors after is the natural way to
+    draft a question, and it produces packs where answerIndex is 0 every time.
+    Someone reading or diffing the JSON can then see every answer at a glance,
+    which makes the multiple-choice layer worth a lot less. The app shuffles
+    options before showing them, so this is a warning rather than an error.
+    """
+    total = sum(positions.values())
+    if total < 12:
+        return
+
+    slot, count = positions.most_common(1)[0]
+    share = count / total
+    if share < 0.6:
+        return
+
+    r.warn(
+        "pack.json",
+        f"{count} of {total} mcq answers sit at index {slot} ({share:.0%}). "
+        "Spread answerIndex across the options as you write.",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pack", type=Path)
@@ -381,6 +414,7 @@ def main() -> int:
     subtopic_ids: dict[str, str] = {}
     question_ids: dict[str, str] = {}
     counts = {"topics": 0, "subtopics": 0, "questions": 0, "formulas": 0, "facts": 0}
+    answer_positions: Counter[int] = Counter()
 
     for i, ref in enumerate(topics):
         label = f"pack.json topics[{i}]"
@@ -447,6 +481,11 @@ def main() -> int:
                             "progress is keyed on it, so ids must be unique across the pack",
                         )
                     question_ids[qid] = f"{file_rel}/{sid}"
+
+                if q.get("kind") == "mcq" and isinstance(q.get("answerIndex"), int):
+                    answer_positions[q["answerIndex"]] += 1
+
+    check_answer_spread(answer_positions, r)
 
     for path, message in r.errors:
         print(f"ERROR  {path}\n       {message}")

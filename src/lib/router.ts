@@ -14,7 +14,7 @@ export type Route =
   | { name: 'coverage' }
   | { name: 'topic'; topicId: string }
   | { name: 'subtopic'; subtopicId: string }
-  | { name: 'session'; mode: string; scope: string }
+  | { name: 'session'; mode: string; scope: string; tiers: string }
   | { name: 'cheatsheet' }
   | { name: 'settings' }
 
@@ -44,6 +44,7 @@ function parse(hash: string): Route {
         name: 'session',
         mode: segments[1] ?? 'quiz',
         scope: query.get('scope') ?? '',
+        tiers: query.get('tier') ?? '',
       }
     default:
       return { name: 'coverage' }
@@ -109,9 +110,12 @@ export const paths = {
   cheatsheet: () => '/cheatsheet',
   topic: (topicId: string) => `/topic/${encodeURIComponent(topicId)}`,
   subtopic: (subtopicId: string) => `/subtopic/${encodeURIComponent(subtopicId)}`,
-  session: (mode: string, subtopicIds: string[] = []) => {
-    const scope = subtopicIds.join(',')
-    return `/session/${mode}${scope ? `?scope=${encodeURIComponent(scope)}` : ''}`
+  session: (mode: string, subtopicIds: string[] = [], tiers: number[] = []) => {
+    const query = new URLSearchParams()
+    if (subtopicIds.length > 0) query.set('scope', subtopicIds.join(','))
+    if (tiers.length > 0) query.set('tier', tiers.join(','))
+    const search = query.toString()
+    return `/session/${mode}${search ? `?${search}` : ''}`
   },
 }
 
@@ -121,6 +125,14 @@ export function parseScope(scope: string): string[] {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+}
+
+/** Split the tier query back into tiers, ignoring anything out of range. */
+export function parseTiers(tiers: string): (1 | 2 | 3)[] {
+  return tiers
+    .split(',')
+    .map((t) => Number(t.trim()))
+    .filter((t): t is 1 | 2 | 3 => t === 1 || t === 2 || t === 3)
 }
 
 /** Scroll to the top whenever the route changes. */
