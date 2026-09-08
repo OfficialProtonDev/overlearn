@@ -1,0 +1,17 @@
+{
+  "source": "C:/Users/billy/OneDrive - The University of Waikato/Study Material/COMPX361/Test 1",
+  "generatedAt": "2026-09-08",
+  "notes": "Test format: in person, pen on paper, no cheat sheet, no calculator. Duration not confirmed at generation time — if it turns out to matter, add it to the description in pack.json. Because no calculator is allowed, every computation drill is integer-valued and hand-doable; the largest answer any range can produce is 625.",
+  "emphasis": "balanced — drills, definitions/theorem statements, and conceptual questions roughly evenly",
+  "longExamples": "staged — multi-step procedures (state elimination, subset construction) are asked one stage at a time so a wrong answer localises which step of the method broke",
+  "topics": {
+    "strings-languages": { "depth": "standard", "computation": false },
+    "dfsas": { "depth": "deep", "computation": true },
+    "nfsas-subset": { "depth": "deep", "computation": true },
+    "kleene-etgs": { "depth": "deep", "computation": true },
+    "closure-minimisation": { "depth": "deep", "computation": false },
+    "pumping-lemma": { "depth": "deep", "computation": false },
+    "turing-machines": { "depth": "standard", "computation": true },
+    "computability": { "depth": "standard", "computation": true }
+  }
+}

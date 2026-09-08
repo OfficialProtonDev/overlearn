@@ -1,0 +1,1039 @@
+{
+  "id": "computability",
+  "title": "Computability",
+  "summary": "Which functions a Turing machine can compute: unary encoding of numbers, building bigger functions by composing machines, the µ operator for search, and the reduction to binary machines that lets 'Turing' be dropped from 'Turing computable'.",
+  "subtopics": [
+    {
+      "id": "cp-functions",
+      "title": "Computable functions and unary representation",
+      "emphasis": "standard",
+      "summary": "Numbers go on the tape in unary, with n written as n + 1 ones and multiple arguments separated by a 0. The basic computable functions are successor, predecessor, plus, times, cutoff and power.",
+      "keyFacts": [
+        {
+          "term": "ℕ",
+          "definition": "Throughout §2.2, ℕ denotes the natural numbers **together with zero**: ℕ = {0, 1, 2, 3, …}.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Unary representation",
+          "definition": "0 ↔ '1', 1 ↔ '11', 2 ↔ '111', … — the number n is written as n + 1 ones. If more than one input is used, they are **separated by a '0'**.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "The basic functions",
+          "definition": "scsr(n) = n + 1 and pred(n) = n − 1 for n > 0 (considered in the labs); plus(m, n) = m + n (a tutorial problem); times(m, n) = m × n (Ch 7 of *Finite Automata*).",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Cutoff subtraction",
+          "definition": "cutoff(m, n) = m − n if m ≥ n, and 0 otherwise. Written m ⊖ n.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "power",
+          "definition": "power(m, n) = n^m — extend times the way plus was extended to give times. Note the argument order: the **first** argument is the exponent.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Turing computability, broadly",
+          "definition": "Any function X* → X*, for X a finite alphabet, computable by a Turing machine. This definition can be shown equivalent to the one involving natural numbers.",
+          "source": "tm2 · §2.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cp-nat-includes-zero",
+          "kind": "mcq",
+          "prompt": "In §2.2, what does ℕ denote?",
+          "options": [
+            "The natural numbers together with zero, {0, 1, 2, 3, …}",
+            "All integers",
+            "The rationals",
+            "The positive integers {1, 2, 3, …}"
+          ],
+          "answerIndex": 0,
+          "explanation": "Zero is included — the notes open the section by fixing this. It matters throughout: cutoff returns 0, quot and sqrt search for a least q ∈ ℕ starting from 0, and the unary encoding has to have a representation for 0 at all.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-unary-zero",
+          "kind": "short",
+          "prompt": "In the unary representation used in §2.2, how is the number **0** written on the tape?",
+          "answers": [
+            "1",
+            "a single 1",
+            "one 1",
+            "as \"1\""
+          ],
+          "tier": 2,
+          "explanation": "As a single '1'. The scheme is 0 ↔ '1', 1 ↔ '11', 2 ↔ '111' — so n is n + 1 ones. Encoding 0 as the empty string would be indistinguishable from a blank tape, which is why the off-by-one exists.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-unary-length",
+          "kind": "computation",
+          "prompt": "In the unary representation of §2.2, how many 1s are written on the tape to represent the number {{n}}?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 0,
+              "max": 15,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "The scheme is 0 ↔ '1', 1 ↔ '11', 2 ↔ '111', … — so each number is represented by **one more** 1 than its value."
+            },
+            {
+              "text": "For n = {{n}}, that is {{n}} + 1."
+            },
+            {
+              "text": "So {{n + 1}} ones are written."
+            }
+          ],
+          "answer": {
+            "expr": "n + 1",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Check the scheme at zero: how many 1s represent the number 0?",
+          "explanation": "n + 1 ones. The off-by-one is the whole content of this convention, and it is the easiest thing to get wrong when hand-tracing a numeric TM — zero is one symbol, not none.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-unary-separator",
+          "kind": "mcq",
+          "prompt": "How are two arguments separated on the tape in this unary scheme?",
+          "options": [
+            "By a blank symbol b",
+            "By a '0'",
+            "By a flag symbol",
+            "They are interleaved"
+          ],
+          "answerIndex": 1,
+          "explanation": "A '0'. Using b would be no good — b marks the end of the string, and the output must contain no blanks in the middle. Using 0 as the separator keeps the whole tape a string over X = {0, 1}.",
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "cp-unary-two-args",
+          "kind": "computation",
+          "prompt": "The function plus(m, n) is to be computed with m = {{m}} and n = {{nn}}, using the unary scheme with the two arguments separated by a single 0. How many symbols long is the input string on the tape?",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 0,
+              "max": 9,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 0,
+              "max": 9,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "Each argument is written as (value + 1) ones: m = {{m}} takes {{m + 1}} ones, and n = {{nn}} takes {{nn + 1}} ones."
+            },
+            {
+              "text": "The two blocks are separated by exactly one '0', adding 1 more symbol."
+            },
+            {
+              "text": "Total: {{m + 1}} + 1 + {{nn + 1}} = {{m + nn + 3}} symbols."
+            }
+          ],
+          "answer": {
+            "expr": "m + nn + 3",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Two blocks, each one longer than its value, plus a single separator between them.",
+          "explanation": "m + n + 3 — the two off-by-ones plus the separator. The '+3' is the tell-tale of this encoding; getting m + n + 1 means you forgot that 0 is written as '1'.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-cutoff-def",
+          "kind": "cloze",
+          "prompt": "Cutoff subtraction is defined by cutoff(m, n) = m − n if m {{1}} n, and {{2}} otherwise. It is written m ⊖ n.",
+          "blanks": [
+            [
+              "≥",
+              ">=",
+              "greater than or equal to",
+              "at least"
+            ],
+            [
+              "0",
+              "zero"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "m ⊖ n = m − n when m ≥ n, and 0 otherwise. It exists because ordinary subtraction would leave ℕ — there is no −3 to write on the tape — so the result is clipped at zero.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-cutoff-drill",
+          "kind": "computation",
+          "prompt": "Compute the cutoff subtraction {{m}} ⊖ {{nn}}.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "cutoff(m, n) = m − n if m ≥ n, and 0 otherwise — ordinary subtraction clipped at zero, because the result must stay in ℕ."
+            },
+            {
+              "text": "Here m = {{m}} and n = {{nn}}. Compare them, then subtract only if m ≥ n."
+            },
+            {
+              "text": "Result: {{max(m - nn, 0)}}."
+            }
+          ],
+          "answer": {
+            "expr": "max(m - nn, 0)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "If the second number is the larger, the answer is not negative — the definition has a second clause for exactly that case.",
+          "explanation": "max(m − n, 0). The point of the drill is the clipping: whenever n > m the answer is 0, not a negative number, since there is no unary representation for one.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-diff-drill",
+          "kind": "computation",
+          "prompt": "The notes define diff(m, n) = |m − n| as plus(cutoff(m, n), cutoff(n, m)) = (m ⊖ n) + (n ⊖ m). Evaluate it for m = {{m}}, n = {{nn}}.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "Compute the two cutoffs separately: m ⊖ n = {{max(m - nn, 0)}} and n ⊖ m = {{max(nn - m, 0)}}."
+            },
+            {
+              "text": "Notice that at most one of them can be non-zero — whichever number is smaller gives 0."
+            },
+            {
+              "text": "Add them: {{max(m - nn, 0)}} + {{max(nn - m, 0)}} = {{abs(m - nn)}}."
+            }
+          ],
+          "answer": {
+            "expr": "abs(m - nn)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "One of the two cutoffs is always zero; the other is the gap between the numbers.",
+          "explanation": "|m − n|. The construction is worth understanding rather than just the answer: it computes an absolute difference using only cutoff and plus, which is how the repertoire of computable functions is enlarged without designing a new machine from scratch.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-max-formula",
+          "kind": "computation",
+          "prompt": "The notes give max(m, n) = n + (m ⊖ n). Evaluate it for m = {{m}}, n = {{nn}}, following that formula.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "First the cutoff: m ⊖ n = {{max(m - nn, 0)}}."
+            },
+            {
+              "text": "Then add n: {{nn}} + {{max(m - nn, 0)}}."
+            },
+            {
+              "text": "= {{max(m, nn)}}. If m ≤ n the cutoff is 0 and the answer is just n; otherwise the cutoff makes up the difference to m."
+            }
+          ],
+          "answer": {
+            "expr": "max(m, nn)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Work the cutoff out first, then add n. Check both cases: m larger, and n larger.",
+          "explanation": "max(m, n), built from plus and cutoff alone. The companion formula is min(m, n) = m ⊖ (m ⊖ n), which uses cutoff twice.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-min-formula",
+          "kind": "computation",
+          "prompt": "The notes give min(m, n) = m ⊖ (m ⊖ n). Evaluate it for m = {{m}}, n = {{nn}}, following that formula.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 0,
+              "max": 20,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "Inner cutoff first: m ⊖ n = {{max(m - nn, 0)}}."
+            },
+            {
+              "text": "Now the outer cutoff: m ⊖ ({{max(m - nn, 0)}}) = {{m}} ⊖ {{max(m - nn, 0)}}."
+            },
+            {
+              "text": "= {{min(m, nn)}}. If m ≤ n the inner cutoff is 0 and the answer is m; otherwise subtracting the excess brings m down to n."
+            }
+          ],
+          "answer": {
+            "expr": "min(m, nn)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Two nested cutoffs — evaluate the inner one before the outer one, and clip at zero both times.",
+          "explanation": "min(m, n). Note it is **not** symmetric in appearance even though the result is: the formula uses m twice and n once.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-power-order",
+          "kind": "computation",
+          "prompt": "The notes define power(m, n) = n^m. Evaluate power({{m}}, {{nn}}).",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 2,
+              "max": 4,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 2,
+              "max": 5,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "The definition is power(m, n) = n^m — the **first** argument is the exponent and the **second** is the base. This is the reverse of what the letters suggest."
+            },
+            {
+              "text": "So power({{m}}, {{nn}}) = {{nn}}^{{m}}."
+            },
+            {
+              "text": "= {{nn^m}}."
+            }
+          ],
+          "answer": {
+            "expr": "nn^m",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Read the definition, not the letters — check carefully which argument ends up as the exponent.",
+          "explanation": "n^m, not m^n. Getting this backwards is the obvious trap and the reason the drill exists. It is defined by extending times the way plus was extended to give times — repeated multiplication, just as times is repeated addition.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-power-how-built",
+          "kind": "mcq",
+          "prompt": "How do the notes say power is obtained?",
+          "options": [
+            "By a binary Turing machine",
+            "By composing cutoff with plus",
+            "By extending times, the way plus was extended to give times",
+            "By the µ operator"
+          ],
+          "answerIndex": 2,
+          "explanation": "Repeated multiplication, mirroring how times is repeated addition. It is the same bootstrapping idea used throughout: a new function is built from machines already available rather than designed from scratch.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-broad-definition",
+          "kind": "mcq",
+          "prompt": "The notes broaden Turing computability beyond functions ℕ → ℕ. To what?",
+          "options": [
+            "Any relation on ℕ decidable by a TM",
+            "Any language accepted by a TM",
+            "Any function ℝ → ℝ computable by a TM",
+            "Any function X* → X*, for X a finite alphabet, computable by a Turing machine"
+          ],
+          "answerIndex": 3,
+          "explanation": "Functions from strings to strings over a finite alphabet. This subsumes the numeric case, because numbers can be represented in binary and such machines are then special cases of TMs with binary input alphabet — and the notes say the two definitions can be shown equivalent.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-functions-recall",
+          "kind": "recall",
+          "prompt": "List the computable functions ℕ → ℕ and ℕ² → ℕ that §2.2 names, and say how each is obtained.",
+          "answer": "**Basic ones:**\n- **scsr(n) = n + 1** and **pred(n) = n − 1** (for n > 0) — considered in the labs.\n- **plus(m, n) = m + n** — a tutorial problem.\n- **times(m, n) = m × n** — treated in detail in Ch 7 of *Finite Automata*.\n\n**Further ones:**\n- **cutoff(m, n) = m ⊖ n** — m − n if m ≥ n, else 0. Seen in a later lab.\n- **power(m, n) = n^m** — extend times the way plus was extended to give times.\n\n**Built by composition from those:**\n- **diff(m, n) = |m − n| = (m ⊖ n) + (n ⊖ m)**\n- **max(m, n) = n + (m ⊖ n)**\n- **min(m, n) = m ⊖ (m ⊖ n)**\n\n**Built by search (the µ operator):**\n- **quot(m, n) = µq{(q + 1)n > m}** — m divided by n, rounded down.\n- **sqrt(n) = µm{(m + 1)² > n}**\n\nAll use unary representation: n is written as n + 1 ones, with a '0' separating multiple arguments.",
+          "tier": 3,
+          "source": "tm2 · §2.2"
+        }
+      ]
+    },
+    {
+      "id": "cp-composition",
+      "title": "Composing Turing machines",
+      "emphasis": "standard",
+      "summary": "Make the halt state of one machine the start state of the next. It works only because a completed computation leaves the head parked.",
+      "keyFacts": [
+        {
+          "term": "Composition construction",
+          "definition": "If M1 computes g and M2 computes h, then a TM M3 computing g(h(w)) is obtained by making the **final state of M2 into the start state of M1**, ensuring M1 and M2 otherwise have disjoint state sets.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Why it works",
+          "definition": "Because we insist the head is **parked** when a computation is completed by a TM — so the second machine starts in exactly the configuration it expects, head at the left-most cell.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "The analogy",
+          "definition": "Compare the NFSA construction that computes the concatenation of two languages, which likewise joins the accepting states of one machine to the start states of another.",
+          "source": "fsa3 · §1.7, tm2 · §2.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cp-comp-construction",
+          "kind": "mcq",
+          "prompt": "M1 computes g and M2 computes h. How is a machine computing g(h(w)) built?",
+          "options": [
+            "Make the final state of M2 the start state of M1, keeping the state sets otherwise disjoint",
+            "Make the final state of M1 the start state of M2",
+            "Take the union of the two transition functions",
+            "Run M1 and M2 in parallel on two tapes"
+          ],
+          "answerIndex": 0,
+          "explanation": "**M2 first** — g(h(w)) applies h first, so the inner machine runs first and hands over to M1. Getting the order backwards computes h(g(w)) instead, which is the natural slip because M1 is named first.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-order",
+          "kind": "mcq",
+          "prompt": "In the composite g(h(w)), which machine reads the original input w?",
+          "options": [
+            "Neither; a new machine is built from scratch",
+            "M2, the machine computing h",
+            "M1, the machine computing g",
+            "Both, on separate passes"
+          ],
+          "answerIndex": 1,
+          "explanation": "M2 computes h, and h is applied to w first. Its output h(w) is left on the tape, and M1 then runs on that, producing g(h(w)). Reading the composition inside out is the same discipline needed for σ(ρ(σ(ρ(M)))) in FSA5.",
+          "source": "fsa5 · §1.13, tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-parked",
+          "kind": "mcq",
+          "prompt": "Which requirement on completed computations makes the composition construction work?",
+          "options": [
+            "That the tape alphabet contains a blank",
+            "That the output lies in X*",
+            "That the head is parked when a computation is completed",
+            "That δ is a partial function"
+          ],
+          "answerIndex": 2,
+          "explanation": "Parking. The second machine starts with its head at the left-most cell by definition, so the first must leave it there — otherwise M1 would begin reading in the middle of h(w). The notes say precisely this: 'This works because we insist the head is parked when a computation is completed by a TM.'",
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-output-in-x",
+          "kind": "recall",
+          "prompt": "Besides parking, what other requirement on a completed computation is needed for composition to be sound? Explain.",
+          "answer": "That the **output v′ lies in X\\*** — no blanks within the string, and no flag symbols left over.\n\nThe second machine to run expects an input that is a legitimate string over the input alphabet X, exactly as if a person had written it on a blank tape. If the first machine left behind a working symbol from Y − X, or a blank in the middle of the string, the second machine would be started on something outside its intended domain — and its behaviour there is simply not specified by whatever it was designed to compute.\n\nSo the two conditions work together: **parking** guarantees the head is where the next machine expects it, and **v′ ∈ X\\*** guarantees the tape holds what the next machine expects. That is why the notes insist that just halting, or just parking, is not enough to count as completing a computation — the definition is shaped to make composition work.",
+          "tier": 3,
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-disjoint",
+          "kind": "mcq",
+          "prompt": "Why must M1 and M2 have otherwise disjoint state sets when composed?",
+          "options": [
+            "So that the tape alphabets agree",
+            "So that the head stays parked",
+            "So that the composite machine is deterministic",
+            "So that a shared name does not accidentally fuse two unrelated states and let control jump between the machines"
+          ],
+          "answerIndex": 3,
+          "explanation": "State names carry no meaning, so two states with the same name would be *the same state*, creating transitions between the machines that neither design intended. Exactly the same precondition appears in the NFSA combining constructions of §1.7, and the fix is the same: rename first.",
+          "source": "fsa3 · §1.7, tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-analogy",
+          "kind": "mcq",
+          "prompt": "The notes compare TM composition with which earlier construction?",
+          "options": [
+            "The NFSA construction that computes the concatenation of two languages",
+            "The dual machine",
+            "The union of two NFSAs",
+            "The subset method"
+          ],
+          "answerIndex": 0,
+          "explanation": "Concatenation of languages. Both join the 'finished' states of one machine to the 'begin' states of another so the second picks up where the first left off — for languages with λ-edges, for TMs by identifying qf of one with q0 of the other.",
+          "source": "fsa3 · §1.7, tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-diff-example",
+          "kind": "short",
+          "prompt": "diff(m, n) = |m − n| is built as plus(cutoff(m, n), cutoff(n, m)). Which already-computable functions does this use?",
+          "answers": [
+            "plus and cutoff",
+            "cutoff and plus",
+            "plus and cutoff subtraction",
+            "the cutoff function and addition"
+          ],
+          "tier": 2,
+          "explanation": "Just plus and cutoff, both already known to be computable. No new machine has to be designed for diff — this is how the repertoire is enlarged throughout §2.2.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-repertoire",
+          "kind": "recall",
+          "prompt": "Show how max and min are obtained from cutoff and plus, and check each formula in the case m < n.",
+          "answer": "**max(m, n) = n + (m ⊖ n).**\nIf m ≥ n, the cutoff gives m − n and adding n returns m — correct, since m is the larger.\nIf m < n, the cutoff clips to 0 and the answer is n + 0 = n — correct again.\n\n**min(m, n) = m ⊖ (m ⊖ n).**\nIf m ≥ n, the inner cutoff gives m − n, and the outer gives m − (m − n) = n — correct.\nIf m < n, the inner cutoff clips to 0, and the outer gives m ⊖ 0 = m — correct, since m is the smaller.\n\n**In the case m < n specifically**, both formulas rely on the clipping clause of cutoff: the inner subtraction would go negative, and it is the 'or 0 otherwise' branch that rescues them. Without the clip there would be no representable answer at all, since ℕ has no negative numbers to write in unary.\n\nBoth are computable because plus and cutoff are, and the composition construction glues the machines together.",
+          "tier": 3,
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-partial-danger",
+          "kind": "mcq",
+          "prompt": "For partial functions, the goal is a TM that always terminates, computes the right answer when the function is defined, and does **not** terminate in the halt state when it is undefined. Why is the last condition needed?",
+          "options": [
+            "Otherwise the machine would loop forever on every input",
+            "Otherwise composition would not be modelled correctly — we could get answers to compositions even when the first function is undefined",
+            "Otherwise the output would not lie in X*",
+            "Otherwise the head would not be parked"
+          ],
+          "answerIndex": 1,
+          "explanation": "The notes give exactly this reason. If a machine halted tidily on an input where its function is undefined, the next machine in a composition would happily run on whatever was left, producing a value for g(h(w)) when h(w) does not exist. Failing to reach qf is what propagates 'undefined' through the composition.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-partial-example",
+          "kind": "short",
+          "prompt": "The notes give f(n) = √n − 10 as an example of a partial function on ℕ. For which n is it defined?",
+          "answers": [
+            "n >= 10",
+            "n ≥ 10",
+            "for n at least 10",
+            "n greater than or equal to 10"
+          ],
+          "tier": 2,
+          "explanation": "Only for n ≥ 10 — below that the value would not lie in ℕ. Partial functions have to be allowed because clipping is not always the right answer, and a machine must be able to signal 'no value here' by not halting.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-comp-turing-computable-partial",
+          "kind": "cloze",
+          "prompt": "A partial function is called **Turing computable** if a TM can be built which always {{1}}, but completes a computation giving the right answer if and only if the partial function being modelled is {{2}}.",
+          "blanks": [
+            [
+              "terminates"
+            ],
+            [
+              "defined"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Always terminates, but completes only where the function is defined. The distinction between merely terminating and *completing* — reaching qf with the head parked and a clean output — is doing real work here.",
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        }
+      ]
+    },
+    {
+      "id": "cp-mu",
+      "title": "The µ operator, quot and sqrt",
+      "emphasis": "standard",
+      "summary": "µq{P(q)} is the least q making P true. Search upward from 0; if the truth set is non-empty this always finds it, and it yields integer division and square roots.",
+      "keyFacts": [
+        {
+          "term": "The µ notation",
+          "definition": "µq{P(q)} means **the least q ∈ ℕ for which the predicate P(q) is true**.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Computing a µ",
+          "definition": "If P(n) is known to have a non-empty truth set, it is easy to design a TM to compute µq{P(q)}: just let q increase from 0 until P(q) becomes true.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "quot",
+          "definition": "For m, n ∈ ℕ with n > 0, quot(m, n) = the least q ∈ ℕ such that (q + 1)n > m, written µq{(q + 1)n > m}. It is a rounded-down version of m/n.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Extra precision",
+          "definition": "Precision can be increased arbitrarily by multiplying by powers of 10 first and moving the decimal point back afterwards — use 10^k rather than 10 for more digits.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "sqrt",
+          "definition": "sqrt(n) = the least m ∈ ℕ such that (m + 1)² > n, written µm{(m + 1)² > n}. Explored in a tutorial question.",
+          "source": "tm2 · §2.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cp-mu-meaning",
+          "kind": "short",
+          "prompt": "What does the notation µq{P(q)} mean?",
+          "answers": [
+            "the least q in N for which P(q) is true",
+            "the smallest natural number q making P(q) true",
+            "the least q such that P(q) holds",
+            "the minimum q with P(q) true"
+          ],
+          "tier": 2,
+          "explanation": "The **least** q ∈ ℕ for which the predicate P(q) is true. Least, not just any — which is what makes the value well defined, by the least integer principle.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-mu-how-computed",
+          "kind": "mcq",
+          "prompt": "How is µq{P(q)} computed by a TM, and what must be assumed?",
+          "options": [
+            "Guess q and verify; assume the machine is non-deterministic",
+            "Search downwards from a known bound; assume the bound is computable",
+            "Let q increase from 0 until P(q) becomes true; assume P has a non-empty truth set",
+            "Test all q in parallel; assume P is decidable"
+          ],
+          "answerIndex": 2,
+          "explanation": "Upward search from 0, which automatically finds the *least* witness. The non-emptiness assumption is what guarantees the search terminates — with an empty truth set the machine runs forever, which is precisely the behaviour wanted for a partial function that is undefined.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-mu-why-from-zero",
+          "kind": "mcq",
+          "prompt": "Why does the search start at q = 0 and increase, rather than starting anywhere else?",
+          "options": [
+            "Because P(0) is always true",
+            "Because ℕ has no largest element",
+            "Because 0 is the only value a TM can write initially",
+            "Because µ demands the **least** witness, and searching upward from the smallest candidate finds that one first"
+          ],
+          "answerIndex": 3,
+          "explanation": "Ascending order is what makes the first hit the least one. Starting elsewhere might find a witness that is not minimal, giving the wrong value — and since ℕ includes 0, the smallest candidate is 0.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-quot-definition",
+          "kind": "cloze",
+          "prompt": "For m, n ∈ ℕ with n {{1}} 0, quot(m, n) = µq{(q + 1)n {{2}} m}.",
+          "blanks": [
+            [
+              ">",
+              "greater than"
+            ],
+            [
+              ">",
+              "greater than"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "n > 0, and the predicate is (q + 1)n > m — strictly greater. The condition n > 0 is needed because nothing divides by zero: with n = 0 the predicate (q+1)·0 > m is false for every q, and the search would never terminate.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-quot-worked",
+          "kind": "mcq",
+          "prompt": "The notes work through quot(51, 24). Which sequence of tests do they perform, and what is the answer?",
+          "options": [
+            "(0+1)24 ≤ 51, (1+1)24 = 48 ≤ 51, (2+1)24 = 72 > 51, so quot = 2",
+            "51 ÷ 24 = 2.125, rounded to 2",
+            "(0+1)24 ≤ 51, (1+1)24 = 48 ≤ 51, so quot = 1",
+            "(2+1)24 = 72 > 51, so quot = 3"
+          ],
+          "answerIndex": 0,
+          "explanation": "Test q = 0, 1, 2 in turn until the predicate first holds, at q = 2. The answer agrees with 51/24 = 2.125 rounded down, but the *method* is a search using only multiplication and comparison — the point being that a TM can do it.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-quot-drill",
+          "kind": "computation",
+          "prompt": "Compute quot({{m}}, {{nn}}) = µq{(q + 1)·{{nn}} > {{m}}} — the least q ∈ ℕ for which (q + 1)·{{nn}} exceeds {{m}}.",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 20,
+              "max": 99,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 3,
+              "max": 19,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "The µ operator searches upward from q = 0 for the first q making (q + 1)·{{nn}} > {{m}} true."
+            },
+            {
+              "text": "Equivalently, find the largest multiple of {{nn}} that is still ≤ {{m}}: that multiple is q·{{nn}}, and the next one, (q + 1)·{{nn}}, overshoots."
+            },
+            {
+              "text": "So q is {{m}} divided by {{nn}}, rounded down: {{floor(m / nn)}}."
+            },
+            {
+              "text": "Check: {{floor(m / nn)}} × {{nn}} = {{floor(m / nn) * nn}} ≤ {{m}}, but {{floor(m / nn) + 1}} × {{nn}} = {{(floor(m / nn) + 1) * nn}} > {{m}}. ✓"
+            }
+          ],
+          "answer": {
+            "expr": "floor(m / nn)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Count how many whole copies of the second number fit inside the first.",
+          "explanation": "floor(m/n) — integer division. The verification step is the part worth internalising: the answer q must satisfy qn ≤ m **and** (q+1)n > m, so checking both sides catches an off-by-one immediately.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-quot-precision",
+          "kind": "mcq",
+          "prompt": "The notes compute quot(51, 24) = 2, then quot(510, 24) = 21. What is the point of the second calculation?",
+          "options": [
+            "To show quot is not well defined",
+            "To get more precision: multiplying by 10 first and moving the decimal point back gives 2.1 as a better approximation to 51/24",
+            "To show that quot(10m, n) = 10·quot(m, n)",
+            "To demonstrate that the search may fail to terminate"
+          ],
+          "answerIndex": 1,
+          "explanation": "Scaling up before dividing recovers decimal places: 21 becomes 2.1. Using 10^k rather than 10 gives as much precision as desired. Note that quot(10m, n) = 10·quot(m, n) is **false**, and these very numbers refute it: 10 × 2 = 20, not 21. That discrepancy is exactly the extra digit being recovered.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-quot-precision-drill",
+          "kind": "computation",
+          "prompt": "Following the notes' precision trick, compute quot(10·{{m}}, {{nn}}) — the integer quotient after scaling the numerator by 10. (Dividing this by 10 afterwards gives {{m}}/{{nn}} to one decimal place.)",
+          "vars": {
+            "m": {
+              "type": "int",
+              "min": 20,
+              "max": 99,
+              "step": 1
+            },
+            "nn": {
+              "type": "int",
+              "min": 3,
+              "max": 19,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "First scale the numerator: 10 × {{m}} = {{10 * m}}."
+            },
+            {
+              "text": "Now take the integer quotient by {{nn}}, exactly as before: quot({{10 * m}}, {{nn}}) = {{floor(10 * m / nn)}}."
+            },
+            {
+              "text": "Moving the decimal point back one place gives {{floor(10 * m / nn) / 10}} as an approximation to {{m}}/{{nn}}."
+            }
+          ],
+          "answer": {
+            "expr": "floor(10 * m / nn)",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Scale first, then divide — the answer is the scaled quotient, before the decimal point is moved back.",
+          "explanation": "floor(10m/n). Note this is generally **not** 10 × floor(m/n): the notes' own numbers show it, with quot(51,24) = 2 but quot(510,24) = 21. The extra digit is precisely the information that rounding down had discarded.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-sqrt-definition",
+          "kind": "short",
+          "prompt": "Write the definition of sqrt(n) using the µ operator.",
+          "answers": [
+            "µm{(m + 1)^2 > n}",
+            "mu m {(m+1)^2 > n}",
+            "the least m such that (m+1)^2 > n",
+            "µm{(m+1)² > n}"
+          ],
+          "tier": 2,
+          "hint": "Same shape as quot: the least value whose *successor* overshoots.",
+          "explanation": "sqrt(n) = µm{(m + 1)² > n} — the least m ∈ ℕ such that (m + 1)² > n. Structurally identical to quot, with squaring in place of multiplying by n.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-sqrt-drill",
+          "kind": "computation",
+          "prompt": "Compute sqrt({{n}}) = µm{(m + 1)² > {{n}}} — the least m ∈ ℕ whose successor squared exceeds {{n}}.",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 10,
+              "max": 99,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "Search upward from m = 0 for the first m with (m + 1)² > {{n}}."
+            },
+            {
+              "text": "Equivalently, find the largest m whose square is still ≤ {{n}}, since then (m + 1)² is the first square to overshoot."
+            },
+            {
+              "text": "That is the integer part of the ordinary square root: {{floor(sqrt(n))}}."
+            },
+            {
+              "text": "Check: {{floor(sqrt(n))}}² = {{floor(sqrt(n)) * floor(sqrt(n))}} ≤ {{n}}, but {{floor(sqrt(n)) + 1}}² = {{(floor(sqrt(n)) + 1) * (floor(sqrt(n)) + 1)}} > {{n}}. ✓"
+            }
+          ],
+          "answer": {
+            "expr": "floor(sqrt(n))",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Which whole numbers, squared, stay at or below the target? Take the largest of them.",
+          "explanation": "The integer part of √n. As with quot, precision beyond the integer part is recovered by scaling — a similar method computes square roots to arbitrary precision.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-mu-nonterminating",
+          "kind": "mcq",
+          "prompt": "What happens to the upward search for µq{P(q)} if P has an **empty** truth set?",
+          "options": [
+            "It returns 0",
+            "It never terminates — which is exactly the behaviour wanted when modelling a partial function that is undefined at that input",
+            "It returns the largest q tested",
+            "The machine enters qf without an output"
+          ],
+          "answerIndex": 1,
+          "explanation": "Nothing stops it, so it runs forever. Far from being a defect, this is the required behaviour for partial functions: a TM modelling one must **not** terminate in the halt state where the function is undefined, or composition would produce answers that should not exist.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-mu-recall",
+          "kind": "recall",
+          "prompt": "Explain the µ operator: what it means, how a TM computes it, what must be assumed, and how quot and sqrt use it.",
+          "answer": "**Meaning.** µq{P(q)} denotes **the least q ∈ ℕ for which the predicate P(q) is true**.\n\n**How a TM computes it.** Let q increase from 0, testing P(q) at each step, and stop at the first q that makes it true. Searching upward is what guarantees the value found is the *least* one.\n\n**What must be assumed.** That P has a **non-empty truth set**. If it does, the search is guaranteed to stop; if it does not, the machine runs forever — which is the correct behaviour for a partial function undefined at that input, since a TM modelling one must not terminate in the halt state where there is no value.\n\n**quot.** For n > 0, **quot(m, n) = µq{(q + 1)n > m}** — the least q whose successor, multiplied by n, overshoots m. This is m/n rounded down. The truth set is non-empty because n > 0 makes (q+1)n unbounded. Precision is recovered by scaling: compute quot(10^k·m, n) and move the decimal point back k places.\n\n**sqrt.** **sqrt(n) = µm{(m + 1)² > n}** — the integer part of √n, by the same pattern with squaring in place of multiplying by n. A similar scaling method gives arbitrary precision.\n\nThe general lesson: **search** is a computational primitive. Anything you can test, you can search for the least instance of.",
+          "tier": 3,
+          "source": "tm2 · §2.2"
+        }
+      ]
+    },
+    {
+      "id": "cp-church",
+      "title": "Binary TMs and the Church–Turing thesis",
+      "emphasis": "core",
+      "summary": "Any TM can be re-coded to use just {0, 1} and a blank, so computability needs no alphabet. And every proposed notion of computation has turned out no stronger than Turing's.",
+      "keyFacts": [
+        {
+          "term": "Re-coding theorem",
+          "definition": "Suppose X is a finite alphabet and φ : X* → X* is a partial function computed by some TM with input alphabet X containing {0, 1}. Then after a suitable re-coding of the problem, φ can be computed by a TM with input alphabet just {0, 1} and tape alphabet {0, 1, b}.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Binary Turing machine",
+          "definition": "A TM with X = {0, 1} and Y = {0, 1, b}. A partial function is Turing computable **if and only if** there is a binary TM that computes it.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Church–Turing Thesis",
+          "definition": "**Any conceivable notion of computation is weaker than or equivalent to (in terms of what counts as computable) Turing computability.** This is not a theorem, but a strongly-held belief.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "term": "Why 'Turing' gets dropped",
+          "definition": "Many attempts to define computability have been made — for example λ-calculus — but so far all have been shown equivalent to, or weaker than, Turing computability. So it is the accepted gold standard, the adjective is dropped, and we simply say **computable**.",
+          "source": "tm2 · §2.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cp-binary-tm-def",
+          "kind": "short",
+          "prompt": "What are the input and tape alphabets of a **binary Turing machine**?",
+          "answers": [
+            "X = {0, 1} and Y = {0, 1, b}",
+            "input {0,1}, tape {0,1,b}",
+            "X = {0,1}, Y = {0,1,b}",
+            "{0,1} and {0,1,blank}"
+          ],
+          "tier": 2,
+          "explanation": "X = {0, 1}, Y = {0, 1, b} — the smallest useful tape alphabet, since Y must contain X and must contain a blank not in X.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-binary-iff",
+          "kind": "cloze",
+          "prompt": "A partial function is Turing computable {{1}} there is a {{2}} Turing machine that computes it.",
+          "blanks": [
+            [
+              "if and only if",
+              "iff",
+              "exactly when"
+            ],
+            [
+              "binary"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "If and only if. The forward direction is the re-coding theorem; the reverse is trivial, since a binary TM is a TM. The upshot is that the alphabet can be dropped from the definition of computability entirely.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-recoding-significance",
+          "kind": "mcq",
+          "prompt": "What is the significance of the re-coding theorem?",
+          "options": [
+            "It shows partial functions are total",
+            "It shows binary TMs compute more functions than general TMs",
+            "It shows the alphabet is irrelevant to what is computable, so computability can be defined without reference to any particular alphabet",
+            "It shows every TM halts"
+          ],
+          "answerIndex": 2,
+          "explanation": "Nothing is gained by a richer alphabet, so 'computable' is not a notion relative to a choice of symbols. It is the same phenomenon as the flag-versus-states trade in §2.1, pushed to its limit: tape symbols can always be traded for encoding and extra states.",
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "cp-recoding-caveat",
+          "kind": "mcq",
+          "prompt": "The re-coding theorem says φ can be computed by a binary TM 'after a suitable re-coding of the problem'. What does that qualification acknowledge?",
+          "options": [
+            "That the machine may fail to halt",
+            "That the theorem holds only for total functions",
+            "That the function computed may be different",
+            "That the inputs and outputs must be re-encoded as binary strings, so the binary machine computes a re-coded version of φ rather than φ on the original symbols"
+          ],
+          "answerIndex": 3,
+          "explanation": "A binary machine cannot literally read a symbol outside {0, 1}, so the data must first be encoded — each original symbol becoming a block of bits. The *content* of the computation is preserved, which is what matters for computability, but the strings on the tape are not the same ones.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-church-statement",
+          "kind": "mcq",
+          "prompt": "How do the notes state the Church–Turing Thesis?",
+          "options": [
+            "Every function ℕ → ℕ is Turing computable",
+            "Any conceivable notion of computation is weaker than or equivalent to Turing computability, in terms of what counts as computable",
+            "Every Turing machine halts on every input",
+            "Turing machines and DFSAs compute the same functions"
+          ],
+          "answerIndex": 1,
+          "explanation": "'Weaker than or equivalent to' — the thesis puts a ceiling on what any notion of computation can achieve. 'Every function ℕ → ℕ is Turing computable' is emphatically false: most functions ℕ → ℕ are not computable, since there are only countably many TMs.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-church-status",
+          "kind": "mcq",
+          "prompt": "What is the logical status of the Church–Turing Thesis?",
+          "options": [
+            "It is not a theorem, but a strongly-held belief",
+            "An axiom of the definition of a Turing machine",
+            "A conjecture known to be false",
+            "A theorem, proved via the re-coding theorem"
+          ],
+          "answerIndex": 0,
+          "explanation": "Not a theorem. It quantifies over *any conceivable* notion of computation, including ones not yet invented, and that is not a mathematical object one can quantify over in a proof. Its support is empirical: every proposal so far has turned out equivalent or weaker.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-church-why-not-theorem",
+          "kind": "recall",
+          "prompt": "Explain why the Church–Turing Thesis cannot be proved, and what evidence supports it.",
+          "answer": "**Why it cannot be proved.** The thesis quantifies over **any conceivable notion of computation** — including notions nobody has proposed yet. 'Conceivable notion of computation' is an **informal** idea, not a mathematical object, so there is nothing precise to quantify over and no proof can be attempted. A proof would require first formalising the informal side, at which point one would only have proved a statement about that particular formalisation — which is exactly the kind of result the evidence already consists of.\n\n**The evidence.** Many attempts to define computability have been made over the years, for example **λ-calculus**. So far **all have been shown to be equivalent to, or weaker than, Turing computability**. That accumulated agreement is why it is a *strongly-held belief* rather than mere speculation.\n\nThe notes add the informal test: if we can imagine writing a computer program in Java to do something, there is a TM to do it too — it may be fiendishly complex, but it exists. **Basically: if we can see an algorithmic way to do something, then there will be a TM to do it too.**\n\n**The consequence.** Turing computability is the accepted gold standard, so the adjective is dropped and we talk simply about whether something is **computable**.",
+          "tier": 3,
+          "hint": "The obstacle is on the informal side of the claim, not the formal side.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-lambda-calculus",
+          "kind": "short",
+          "prompt": "Which alternative attempt at defining computability do the notes name by way of example?",
+          "answers": [
+            "λ-calculus",
+            "lambda calculus",
+            "the lambda calculus",
+            "λ calculus"
+          ],
+          "tier": 2,
+          "explanation": "λ-calculus. It is mentioned as one of many attempts, all of which have turned out equivalent to or weaker than Turing computability — the convergence that motivates the thesis.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-java-test",
+          "kind": "mcq",
+          "prompt": "The notes offer an informal test of the thesis. What is it?",
+          "options": [
+            "If a function is total then it is computable",
+            "If we can imagine writing a computer program in Java to do something, there is a TM to do it too — it may be fiendishly complex",
+            "If a DFSA can do it, a TM can do it",
+            "If a function grows slowly enough, it is computable"
+          ],
+          "answerIndex": 1,
+          "explanation": "The Java test — and more generally, if we can see an *algorithmic* way to do something then there will be a TM to do it too. It is a useful working heuristic, not an argument: 'fiendishly complex' does the work of hiding an enormous amount of construction.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-drop-adjective",
+          "kind": "mcq",
+          "prompt": "Why do the notes stop saying 'Turing computable' and simply say 'computable'?",
+          "options": [
+            "Because computability is only defined for binary machines",
+            "Because Turing machines are the only model taught in the course",
+            "Because every proposed notion of computability has been shown equivalent to or weaker than Turing computability, so it is the generally accepted gold standard and the qualifier adds nothing",
+            "Because the re-coding theorem removes the alphabet"
+          ],
+          "answerIndex": 2,
+          "explanation": "The qualifier would only matter if some rival notion picked out a different class of functions, and none does. The re-coding theorem removes the *alphabet* from the definition; it is the Church–Turing thesis that removes the *model*.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-two-definitions-equivalent",
+          "kind": "mcq",
+          "prompt": "§2.2 gives a numeric notion of computability (functions ℕ → ℕ, in unary) and a string notion (functions X* → X*). What is their relationship?",
+          "options": [
+            "The numeric notion applies only to total functions",
+            "They are unrelated",
+            "The string notion is strictly more general and computes more functions",
+            "It can be shown that the two definitions of computability are equivalent"
+          ],
+          "answerIndex": 3,
+          "explanation": "Equivalent — the notes say so directly. Numbers can be represented in binary, so numeric machines are special cases of TMs with binary input alphabet; and conversely strings can be coded as numbers. It is the same reduction-by-encoding idea as the re-coding theorem.",
+          "source": "tm2 · §2.2"
+        },
+        {
+          "id": "cp-church-recall",
+          "kind": "recall",
+          "prompt": "State the re-coding theorem and the Church–Turing Thesis, and say what each one lets you stop worrying about.",
+          "answer": "**Re-coding theorem.** Suppose X is a finite alphabet and φ : X* → X* is a partial function computed by some TM with input alphabet X containing {0, 1}. Then **after a suitable re-coding of the problem, φ can be computed by a TM with input alphabet just {0, 1} and tape alphabet {0, 1, b}** — a **binary Turing machine**. Hence a partial function is Turing computable **if and only if** some binary TM computes it.\n\n*What it lets you stop worrying about:* **the alphabet**. No richer set of symbols buys any extra computing power, so computability is not relative to a choice of symbols. (This is the flag-versus-states trade of §2.1 taken to its limit.)\n\n**Church–Turing Thesis.** **Any conceivable notion of computation is weaker than or equivalent to — in terms of what counts as computable — Turing computability.**\n\nIt is **not a theorem, but a strongly-held belief**, because it quantifies over informal notions of computation and so has nothing precise to be proved about. The evidence is that many attempts, λ-calculus among them, have all turned out equivalent or weaker.\n\n*What it lets you stop worrying about:* **the model**. Turing computability is the gold standard, so the adjective is dropped and we say simply **computable**.",
+          "tier": 3,
+          "source": "tm2 · §2.2"
+        }
+      ]
+    }
+  ]
+}

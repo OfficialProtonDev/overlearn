@@ -1,0 +1,842 @@
+{
+  "id": "nfsas-subset",
+  "title": "NFSAs & the Subset Method",
+  "summary": "Non-deterministic machines: what the extra freedom buys, why it buys no extra languages, the subset construction that removes it, and the three constructions that combine NFSAs to realise +, concatenation and *.",
+  "subtopics": [
+    {
+      "id": "nf-nfsas",
+      "title": "NFSAs and how they differ from DFSAs",
+      "emphasis": "core",
+      "summary": "δ becomes a relation into 2^Q with λ allowed as an input, there may be several start states or none, and a string is accepted if just one of its paths ends accepting.",
+      "keyFacts": [
+        {
+          "term": "NFSA",
+          "definition": "A non-deterministic finite state automaton M = (Q, δ, Q0, F) with input alphabet X, consisting of a finite set Q of states, a transition relation δ : Q × (X ∪ {λ}) → 2^Q, a possibly empty set Q0 ⊆ Q of **start states**, and a set F ⊆ Q of accepting states.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "term": "2^Q",
+          "definition": "The set of all subsets of Q. An NFSA's δ maps into it, so δ(q, x) is a possibly empty **set** of states rather than a single state.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "term": "λ-move",
+          "definition": "If δ(q, λ) is non-empty the machine may move to any state in it without 'using up' any of the input string. This freedom of choice is what makes an NFSA non-deterministic.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "term": "Acceptance (NFSA)",
+          "definition": "A string may determine several paths, or none. It is accepted if **one** of the paths it defines ends in an accepting state. All the letters of the string must be used — no premature termination.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "term": "Why NFSAs are not really machines",
+          "definition": "They have a 'random' element in their make-up, so they are not strictly automata and not really models of computing machines. They are kept because they help us understand DFSAs.",
+          "source": "fsa3 · §1.5"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nf-tuple",
+          "kind": "mcq",
+          "prompt": "Which component of the tuple differs in kind between a DFSA M = (Q, δ, q0, F) and an NFSA M = (Q, δ, Q0, F)?",
+          "options": [
+            "F becomes a single accepting state",
+            "Q0 replaces the input alphabet X",
+            "Q becomes possibly infinite",
+            "The third component becomes a set of start states Q0 rather than a single start state q0"
+          ],
+          "answerIndex": 3,
+          "explanation": "An NFSA has a *set* of start states, possibly empty — the capital Q0 rather than lowercase q0 signals it. Q stays finite in both, and F is a set in both.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-delta-signature",
+          "kind": "cloze",
+          "prompt": "An NFSA's transition relation has signature δ : Q × ({{1}} ∪ {λ}) → {{2}}, where the codomain denotes the set of all subsets of Q.",
+          "blanks": [
+            [
+              "X"
+            ],
+            [
+              "2^Q",
+              "2Q",
+              "2^{Q}",
+              "the power set of Q"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "δ : Q × (X ∪ {λ}) → 2^Q. Two changes from the DFSA at once: λ joins the input side, and the output side becomes a set of states rather than one state.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-two-differences",
+          "kind": "multi",
+          "prompt": "Which of these are genuine differences between the NFSA definition and the DFSA definition? (Select all that apply.)",
+          "options": [
+            "δ may return a set of states, including the empty set",
+            "λ is allowed as an input to δ, permitting moves that consume no letter",
+            "There may be several start states, or none",
+            "The set of accepting states may be empty"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "explanation": "The set-valued δ, the λ-input and the multiple start states are the real differences. An empty set of accepting states is **not** one: F ⊆ Q may be empty in a DFSA too — the notes' own ∅-accepting example has F = ∅.",
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "nf-acceptance-one-path",
+          "kind": "mcq",
+          "prompt": "A string w defines five different paths through an NFSA M. Four end in non-accepting states and one ends in an accepting state. Is w accepted?",
+          "options": [
+            "Yes — it is enough that one of the paths ends in an accepting state",
+            "The question is ill-posed; a string defines only one path",
+            "No — a majority of paths must end accepting",
+            "No — all paths must end accepting"
+          ],
+          "answerIndex": 0,
+          "explanation": "One is enough. This existential reading is the whole point of non-determinism, and it is why the complement construction — swapping accepting and non-accepting states — fails for NFSAs: negating 'some path accepts' is not 'some path rejects'.",
+          "source": "fsa3 · §1.5, fsa5 · §1.11"
+        },
+        {
+          "id": "nf-no-premature",
+          "kind": "mcq",
+          "prompt": "An NFSA reaches an accepting state after reading the first three letters of a five-letter string, and has no transition available for the fourth letter. Is the string accepted along that path?",
+          "options": [
+            "Yes — an accepting state was reached",
+            "No — for acceptance all the letters in the string must be used; there is no premature termination",
+            "Yes, provided the remaining letters are λ-moves",
+            "Only if the accepting state is also a start state"
+          ],
+          "answerIndex": 1,
+          "explanation": "The notes state it explicitly: for acceptance, all the letters in the string must be used — no premature termination. A path that dies partway through simply is not a path for that string. Another path might still accept it.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-no-path",
+          "kind": "mcq",
+          "prompt": "In an NFSA, what happens if a string defines **no** complete path at all?",
+          "options": [
+            "It is accepted if the start state is accepting",
+            "It is accepted by default",
+            "It is not accepted",
+            "The machine is invalid"
+          ],
+          "answerIndex": 2,
+          "explanation": "Not accepted. Acceptance requires *some* path ending in an accepting state; no paths means no such path. In the subset construction this case is exactly what produces the ∅ state, which is a trap.",
+          "source": "fsa3 · §1.5, fsa3 · §1.6"
+        },
+        {
+          "id": "nf-lambda-meaning",
+          "kind": "short",
+          "prompt": "What does an edge labelled λ in an NFSA state diagram allow the machine to do?",
+          "answers": [
+            "move between states without using up any of the input string",
+            "change state without consuming a letter",
+            "move without spending any letters of the input",
+            "move to another state without reading a letter"
+          ],
+          "tier": 2,
+          "explanation": "Move from one state to another without 'spending' any letters of the input string. This is why λ-closure has to be taken into account in the subset method's (B) and (R) steps.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-edges-out",
+          "kind": "mcq",
+          "prompt": "In an NFSA state diagram, how many edges labelled with a given letter x may leave a given vertex?",
+          "options": [
+            "At least one",
+            "Exactly one",
+            "At most one",
+            "Any number, including none"
+          ],
+          "answerIndex": 3,
+          "explanation": "Any number, including none — the notes say a vertex 'does not have to be exactly one — could even be none'. That is δ mapping into 2^Q: the image may have many elements, or be empty. In a DFSA it is exactly one, always.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-not-really-machines",
+          "kind": "mcq",
+          "prompt": "Why do the notes say NFSAs are 'not really models of computing machines'?",
+          "options": [
+            "They have a 'random' element in their make-up, so they are not strictly automata",
+            "They have no start state",
+            "They cannot process infinite strings",
+            "They accept more languages than any real computer can recognise"
+          ],
+          "answerIndex": 0,
+          "explanation": "The 'random' element — the free choice among several possible moves — has no counterpart in a real machine. They are kept purely because they help us understand DFSAs, and by the subset method they accept exactly the same languages, so nothing is lost.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-simpler-bbabb",
+          "kind": "recall",
+          "prompt": "Give an NFSA over {a, b} accepting bb*abb*, and say how many states it saves against the five-state DFSA for the same language, and why.",
+          "answer": "**Q = {q0, q1, q2, q3}**, start **q0**, **F = {q3}**.\n\n- q0 →b q1\n- q1 →b q1 (loop)\n- q1 →a q2\n- q2 →b q3\n- q3 →b q3 (loop)\n\nAnd nothing else — δ(q0, a), δ(q2, a), δ(q3, a) are all empty.\n\n**It saves one state: four instead of five.** The saving is exactly the **trap state**. In the DFSA δ is total, so every letter that ruins a string must lead somewhere, and that somewhere is the trap. In an NFSA δ may return the empty set, so a ruinous letter can simply have no edge at all and the path dies. As the notes put it: no need to insert trap states.",
+          "tier": 3,
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-bbb-multiple-paths",
+          "kind": "mcq",
+          "prompt": "An NFSA over {a, b} has start states q0 **and** q2, F = {q3}, and transitions `q0: b→{q1}, λ→{q2}`, `q1: b→{q0,q1}, a→{q2}`, `q2: b→{q3}`, `q3: b→{q3}`. Is the string **bbb** accepted?",
+          "options": [
+            "No — the path q0 →b q1 →b q0 →b q1 ends in the non-accepting q1",
+            "Yes — for example q2 →b q3 →b q3 →b q3 ends in the accepting q3",
+            "No — a string cannot be traced from two different start states",
+            "Yes — every path for bbb ends in q3"
+          ],
+          "answerIndex": 1,
+          "explanation": "Accepted, because *at least one* path ends accepting — the notes list several, including q2 →b q3 →b q3 →b q3 and q0 →b q1 →b q0 →λ q2 →b q3. The path q0 →b q1 →b q0 →b q1 is genuine and does fail, but a failing path proves nothing about acceptance. And 'every path for bbb ends in q3' is false too: plenty of them end in q0 or q1.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-bbb-lambda-path",
+          "kind": "short",
+          "prompt": "An NFSA over {a, b} has start states q0 **and** q2, F = {q3}, and transitions `q0: b→{q1}, λ→{q2}`, `q1: b→{q0,q1}, a→{q2}`, `q2: b→{q3}`, `q3: b→{q3}`. Complete this accepting path for the string **bbb**, which uses the λ-edge: q0 →b q1 →b q0 →λ ? →b q3. Which state fills the gap?",
+          "answers": [
+            "q2",
+            "q_2",
+            "state q2"
+          ],
+          "tier": 2,
+          "explanation": "q2. The λ-move from q0 to q2 costs no letter, so only three b's are consumed across the whole path — exactly the string bbb. Counting letters, not arrows, is the thing to watch with λ-edges.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-lambda-not-a-letter",
+          "kind": "mcq",
+          "prompt": "In the path q0 →b q1 →b q0 →λ q2 →b q3, how many letters of input are consumed?",
+          "options": [
+            "Four, one per arrow",
+            "Three — the λ-move consumes nothing",
+            "Two",
+            "Three, but the λ counts as a blank symbol on the input"
+          ],
+          "answerIndex": 1,
+          "explanation": "Three b's. The λ-arrow is free: it changes state without spending input. So this four-arrow path is a path for the three-letter string bbb, not for a four-letter one.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-dfsa-is-nfsa",
+          "kind": "mcq",
+          "prompt": "What is the relationship between DFSAs and NFSAs as classes of machine?",
+          "options": [
+            "They are disjoint classes",
+            "Every NFSA is a special kind of DFSA",
+            "DFSAs are quite special kinds of NFSA, and by the subset method the two accept exactly the same languages",
+            "NFSAs accept strictly more languages than DFSAs"
+          ],
+          "answerIndex": 2,
+          "explanation": "A DFSA is an NFSA whose δ always returns a singleton, never uses λ, and has one start state. The surprise the notes flag is the converse: despite their more general nature, NFSAs accept only languages DFSAs accept. Non-determinism buys convenience, not power.",
+          "source": "fsa3 · §1.5, §1.6"
+        },
+        {
+          "id": "nf-empty-start-set",
+          "kind": "mcq",
+          "prompt": "The NFSA definition allows Q0, the set of start states, to be empty. What language does such a machine accept?",
+          "options": [
+            "All strings over X",
+            "It is not a legal NFSA",
+            "Λ = {λ}",
+            "∅ — with nowhere to begin, no string defines any path"
+          ],
+          "answerIndex": 3,
+          "explanation": "∅. The definition says 'a possibly empty set of start states', and with no start state no path can begin, so no string can be accepted. In the subset construction such a machine gives ∅ as its DFSA start state — a trap from the outset.",
+          "source": "fsa3 · §1.5, §1.6"
+        },
+        {
+          "id": "nf-define-nfsa",
+          "kind": "recall",
+          "prompt": "State the full definition of an NFSA, and state its acceptance criterion.",
+          "answer": "A **non-deterministic finite state automaton** M = (Q, δ, Q0, F) with input alphabet X consists of:\n\n- a **finite set Q of states**;\n- a **transition relation δ : Q × (X ∪ {λ}) → 2^Q**, associating with (q, x) a possibly empty set of states δ(q, x) ⊆ Q, where 2^Q is the set of all subsets of Q;\n- a **possibly empty set Q0 ⊆ Q of start states**;\n- a **set F ⊆ Q of accepting states**.\n\nWhen in state q reading x ∈ X the machine may move to any state in δ(q, x), and may also move to any state in δ(q, λ) without using up any input.\n\n**Acceptance:** a string is accepted if **one** of the paths it defines ends in an accepting state; otherwise it is not accepted. All the letters must be used — no premature termination.",
+          "tier": 3,
+          "hint": "Four components as before, but two of them change kind, and the input side of δ grows by one element.",
+          "source": "fsa3 · §1.5"
+        },
+        {
+          "id": "nf-compare-recall",
+          "kind": "recall",
+          "prompt": "List every way an NFSA differs from a DFSA, and say what each difference costs or buys.",
+          "answer": "**1. δ returns a set, not a state.** δ : Q × … → 2^Q instead of → Q. Buys: several choices for one letter, or none at all — so no trap states are needed, since a bad letter can just have no edge.\n\n**2. λ is allowed on the input side.** Moves that consume no letter become possible. Buys: machines can be glued together with λ-edges, which is what makes the union, concatenation and Kleene constructions easy.\n\n**3. Several start states, or none.** Buys: the union construction is just a disjoint union with both start sets kept.\n\n**4. Acceptance is existential.** One accepting path suffices, rather than the single path a DFSA has. Costs: the complement trick of swapping F and Q − F **does not work** on an NFSA.\n\n**What none of it buys: extra languages.** The subset method converts any NFSA into an equivalent DFSA, so the two classes accept exactly the same languages.",
+          "tier": 3,
+          "source": "fsa3 · §1.5, §1.6, fsa5 · §1.11"
+        }
+      ]
+    },
+    {
+      "id": "nf-subset",
+      "title": "The subset method",
+      "emphasis": "core",
+      "summary": "Given an NFSA M, build a DFSA M′ whose states are subsets of M's states: (B) sets the start state, (R) generates the rest, and accepting means containing an accepting state of M.",
+      "keyFacts": [
+        {
+          "term": "Subset method — step (B)",
+          "definition": "M′ has starting state the set of all starting states of M, **together with** those states of M reachable from a starting state via a path of edges all labelled λ.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "term": "Subset method — step (R)",
+          "definition": "If S is already a state of M′ and x ∈ X, add an edge in M′ from S to T, where T is the set of states of M reachable from some element of S by a path containing **exactly one** edge labelled x, with any other edges in the path labelled λ.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "term": "Subset method — accepting states",
+          "definition": "When no more states can be added, the accepting states of M′ are those subsets which **contain an accepting state of M**.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "term": "Why it terminates",
+          "definition": "New states cannot be generated forever: there is only a finite number of possible subsets of the finite set Q of states of M.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "term": "The ∅ state",
+          "definition": "If no state of M is reachable from a subset S on letter x, the target subset is ∅. This becomes a trap state in M′ — from nothing, nothing is reachable.",
+          "source": "fsa3 · §1.6"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nf-subset-purpose",
+          "kind": "mcq",
+          "prompt": "What does the subset method achieve?",
+          "options": [
+            "Given an NFSA M, it produces a DFSA M′ with L(M′) = L(M)",
+            "Given an NFSA, it produces a regular expression for its language",
+            "Given two NFSAs, it produces one accepting their union",
+            "Given a DFSA, it produces an equivalent NFSA with fewer states"
+          ],
+          "answerIndex": 0,
+          "explanation": "It removes non-determinism while preserving the language. Producing a regular expression is state elimination (FSA4 §1.10); combining two machines is the constructions of §1.7.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-why-name",
+          "kind": "short",
+          "prompt": "Why is the subset method so called?",
+          "answers": [
+            "the states of M' are labelled by subsets of the states of M",
+            "its states are subsets of the states of the NFSA",
+            "the new states are subsets of the old states",
+            "states of the DFSA are subsets of states of M"
+          ],
+          "tier": 2,
+          "explanation": "Because the states of the constructed DFSA M′ are labelled by subsets of the states of M. This is also why it terminates — a finite set has only finitely many subsets.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-start-lambda",
+          "kind": "mcq",
+          "prompt": "Step (B) of the subset method says the start state of M′ is which subset?",
+          "options": [
+            "Just the set of all start states of M",
+            "The set of all start states of M, together with everything reachable from one of them by a path of edges all labelled λ",
+            "The set of all states of M",
+            "The set of all accepting states of M"
+          ],
+          "answerIndex": 1,
+          "explanation": "The λ-closure of the start states. Forgetting to close under λ at step (B) is the standard error, and it corrupts the whole construction — in the notes' example it would give {q0} rather than {q0, q3}, and every subsequent state would be wrong.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-r-exactly-one",
+          "kind": "cloze",
+          "prompt": "In step (R), T is the set of states of M reachable from some element of S by a path containing **exactly {{1}}** edge labelled x, with any other edges in the path labelled {{2}}.",
+          "blanks": [
+            [
+              "one",
+              "1"
+            ],
+            [
+              "λ",
+              "lambda"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Exactly one edge labelled x, everything else λ. Both halves matter: 'exactly one' stops you consuming two letters in a single step, and 'any others λ' is what folds λ-closure into every step, not just the first.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-accepting-rule",
+          "kind": "mcq",
+          "prompt": "Which states of the constructed DFSA M′ are accepting?",
+          "options": [
+            "Those subsets of maximum size",
+            "Those subsets consisting entirely of accepting states of M",
+            "Those subsets containing at least one accepting state of M",
+            "Those subsets containing a start state of M"
+          ],
+          "answerIndex": 2,
+          "explanation": "Containing at least one — which mirrors NFSA acceptance exactly, where one accepting path suffices. Requiring the whole subset to be accepting would give a different and wrong language.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-terminates",
+          "kind": "short",
+          "prompt": "Why must the subset construction terminate?",
+          "answers": [
+            "there are only finitely many subsets of the finite state set Q",
+            "only a finite number of possible subsets of Q exist",
+            "Q is finite so it has finitely many subsets",
+            "finitely many subsets of a finite set"
+          ],
+          "tier": 2,
+          "explanation": "Q is finite, so it has only finitely many subsets, and M′'s states are drawn from those. New states cannot be generated forever.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-max-states",
+          "kind": "computation",
+          "prompt": "An NFSA M has {{n}} states. At most how many states can the subset method produce in the equivalent DFSA M′?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 2,
+              "max": 8,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "The states of M′ are **subsets** of M's state set Q, so M′ has at most as many states as Q has subsets."
+            },
+            {
+              "text": "A set with {{n}} elements has 2^{{n}} subsets — this is exactly the notation 2^Q the notes use for the codomain of δ. The count includes the empty subset ∅, which appears as M′'s trap state."
+            },
+            {
+              "text": "So the bound is 2^{{n}} = {{2^n}} states."
+            }
+          ],
+          "answer": {
+            "expr": "2^n",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "M′'s states are subsets of M's states, and the notes already write the set of all subsets of Q as 2^Q.",
+          "explanation": "2^n, counting ∅. It is only an upper bound — the notes' six-state example produces ten states, not 64, because most subsets are never reached. But it is what guarantees termination.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-empty-trap",
+          "kind": "mcq",
+          "prompt": "During a subset construction, a state {q5} has no outgoing edges in M for either letter. What does step (R) produce, and what is its role?",
+          "options": [
+            "The state {q5} again for both letters",
+            "The construction fails and must be restarted",
+            "Nothing — the state is simply left with no outgoing edges",
+            "The state ∅ for both letters, which is a trap state in M′"
+          ],
+          "answerIndex": 3,
+          "explanation": "∅ for both letters. As the notes put it, you cannot get to any states in M starting from nothing, so ∅ loops to itself on every letter — a trap. Leaving the state with no outgoing edges is not an option: M′ must be a DFSA, so δ must be total, and ∅ is precisely how the construction supplies the missing entries.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-start",
+          "kind": "short",
+          "prompt": "Apply the subset method to this NFSA over X = {0, 1}, which has start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5`. What is the start state of the resulting DFSA M′?",
+          "answers": [
+            "{q0, q3}",
+            "{q0,q3}",
+            "{q3, q0}",
+            "q0 and q3",
+            "{ q0, q3 }"
+          ],
+          "tier": 2,
+          "hint": "Step (B) takes the start states and then closes under λ-edges.",
+          "explanation": "{q0, q3}. q0 is the only start state of M, and q3 is reachable from it by a path of λ-edges (a single one). Step (B) is the λ-closure of the start set, so both go in.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-0",
+          "kind": "short",
+          "prompt": "Continuing the subset construction on the NFSA with start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5` — from the DFSA start state {q0, q3}, which subset is reached on **0**?",
+          "answers": [
+            "{q4}",
+            "{ q4 }",
+            "q4",
+            "the set {q4}"
+          ],
+          "tier": 2,
+          "explanation": "{q4}. q0 has no 0-edge at all; q3 has 0 → q4. So the union of the targets is {q4}, and no λ-edges leave q4 to widen it further.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-1",
+          "kind": "short",
+          "prompt": "Same NFSA, with start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5`. From the DFSA start state {q0, q3}, which subset is reached on **1**?",
+          "answers": [
+            "{q1, q3}",
+            "{q1,q3}",
+            "{q3, q1}",
+            "{ q1, q3 }"
+          ],
+          "tier": 2,
+          "hint": "Take the 1-edges out of every member of the subset, and pool the results.",
+          "explanation": "{q1, q3}. From q0, 1 → q1. From q3, the 1-loop returns q3. Pooling gives {q1, q3}. Missing the self-loop on q3 is the usual slip here.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-q1q3",
+          "kind": "short",
+          "prompt": "Same NFSA, with start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5`. From the DFSA state {q1, q3}, which subset is reached on **1**?",
+          "answers": [
+            "{q2, q3}",
+            "{q2,q3}",
+            "{q3, q2}",
+            "{ q2, q3 }"
+          ],
+          "tier": 2,
+          "explanation": "{q2, q3}. From q1, 1 → q2; from q3, the 1-loop gives q3. This is a new state, so it joins the worklist.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-q2q3",
+          "kind": "short",
+          "prompt": "Same NFSA, with start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5`. From the DFSA state {q2, q3}, which subset is reached on **0**?",
+          "answers": [
+            "{q2, q4}",
+            "{q2,q4}",
+            "{q4, q2}",
+            "{ q2, q4 }"
+          ],
+          "tier": 2,
+          "explanation": "{q2, q4}. q2's 0-loop returns q2, and q3's 0-edge gives q4. Both must be pooled — dropping the self-loop contribution is the commonest error in this construction.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-count",
+          "kind": "mcq",
+          "prompt": "Running the subset method to completion on the NFSA with start state q0, accepting states q2 and q3, and transitions `q0: 1→{q1}, λ→{q3}`, `q1: 1→{q2}`, `q2: 0→{q2}, 1→{q2}`, `q3: 0→{q4}, 1→{q3}`, `q4: 0→{q5}, 1→{q3}`, and no transitions out of `q5` yields a DFSA with how many states?",
+          "options": [
+            "10",
+            "12",
+            "6, one per state of M",
+            "64, since M has six states"
+          ],
+          "answerIndex": 0,
+          "explanation": "Ten: {q0,q3}, {q4}, {q1,q3}, {q2,q3}, {q5}, {q3}, {q2,q4}, {q2,q5}, {q2} and ∅. Note how far this sits below the 2^6 = 64 upper bound — most subsets are simply never reached, which is typical.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-worked-accepting",
+          "kind": "mcq",
+          "prompt": "The subset construction on an NFSA with F = {q2, q3} produced these ten DFSA states: {q0,q3}, {q4}, {q1,q3}, {q2,q3}, {q5}, {q3}, {q2,q4}, {q2,q5}, {q2} and ∅. How many of them are accepting?",
+          "options": [
+            "3",
+            "7",
+            "2",
+            "10"
+          ],
+          "answerIndex": 1,
+          "explanation": "Seven — every subset containing q2 or q3: {q0,q3}, {q1,q3}, {q2,q3}, {q3}, {q2,q4}, {q2,q5}, {q2}. The three non-accepting ones are {q4}, {q5} and ∅. Note the DFSA's *start* state is accepting here, so λ is in the language.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-renaming",
+          "kind": "mcq",
+          "prompt": "After the subset construction the notes suggest renaming states {q0,q3}, {q1,q3}, … to Q0, Q1, …. What is the status of this step?",
+          "options": [
+            "It changes the language accepted, so it must be done with care",
+            "Mandatory — subset labels are not valid state names",
+            "Optional tidying up; the names of states do not affect how the DFSA functions, only how the states are connected",
+            "Mandatory, because it is what makes the machine deterministic"
+          ],
+          "answerIndex": 2,
+          "explanation": "Purely optional. State names carry no meaning — only the connections do. The notes recommend it when further changes are to be made to M′, since long subset labels get unwieldy once you start eliminating states or taking duals.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-procedure-recall",
+          "kind": "recall",
+          "prompt": "State the subset method in full — all three rules, plus why it terminates.",
+          "answer": "Given an NFSA M, build a DFSA M′ whose states are subsets of M's states.\n\n**(B) Start state.** The set of all start states of M, *together with* those states of M reachable from a start state via a path of edges all labelled λ.\n\n**(R) Recursive step.** If S is already a state of M′ and x ∈ X, add an edge in M′ from S to T, where T is the set of states of M reachable from some element of S by a path containing **exactly one** edge labelled x, with any other edges in that path labelled λ. If no state is reachable, T = ∅.\n\n**Accepting states.** Once no more states can be added, the accepting states of M′ are those subsets **containing an accepting state of M**.\n\n**Termination:** M′'s states are subsets of the finite set Q, and there are only finitely many of those — at most 2^|Q| — so new states cannot be generated forever.\n\n**Correctness:** an input string defines a path through M ending in an accepting state if and only if it defines a path through M′ ending in one of its accepting states, so L(M) = L(M′).",
+          "tier": 3,
+          "hint": "One rule for the start state, one for growing the machine, one for deciding F — and the termination argument is a counting argument.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-lambda-both-steps",
+          "kind": "mcq",
+          "prompt": "λ-closure is applied in which parts of the subset method?",
+          "options": [
+            "Neither; λ-edges are deleted from M before the construction begins",
+            "Only in step (B), when forming the start state",
+            "Only in step (R), when forming successors",
+            "In both — step (B) closes the start set, and step (R) allows any number of λ-edges around the single x-edge"
+          ],
+          "answerIndex": 3,
+          "explanation": "Both. Step (B) closes the start set under λ, and step (R)'s wording — 'exactly one edge labelled x, with any others in the path labelled λ' — permits λ-edges before and after the letter. Applying it only at the start is a common and quietly fatal error.",
+          "source": "fsa3 · §1.6"
+        },
+        {
+          "id": "nf-subset-equivalence-meaning",
+          "kind": "short",
+          "prompt": "Two machines M and M′ are called **equivalent** when what holds?",
+          "answers": [
+            "L(M) = L(M')",
+            "they accept the same language",
+            "L(M') = L(M)",
+            "the languages they accept are equal"
+          ],
+          "tier": 2,
+          "explanation": "L(M) = L(M′) — they accept the same language. Nothing is required of their states, their size, or even whether they are the same kind of machine; an NFSA and a DFSA can be equivalent, which is the entire content of the subset method.",
+          "source": "fsa3 · §1.6"
+        }
+      ]
+    },
+    {
+      "id": "nf-combining",
+      "title": "Combining NFSAs: union, concatenation and closure",
+      "emphasis": "standard",
+      "summary": "Three constructions glue NFSAs together to realise the three regular operations — and they are what make the ETG-to-NFSA direction of Kleene's Theorem work.",
+      "keyFacts": [
+        {
+          "term": "Disjointness precondition",
+          "definition": "M1 and M2 must have the same input alphabet X but share **no common states**. If they have states in common, rename some of them first — the particular names of states are not important in an NFSA.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "term": "Union construction",
+          "definition": "Place M1 and M2 side by side as one machine M3, keeping both sets of start states and both sets of accepting states. A string is accepted iff there is a path from a start state to an accepting state in one of the two halves, so L(M3) = L(M1) + L(M2).",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "term": "Concatenation construction",
+          "definition": "Draw an edge labelled λ from **every** accepting state of M1 to **every** start state of M2. The start states are then those of M1 and the accepting states those of M2. Gives L(M4) = L(M1)L(M2).",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "term": "Kleene closure construction",
+          "definition": "Join every accepting state to every start state by an edge labelled λ, then introduce a new state that is both start and accepting, in order to ensure the empty string is accepted.",
+          "source": "fsa3 · §1.7"
+        }
+      ],
+      "questions": [
+        {
+          "id": "nf-comb-disjoint",
+          "kind": "mcq",
+          "prompt": "Before combining two NFSAs M1 and M2, what must be true of them?",
+          "options": [
+            "They must have the same input alphabet and share no common states",
+            "They must both be deterministic",
+            "They must accept disjoint languages",
+            "They must have the same number of states"
+          ],
+          "answerIndex": 0,
+          "explanation": "Same alphabet, disjoint state sets. If they share states, rename some first — legitimate because the particular names of states are not important in an NFSA. Sharing a state would silently fuse the two machines and let paths cross between them.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-union",
+          "kind": "mcq",
+          "prompt": "How is the NFSA M3 with L(M3) = L(M1) + L(M2) constructed?",
+          "options": [
+            "Place M1 and M2 side by side, keeping both sets of start states and both sets of accepting states",
+            "Join every accepting state of M1 to every start state of M2 by a λ-edge",
+            "Add a new state that is both start and accepting",
+            "Take the union of the state sets and intersect the accepting sets"
+          ],
+          "answerIndex": 0,
+          "explanation": "Just a disjoint union — no new states and no new edges. It works because an NFSA is allowed several start states: a string is accepted iff some path runs from a start state to an accepting state, and any such path lies wholly in one half. Joining M1's accepting states to M2's start states by λ-edges is the concatenation construction; adding a new state that is both start and accepting is part of the Kleene one.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-union-why-works",
+          "kind": "mcq",
+          "prompt": "Why does simply placing M1 and M2 side by side give exactly L(M1) + L(M2), with no path 'leaking' between the halves?",
+          "options": [
+            "Because λ-edges are forbidden between the halves",
+            "Because the two machines share no states and no edges are added, so any path lies wholly within one half",
+            "Because the alphabets are disjoint",
+            "Because the accepting states of M1 are made non-accepting"
+          ],
+          "answerIndex": 1,
+          "explanation": "Disjointness of the state sets plus adding no edges means there is no way to cross from one half to the other mid-path. So the paths of M3 are exactly the paths of M1 together with the paths of M2. This is precisely why the disjointness precondition is not a technicality.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-concat-edges",
+          "kind": "cloze",
+          "prompt": "For the concatenation M4, draw an edge labelled {{1}} from every {{2}} state in M1 to every {{3}} state in M2.",
+          "blanks": [
+            [
+              "λ",
+              "lambda"
+            ],
+            [
+              "accepting",
+              "accept",
+              "final"
+            ],
+            [
+              "starting",
+              "start",
+              "initial"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "λ-edges from every accepting state of M1 to every start state of M2. 'Every … to every' matters: if either machine has several such states, one edge is not enough.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-concat-states",
+          "kind": "mcq",
+          "prompt": "In the concatenation construction M4, which states are the start states and which are the accepting states?",
+          "options": [
+            "Start: those of M2. Accepting: those of M1",
+            "Start: those of M1 and M2 together. Accepting: those of M2",
+            "Start: those of M1. Accepting: those of M2",
+            "Start: those of M1. Accepting: those of M1 and M2 together"
+          ],
+          "answerIndex": 2,
+          "explanation": "Start states from M1 only, accepting states from M2 only. The old accepting states of M1 stop being accepting and the old start states of M2 stop being start states — otherwise the machine would accept strings from L(M1) alone, or from L(M2) alone.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-concat-why",
+          "kind": "recall",
+          "prompt": "Explain why the concatenation construction gives exactly L(M1)L(M2).",
+          "answer": "A string is accepted by M4 if and only if it defines a path from a start state of M4 to an accepting state of M4 — that is, from a start state of **M1** to an accepting state of **M2**.\n\nAny such path must cross from the M1 part to the M2 part, and the only edges between them are the λ-edges from M1's accepting states to M2's start states. So the path splits into:\n\n- a first part reading some prefix, running from a start state of M1 to an **accepting state of M1** — so that prefix is in L(M1);\n- a free λ-step, consuming nothing;\n- a second part reading the rest, running from a **start state of M2** to an accepting state of M2 — so the rest is in L(M2).\n\nHence the accepted strings are exactly those splitting as w_1w_2 with w_1 ∈ L(M1) and w_2 ∈ L(M2), which is L(M1)L(M2).\n\nThe λ-label is what makes the join free: the crossing costs no input letter.",
+          "tier": 3,
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-kleene-two-steps",
+          "kind": "multi",
+          "prompt": "The Kleene closure construction for L(M1)* has two parts. Which are they? (Select all that apply.)",
+          "options": [
+            "Join every accepting state to every start state by an edge labelled λ",
+            "Introduce a new state that is both a start state and an accepting state",
+            "Delete all trap states from M1",
+            "Reverse the direction of every edge"
+          ],
+          "answerIndices": [
+            0,
+            1
+          ],
+          "explanation": "Loop back with λ-edges so the machine can go round again, then add a new start-and-accepting state so λ itself is accepted. Reversing edges is the *dual* machine ρ(M) of FSA5, a different construction entirely.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-kleene-new-state",
+          "kind": "mcq",
+          "prompt": "Why must the Kleene closure construction add a **new** state that is both start and accepting, rather than simply making an existing start state accepting?",
+          "options": [
+            "Because NFSAs may not have a state that is both start and accepting",
+            "Because otherwise the machine would be deterministic",
+            "Because the original accepting states must all be removed",
+            "Because A* must contain λ, and marking an existing start state accepting would also accept every string that merely reaches it"
+          ],
+          "answerIndex": 3,
+          "explanation": "λ ∈ A* for every A, so the new machine must accept λ. But marking an *existing* start state as accepting would also accept every string whose path happens to return there, changing the language. A fresh state with no incoming edges accepts λ and nothing else — which is why the notes say it uses 'the idea of the union method given earlier'.",
+          "source": "fsa1 · §1.2, fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-m1-example",
+          "kind": "short",
+          "prompt": "An NFSA has a single state q0 which is both the start state and the only accepting state, with one edge: a loop on q0 labelled 0. What language does it accept?",
+          "answers": [
+            "0*",
+            "0 star",
+            "{0}*",
+            "any number of 0s",
+            "0^n for n >= 0"
+          ],
+          "tier": 2,
+          "explanation": "0*. The loop can be traversed any number of times, including none — and since the start state is accepting, λ is accepted too. This is the notes' M1 in the combining examples.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-union-example",
+          "kind": "mcq",
+          "prompt": "M1 has one state q0 (start and accepting) with a 0-loop, so L(M1) = 0*. M2 has states q0′ →0 q1′ →1 q2′ with start q0′ and F = {q2′}, so L(M2) = 01. What language does the union construction M3 accept, and what are its start states?",
+          "options": [
+            "0* + 01, with start states q0 and q0′",
+            "0*01, with start states q0 and q0′",
+            "0* + 01, with start state q0 only",
+            "0*01, with start state q0"
+          ],
+          "answerIndex": 0,
+          "explanation": "0* + 01, with **both** q0 and q0′ as start states — the union construction keeps both start sets. Getting 0*01 instead means you built the concatenation, which differs by a single λ-edge from q0 to q0′ and by dropping q0 from the accepting set.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-concat-example",
+          "kind": "short",
+          "prompt": "M1 has a single state q0 (start and accepting) with a 0-loop, so L(M1) = 0*. M2 is q0′ →0 q1′ →1 q2′ with start q0′ and F = {q2′}, so L(M2) = 01. Applying the concatenation construction adds a λ-edge from q0 to q0′. What language does the result accept?",
+          "answers": [
+            "0*01",
+            "0* 01",
+            "0star01",
+            "0*(01)"
+          ],
+          "tier": 2,
+          "explanation": "0*01 — any number of 0s followed by 01. The start state is q0 (from M1) and the only accepting state is q2′ (from M2); q0 stops being accepting, which is exactly what stops 0* alone being accepted.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-which-construction",
+          "kind": "mcq",
+          "prompt": "You have NFSAs for R and S and want one for RS + R. Which constructions do you need, and in what order?",
+          "options": [
+            "Kleene closure on R, then union with S",
+            "Concatenation of the R and S machines, then union of that result with a second copy of the R machine",
+            "Union of R and S, then concatenation with R",
+            "Concatenation alone suffices"
+          ],
+          "answerIndex": 1,
+          "explanation": "Build the concatenation first (RS), then take the union with a separate copy of the R machine. The copy must be a genuinely fresh one with renamed states — the concatenation construction destroys the original's accepting states, so the same machine cannot serve twice.",
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-then-subset",
+          "kind": "mcq",
+          "prompt": "Having combined two NFSAs into one with several start states and λ-edges, how do you obtain an equivalent DFSA?",
+          "options": [
+            "Merge all the start states into one",
+            "Delete the λ-edges and pick one start state arbitrarily",
+            "Apply the subset method",
+            "Apply the dual construction ρ"
+          ],
+          "answerIndex": 2,
+          "explanation": "The subset method — its step (B) folds multiple start states and λ-closure into a single DFSA start state automatically. The notes say exactly this after building M3: 'Of course we could now use the subset method to convert this to an equivalent DFSA (with a single start state, etc) if we wish.'",
+          "source": "fsa3 · §1.6, §1.7"
+        },
+        {
+          "id": "nf-comb-three-constructions",
+          "kind": "recall",
+          "prompt": "Name the three constructions of §1.7 and describe each in one or two lines.",
+          "answer": "**Union — L(M1) + L(M2).** Place M1 and M2 side by side as one machine, keeping both sets of start states and both sets of accepting states. No new states, no new edges.\n\n**Concatenation — L(M1)L(M2).** Draw a λ-edge from every accepting state of M1 to every start state of M2. Start states become those of M1 only; accepting states become those of M2 only.\n\n**Kleene closure — L(M1)*.** Join every accepting state to every start state by a λ-edge, then add a new state that is both start and accepting, so that λ is accepted.\n\nIn all three the machines must share the same alphabet and no states; rename first if necessary.\n\nTogether these three handle exactly the three regular operations, which is what lets any regular expression be turned into an NFSA.",
+          "tier": 3,
+          "source": "fsa3 · §1.7"
+        },
+        {
+          "id": "nf-comb-why-matters",
+          "kind": "mcq",
+          "prompt": "What larger result do the three combining constructions contribute to?",
+          "options": [
+            "The minimisation theorem M = σ(ρ(σ(ρ(M))))",
+            "The Pumping Lemma",
+            "The proof that NFSAs and DFSAs accept the same languages",
+            "The proof that every regular language is accepted by some NFSA, and hence by some DFSA — one half of Kleene's Theorem"
+          ],
+          "answerIndex": 3,
+          "explanation": "They mirror the three closure clauses in the recursive definition of the regular languages, so any regular expression can be built up into an NFSA — the 'every regular language is accepted by a DFSA' half of Kleene's Theorem. The NFSA/DFSA equivalence is the subset method instead.",
+          "source": "fsa3 · §1.7, fsa4 · §1.8–1.9"
+        },
+        {
+          "id": "nf-comb-rename-why",
+          "kind": "recall",
+          "prompt": "Why is renaming states harmless in an NFSA, and where does the notes' work rely on that fact?",
+          "answer": "**Why harmless:** the names of states carry no information. What determines the language is only which states are start states, which are accepting, and how they are connected by labelled edges — the machine is a labelled directed multigraph with two marked subsets, and renaming its vertices changes none of that.\n\n**Where it is relied on:**\n- **Combining NFSAs (§1.7)** — M1 and M2 must share no states, so if they do, some are renamed first.\n- **The subset method (§1.6)** — the final optional tidying step renames {q0,q3}, {q1,q3}, … to Q0, Q1, …, useful when further changes are to be made to M′.\n- **State elimination (§1.10)** — when a new start state must be added and the name q0 is already taken, the notes rename the new ones Q0 and Qf.",
+          "tier": 3,
+          "source": "fsa3 · §1.6, §1.7, fsa4 · §1.10"
+        }
+      ]
+    }
+  ]
+}

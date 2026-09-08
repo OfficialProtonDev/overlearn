@@ -1,0 +1,686 @@
+{
+  "id": "closure-minimisation",
+  "title": "Closure & Minimisation",
+  "summary": "Regular languages are closed under complement, intersection and reversal — none of which is a regular-expression operation. The dual machine reverses a language, and applying it alternately with the subset method minimises a DFSA.",
+  "subtopics": [
+    {
+      "id": "cm-complement",
+      "title": "Complement and intersection",
+      "emphasis": "core",
+      "summary": "Swap accepting and non-accepting states to complement — but only on a DFSA. Intersection follows by De Morgan, routed through complement and union.",
+      "keyFacts": [
+        {
+          "term": "Complement of a language",
+          "definition": "If L is a language over an alphabet X, then L′ is the set of all strings over X **not** in L.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "term": "Complement construction",
+          "definition": "Given a DFSA M with L(M) = L, obtain M1 accepting L′ by making every accepting state non-accepting and every non-accepting state accepting. **This only works for DFSAs.**",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "term": "Finding a regular expression for R′",
+          "definition": "First find a DFSA M with L(M) = R (transition graphs plus the subset method), then swap accepting states to get M1 with L(M1) = R′, then use state elimination to find a regular expression S for L(M1).",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "term": "Intersection construction",
+          "definition": "Given regular R1, R2: find DFSAs M1, M2 accepting them; complement each to get M′_1, M′_2 accepting R′_1, R′_2; build M3 accepting R′_1 + R′_2 by the union construction; complement that to get M4 accepting (R′_1 + R′_2)′ = R1 ∩ R2.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "term": "Not regular-expression operations",
+          "definition": "If R is a regular expression, its complement R′ is **not** one; if R1, R2 are regular expressions, R1 ∩ R2 is **not** one. But regular expressions for these languages can still be found.",
+          "source": "fsa5 · §1.11"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cm-comp-construction",
+          "kind": "mcq",
+          "prompt": "Given a DFSA M accepting L, how is a DFSA accepting the complement L′ obtained?",
+          "options": [
+            "Swap the start state with an accepting state",
+            "Apply the subset method",
+            "Reverse the direction of every edge",
+            "Make every accepting state non-accepting and every non-accepting state accepting"
+          ],
+          "answerIndex": 3,
+          "explanation": "Swap F for Q − F, leaving states and transitions untouched. Reversing edges is the *dual* machine ρ(M), which gives the reverse language, not the complement.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-why-dfsa-only",
+          "kind": "recall",
+          "prompt": "The notes say the complement construction 'only works for DFSAs', and ask why. Explain.",
+          "answer": "Because the construction relies on each string having **exactly one** run through the machine, and only a DFSA guarantees that.\n\n**In a DFSA** every string w defines exactly one transition sequence, ending in exactly one state q. So 'w is accepted' means q ∈ F, and 'w is not accepted' means q ∉ F. Swapping F and Q − F therefore flips acceptance for every string at once, which is precisely complementation.\n\n**In an NFSA** acceptance is existential: w is accepted if **some** path ends accepting. Its negation is that **every** path ends non-accepting — which is not the same as 'some path ends non-accepting'. A string with one accepting path and one non-accepting path would be accepted both before and after the swap, so the swapped machine accepts too much and is not the complement.\n\nTotality matters too: because δ is total, no string ever gets stuck, so every string genuinely lands in some state and gets classified.\n\nThe practical consequence: to complement a language you must first *determinise* — via transition graphs and the subset method — and only then swap.",
+          "tier": 3,
+          "hint": "Compare 'the unique run rejects' with 'some run rejects'.",
+          "source": "fsa3 · §1.5, fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-nfsa-fails",
+          "kind": "mcq",
+          "prompt": "An NFSA has two paths for the string w: one ending in an accepting state, one ending in a non-accepting state. What happens if the accepting and non-accepting states are swapped?",
+          "options": [
+            "w is accepted by exactly one of the two machines, as required",
+            "The swapped machine is no longer an NFSA",
+            "w is accepted by both the original and the swapped machine, so the swapped machine is not the complement",
+            "w is rejected by both machines"
+          ],
+          "answerIndex": 2,
+          "explanation": "Before the swap, the first path accepts w. After the swap, the second path's endpoint has become accepting, so w is accepted again. A string accepted by both a machine and its 'complement' shows the construction fails — which is exactly why it is restricted to DFSAs.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-example",
+          "kind": "short",
+          "prompt": "A DFSA over {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`. It accepts the strings ending in bb. Give the accepting set of a DFSA accepting the complement.",
+          "answers": [
+            "{q0, q1}",
+            "{q0,q1}",
+            "{q1, q0}",
+            "q0 and q1",
+            "{ q0, q1 }"
+          ],
+          "tier": 2,
+          "explanation": "F′ = {q0, q1} — everything that was not accepting. The transitions are untouched. The new machine accepts exactly the strings over {a, b} that do **not** end in bb, including λ.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-lambda-flips",
+          "kind": "mcq",
+          "prompt": "A DFSA M has a non-accepting start state. What can be said about λ for M and for the complement machine M1?",
+          "options": [
+            "Nothing — λ is a special case the construction does not cover",
+            "λ is accepted by neither",
+            "λ is accepted by both",
+            "λ is rejected by M and accepted by M1"
+          ],
+          "answerIndex": 3,
+          "explanation": "λ ends at the start state, so it is accepted exactly when the start state is accepting. Swapping F flips that, as it flips every string. The construction has no special cases: every string, λ included, changes side.",
+          "source": "fsa2 · §1.4, fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-regex-route",
+          "kind": "recall",
+          "prompt": "R is given as a regular expression. Describe the full route to a regular expression for R′, naming the method used at each stage.",
+          "answer": "**1. Regular expression → NFSA.** Write R on the single edge of an ETG and unfold it with the three rules of §1.9.\n\n**2. NFSA → DFSA.** Apply the **subset method** (§1.6). This step is essential and cannot be skipped: complementation requires determinism.\n\n**3. Complement the DFSA.** Make every accepting state non-accepting and vice versa, giving M1 with L(M1) = R′.\n\n**4. DFSA → regular expression.** Apply **state elimination** (§1.10) to M1, giving a regular expression S with S = L(M1) = R′.\n\nThe notes summarise this as: find a DFSA M with L(M) = R using transition graphs plus the subset method; obtain M1; then find a regular expression S such that S = L(M1) = R′.\n\nThe point of the detour is that complement is **not** a regular-expression operation — you cannot write R′ down directly using +, · and * — yet the resulting language is still regular, and this route produces an expression for it.",
+          "tier": 3,
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-not-an-operation",
+          "kind": "mcq",
+          "prompt": "Which statement about R′ is correct, for R a regular expression?",
+          "options": [
+            "R′ is a regular expression, and the language it defines is regular",
+            "R′ is not a regular expression, and the language it defines is not regular",
+            "R′ is not a regular expression, but the language it defines is regular and a regular expression for it can be found",
+            "R′ is a regular expression only when R is finite"
+          ],
+          "answerIndex": 2,
+          "explanation": "Two distinct claims, and only one is negative. Complement is not among the operations +, · and * from which regular expressions are built, so 'R′' is not itself a regular expression. But the *language* is regular, by the DFSA-swap argument, so some regular expression defines it — state elimination will produce one.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-inter-demorgan",
+          "kind": "cloze",
+          "prompt": "The intersection construction rests on the identity R1 ∩ R2 = (R′_1 {{1}} R′_2)′, so it needs only {{2}} and union, both of which are already available.",
+          "blanks": [
+            [
+              "+",
+              "union",
+              "∪"
+            ],
+            [
+              "complement",
+              "complementation"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "R1 ∩ R2 = (R′_1 + R′_2)′ — De Morgan. Since regular languages are closed under complement and under union, they are closed under intersection too, with no new machinery.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-inter-steps",
+          "kind": "mcq",
+          "prompt": "The notes' intersection procedure, in order, is:",
+          "options": [
+            "Find NFSAs for R1 and R2; take their union; apply the subset method",
+            "Find DFSAs for R1 and R2; take the dual of each; combine with the union construction",
+            "Find DFSAs M1, M2 for R1, R2; build the union machine; complement it once",
+            "Find DFSAs M1, M2 for R1, R2; complement each to get M′_1, M′_2; build M3 accepting R′_1 + R′_2; complement M3 to get M4"
+          ],
+          "answerIndex": 3,
+          "explanation": "Three complementations in total — one on each machine, then one on the union. Complementing the union directly of the *originals* would give (R1 + R2)′, which is R′_1 ∩ R′_2, not R1 ∩ R2.",
+          "source": "fsa5 · §1.11"
+        },
+        {
+          "id": "cm-inter-determinise-again",
+          "kind": "mcq",
+          "prompt": "In the intersection procedure, M3 accepting R′_1 + R′_2 is built with the union construction of §1.7, which produces an NFSA with two start states. What must happen before M3 can be complemented?",
+          "options": [
+            "The two start states must be merged into one by hand",
+            "Nothing — the complement swap works on any machine",
+            "M3 must be converted to a DFSA by the subset method, since complementation requires determinism",
+            "M3 must be minimised"
+          ],
+          "answerIndex": 2,
+          "explanation": "The subset method must be applied first. The union construction yields an NFSA — several start states, possibly λ-edges — and swapping accepting states on an NFSA does not complement its language. Step (B) of the subset method handles the multiple start states automatically.",
+          "source": "fsa3 · §1.6, §1.7, fsa5 · §1.11"
+        },
+        {
+          "id": "cm-closure-list",
+          "kind": "multi",
+          "prompt": "Under which of these operations are the regular languages closed, according to FSA1 and FSA5? (Select all that apply.)",
+          "options": [
+            "Union, concatenation and Kleene closure",
+            "Complement",
+            "Intersection",
+            "Reversal"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "explanation": "All of them. Union, concatenation and Kleene closure come free with the recursive definition; complement comes from swapping accepting states on a DFSA; intersection follows by De Morgan; reversal comes from the dual machine in §1.12. But only union, concatenation and Kleene closure are regular-expression *operations* — the other three are closure results proved via machines.",
+          "source": "fsa1 · §1.3, fsa5 · §1.11–1.12"
+        },
+        {
+          "id": "cm-closure-vs-operation",
+          "kind": "recall",
+          "prompt": "Distinguish 'the regular languages are closed under an operation' from 'the operation is a regular-expression operation'. Give an example that separates the two.",
+          "answer": "**Closed under an operation** means: apply it to regular languages and you get a regular language. It is a statement about the *class* of languages.\n\n**A regular-expression operation** means: the symbol may be used when *writing* a regular expression, because it appears in the recursive definition. It is a statement about the *notation*.\n\nOnly **+, concatenation and \\*** are regular-expression operations — clause 3 of the definition names exactly those three.\n\n**Complement separates them.** The regular languages *are* closed under complement: given regular L, build a DFSA for it, swap the accepting states, and the result is a DFSA for L′, which is therefore regular. But R′ is **not** a regular expression — you cannot write a prime in one and have it mean anything. To *write down* an expression for L′ you must go all the way round through a DFSA and state elimination.\n\n**Intersection and reversal** separate them the same way: closed, but neither ∩ nor ← may appear in a regular expression.",
+          "tier": 3,
+          "source": "fsa1 · §1.3, fsa5 · §1.11–1.12"
+        },
+        {
+          "id": "cm-comp-alphabet-matters",
+          "kind": "mcq",
+          "prompt": "Why must the alphabet X be fixed and known before the complement L′ can be formed?",
+          "options": [
+            "Because the complement is only defined for binary alphabets",
+            "Because L′ must be finite",
+            "Because complementation changes the alphabet",
+            "Because L′ is defined as all strings **over X** not in L, so a different X gives a different complement"
+          ],
+          "answerIndex": 3,
+          "explanation": "L′ is relative to X. The strings over {a, b} not ending in bb form a different language from the strings over {a, b, c} not ending in bb. In machine terms this is the same point as DFSA totality: widening X means every state needs new transitions, and the complement machine inherits them.",
+          "source": "fsa2 · §1.4, fsa5 · §1.11"
+        },
+        {
+          "id": "cm-comp-double",
+          "kind": "short",
+          "prompt": "Applying the accepting-state swap twice to a DFSA gives which machine back?",
+          "answers": [
+            "the original machine",
+            "the original DFSA",
+            "M again",
+            "the machine you started with, accepting L"
+          ],
+          "tier": 2,
+          "explanation": "The original, since (L′)′ = L and swapping F twice restores it exactly. This is what makes the intersection construction's final complementation legitimate: (R′_1 + R′_2)′ really is R1 ∩ R2.",
+          "source": "fsa5 · §1.11"
+        }
+      ]
+    },
+    {
+      "id": "cm-reversal",
+      "title": "Reversal and the dual machine",
+      "emphasis": "standard",
+      "summary": "L← reverses every string in L. The dual machine ρ(M) reverses all edges and swaps the roles of start and accepting states, and accepts exactly L(M)←.",
+      "keyFacts": [
+        {
+          "term": "Reverse of a language",
+          "definition": "L← is the language obtained by reversing the order of every string in L. For example if L = {abc, ca, bca} then L← = {cba, ac, acb}.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "term": "Dual machine ρ(M)",
+          "definition": "For an NFSA M: ρ(M) has the **same states** as M; the **same edges and edge labels but with all directions reversed**; the **start states of ρ(M) are the accepting states of M**; the **accepting states of ρ(M) are the start states of M**.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "term": "What the dual accepts",
+          "definition": "L(ρ(M)) = L(M)←. A string is accepted by M if and only if its reverse is accepted by ρ(M).",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "term": "Reversing a regular expression",
+          "definition": "For an infinite regular language defined by a regular expression, reverse the terms in every concatenation. For example if R = (01 + 1)*1 then R← = 1(10 + 1)*.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "term": "Reversal is not a regular-expression operation",
+          "definition": "Like complement and intersection, R← is not a regular expression — but the language is regular, by Kleene's Theorem applied to ρ(M).",
+          "source": "fsa5 · §1.12"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cm-rev-definition",
+          "kind": "short",
+          "prompt": "If L = {abc, ca, bca}, what is L←?",
+          "answers": [
+            "{cba, ac, acb}",
+            "{cba,ac,acb}",
+            "{ac, cba, acb}",
+            "{ cba, ac, acb }"
+          ],
+          "tier": 2,
+          "explanation": "{cba, ac, acb} — each string reversed individually. The *set* is not reordered; only the strings are, so the language has the same number of members.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-not-set-operation",
+          "kind": "mcq",
+          "prompt": "The notes note that concatenation differs from union, intersection and complement in a particular way, and that reversal shares that difference. What is it?",
+          "options": [
+            "It is not just a set operation — it depends on the internal structure of the strings",
+            "It does not preserve regularity",
+            "It cannot be performed on infinite languages",
+            "It is not commutative"
+          ],
+          "answerIndex": 0,
+          "explanation": "Union, intersection and complement treat strings as featureless members of a set. Concatenation and reversal look *inside* the strings, at the order of their letters. That is why reversal needs a construction on machines rather than a set-theoretic identity.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-dual-four-parts",
+          "kind": "multi",
+          "prompt": "Which are the defining features of the dual machine ρ(M)? (Select all that apply.)",
+          "options": [
+            "It has the same states as M",
+            "It has the same edges and edge labels as M, but all directions reversed",
+            "Its start states are the accepting states of M",
+            "Its accepting states are the start states of M"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "explanation": "All four. States are untouched, edges are flipped, and the two marked sets exchange roles. Nothing is added or deleted — which is why ρ(ρ(M)) = M.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-dual-accepts",
+          "kind": "cloze",
+          "prompt": "For any NFSA M, the dual satisfies L(ρ(M)) = L(M){{1}}. Equivalently, a string is accepted by M if and only if its {{2}} is accepted by ρ(M).",
+          "blanks": [
+            [
+              "←",
+              "reverse",
+              "R",
+              "reversed"
+            ],
+            [
+              "reverse",
+              "reversal",
+              "reversed string"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "L(ρ(M)) = L(M)←. Reversing a path turns a start-to-accepting run into an accepting-to-start run, which is exactly what swapping the two marked sets and flipping the edges arranges.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-dual-is-nfsa",
+          "kind": "mcq",
+          "prompt": "M is a DFSA. Is its dual ρ(M) necessarily a DFSA?",
+          "options": [
+            "No — ρ(M) is not a machine at all",
+            "Yes — reversing edges preserves determinism",
+            "No — reversal generally produces several edges with the same label leaving a state, and several start states, so ρ(M) is only an NFSA",
+            "Yes, provided M has a single accepting state"
+          ],
+          "answerIndex": 2,
+          "explanation": "Only an NFSA in general. If two states both send a to q, then reversing gives q two outgoing a-edges; and if M has several accepting states, ρ(M) has several start states. This is exactly why the minimisation theorem alternates ρ with σ — the subset method is needed to restore determinism after every dual.",
+          "source": "fsa5 · §1.12–1.13"
+        },
+        {
+          "id": "cm-rev-worked-dual",
+          "kind": "recall",
+          "prompt": "A DFSA M over {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`; it accepts the strings ending in bb. Give its dual ρ(M): state the transitions, the start states and the accepting states, and say what language it accepts.",
+          "answer": "The original edges are q0 →a q0, q0 →b q1, q1 →a q0, q1 →b q2, q2 →a q0, q2 →b q2.\n\n**Reversing every one of them:**\n\n- q0 →a q0  (the self-loop reverses to itself)\n- q1 →b q0\n- q0 →a q1\n- q2 →b q1\n- q0 →a q2\n- q2 →b q2  (self-loop)\n\nCollected by source state:\n\n```\nq0: a → {q0, q1, q2}\nq1: b → {q0}\nq2: b → {q1, q2}\n```\n\n**Start states: {q2}** (the accepting states of M).\n**Accepting states: {q0}** (the start state of M).\n\n**Language accepted: the strings over {a, b} that *begin* with bb** — which is exactly the reverse of 'ends in bb'.\n\nCheck: bb runs q2 →b q1 →b q0, ending in the accepting q0. Note that ρ(M) is an NFSA, not a DFSA: q0 has three outgoing a-edges and no b-edge at all.",
+          "tier": 3,
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-regex-rule",
+          "kind": "short",
+          "prompt": "If R = (01 + 1)*1, what is R←?",
+          "answers": [
+            "1(10 + 1)*",
+            "1(10+1)*",
+            "1 (10 + 1)*"
+          ],
+          "tier": 2,
+          "hint": "Reverse the terms in every concatenation — at the top level, and inside each bracket too.",
+          "explanation": "1(10 + 1)*. The top-level concatenation (01 + 1)* · 1 flips to 1 · (01 + 1)←*, and inside the sum the concatenation 01 flips to 10. The sum itself does not reorder — + is commutative — and the star stays put.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-regex-method",
+          "kind": "mcq",
+          "prompt": "For an infinite regular language given by a regular expression, how do you obtain a regular expression for its reverse?",
+          "options": [
+            "Replace every * by its reverse",
+            "You cannot; you must go through the dual machine",
+            "Reverse the whole expression as a string of characters",
+            "Reverse the terms in every concatenation"
+          ],
+          "answerIndex": 3,
+          "explanation": "Reverse the order of factors in each concatenation, recursively. Reversing the expression as raw text would mangle brackets and stars. The dual machine route always works but is not needed when an expression is in hand.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-finite-easy",
+          "kind": "mcq",
+          "prompt": "Why do the notes call reversal 'easy to see' for finite languages?",
+          "options": [
+            "Because you can simply write out every string and reverse it one by one",
+            "Because finite languages have no concatenations",
+            "Because the dual of a finite machine is finite",
+            "Because a finite language is regular, so its reverse is automatically regular"
+          ],
+          "answerIndex": 0,
+          "explanation": "With finitely many strings you can reverse them individually and the result is again a finite language, hence regular by FSA1. The dual-machine argument exists for the *infinite* case, where you cannot enumerate.",
+          "source": "fsa1 · §1.3, fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-proof-recall",
+          "kind": "recall",
+          "prompt": "Prove that if R is regular then R← is regular, using the dual machine.",
+          "answer": "**Setup.** Let R be regular. By **Kleene's Theorem** there is an NFSA M with L(M) = R.\n\n**Construct ρ(M):** same states as M; same edges and labels but every direction reversed; the start states of ρ(M) are the accepting states of M; the accepting states of ρ(M) are the start states of M.\n\n**Why L(ρ(M)) = L(M)←.** A string w is accepted by M exactly when some path reads w from a start state of M to an accepting state of M. Reversing that path edge by edge gives a path in ρ(M) which reads the letters in the opposite order — so it reads w← — and which runs from an accepting state of M to a start state of M, that is, from a start state of ρ(M) to an accepting state of ρ(M). The correspondence works in both directions, so w ∈ L(M) if and only if w← ∈ L(ρ(M)).\n\n**Conclude.** L(ρ(M)) = L(M)← = R←. Since ρ(M) is an NFSA, **Kleene's Theorem** applies again in the other direction: the language it accepts is regular. Hence R← is regular. □\n\nOnly an NFSA is needed, never a DFSA — which is just as well, since ρ of a DFSA is usually non-deterministic.",
+          "tier": 3,
+          "hint": "Kleene's Theorem is used twice: once to get a machine, once to get regularity back.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-double-dual",
+          "kind": "short",
+          "prompt": "What is ρ(ρ(M)), the dual of the dual?",
+          "answers": [
+            "M",
+            "M itself",
+            "the original machine",
+            "the machine M you started with"
+          ],
+          "tier": 2,
+          "explanation": "M again — reversing the edges twice restores their directions, and swapping the start and accepting sets twice restores them. Consistent with (L←)← = L.",
+          "source": "fsa5 · §1.12"
+        },
+        {
+          "id": "cm-rev-other-role",
+          "kind": "mcq",
+          "prompt": "Besides reversing a language, what other role does the dual machine play in the notes?",
+          "options": [
+            "It proves the Pumping Lemma",
+            "It complements a regular language",
+            "It is used in the minimisation of DFSAs",
+            "It converts an NFSA into a DFSA"
+          ],
+          "answerIndex": 2,
+          "explanation": "Minimisation: the theorem of §1.13 states that σ(ρ(σ(ρ(M)))) is a minimal equivalent machine, alternating the dual with the subset method. The notes flag this at the end of §1.12 — 'the dual machine has another role in minimisation of DFSAs'.",
+          "source": "fsa5 · §1.12–1.13"
+        }
+      ]
+    },
+    {
+      "id": "cm-minimisation",
+      "title": "Minimisation of DFSAs",
+      "emphasis": "core",
+      "summary": "A minimal DFSA for L has as few states as any DFSA accepting L. The theorem σ(ρ(σ(ρ(M)))) produces one, using only the dual machine and the subset method.",
+      "keyFacts": [
+        {
+          "term": "Minimal DFSA",
+          "definition": "Let S_L = {n ∈ ℕ | there is a DFSA with n states accepting L}. By the least integer principle S_L has a smallest element n, and any DFSA accepting L with that many states is called **minimal for L**.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "term": "σ(M) and ρ(M)",
+          "definition": "σ(M) denotes the equivalent DFSA obtained from M by the subset method; ρ(M) denotes the dual machine.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "term": "Minimisation theorem (DFSA)",
+          "definition": "For any DFSA M, a minimal equivalent machine is **σ(ρ(σ(ρ(M))))** — dual, subset, dual, subset.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "term": "Corollary (NFSA)",
+          "definition": "For any NFSA M, a minimal equivalent machine is **σ(ρ(σ(ρ(σ(M)))))** — one extra subset method first, to make it deterministic.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "term": "Why 'a' minimal machine, not 'the'",
+          "definition": "There will generally be several minimal DFSAs for a language L, and likewise several minimal equivalent machines to a given NFSA. The procedure finds one of them.",
+          "source": "fsa5 · §1.13"
+        }
+      ],
+      "questions": [
+        {
+          "id": "cm-min-definition",
+          "kind": "mcq",
+          "prompt": "What does it mean for a DFSA to be minimal for a language L?",
+          "options": [
+            "It accepts L and has no trap state",
+            "It accepts L using the fewest possible edges",
+            "It accepts L and has no unreachable states",
+            "It accepts L and has as few states as any DFSA accepting L"
+          ],
+          "answerIndex": 3,
+          "explanation": "Fewest **states** — the notes pick that as the definition of 'simplest', while noting other definitions are possible. Removing unreachable states or traps may help but is neither necessary nor sufficient: a machine can have no unreachable states and still not be minimal.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-exists",
+          "kind": "mcq",
+          "prompt": "Which principle guarantees that a minimal DFSA for a regular language L exists?",
+          "options": [
+            "The least integer principle applied to S_L, the set of state-counts of DFSAs accepting L",
+            "The Pumping Lemma",
+            "The pigeonhole principle",
+            "Kleene's Theorem"
+          ],
+          "answerIndex": 0,
+          "explanation": "S_L is a non-empty set of natural numbers — non-empty because L is regular, so *some* DFSA accepts it — and every such set has a least element. So a minimum is attained, and 'such a DFSA exists by definition'.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-theorem",
+          "kind": "cloze",
+          "prompt": "Minimisation theorem: for any DFSA M, a minimal equivalent machine is σ(ρ(σ(ρ(M)))) — that is, first take the {{1}}, then apply the {{2}}, then the {{3}} again, then the {{4}} again.",
+          "blanks": [
+            [
+              "dual",
+              "dual machine",
+              "ρ",
+              "rho"
+            ],
+            [
+              "subset method",
+              "subset construction",
+              "σ",
+              "sigma"
+            ],
+            [
+              "dual",
+              "dual machine",
+              "ρ",
+              "rho"
+            ],
+            [
+              "subset method",
+              "subset construction",
+              "σ",
+              "sigma"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Dual, subset, dual, subset. Reading σ(ρ(σ(ρ(M)))) from the **inside out** gives the order of operations — the outermost σ is applied last.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-order-inside-out",
+          "kind": "mcq",
+          "prompt": "In the expression σ(ρ(σ(ρ(M)))), which operation is applied to M **first**?",
+          "options": [
+            "σ, the subset method",
+            "ρ, the dual machine",
+            "Both simultaneously",
+            "It does not matter"
+          ],
+          "answerIndex": 1,
+          "explanation": "ρ — function application reads inside out, so the innermost ρ acts on M first. Reading it left to right and starting with the subset method is the usual error, and it produces a machine that is equivalent but not necessarily minimal.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-why-equivalent",
+          "kind": "recall",
+          "prompt": "Show that σ(ρ(σ(ρ(M)))) accepts the same language as M, tracking the language at each of the four stages.",
+          "answer": "Write L = L(M) and follow the four steps outwards.\n\n1. **ρ(M)** accepts **L←** — the dual reverses the language.\n2. **σ(ρ(M))** accepts **L←** too — the subset method preserves the language; it only removes non-determinism.\n3. **ρ(σ(ρ(M)))** accepts **(L←)← = L** — reversing a second time restores the original.\n4. **σ(ρ(σ(ρ(M))))** accepts **L** — again the subset method changes nothing but determinism.\n\nSo σ(ρ(σ(ρ(M)))) is a DFSA accepting L(M), and it is deterministic because the outermost operation is σ.\n\nAs the notes say, what is *not* obvious is that it is **minimal** — that is a remarkable fact whose proof they do not go into.",
+          "tier": 3,
+          "hint": "Each ρ reverses the language and each σ leaves it alone. Two reversals cancel.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-not-obvious",
+          "kind": "mcq",
+          "prompt": "Which part of the minimisation theorem do the notes describe as 'not obvious' and decline to prove?",
+          "options": [
+            "That σ(ρ(σ(ρ(M)))) is deterministic",
+            "That σ(ρ(σ(ρ(M)))) accepts L(M)",
+            "That σ(ρ(σ(ρ(M)))) is minimal",
+            "That the dual of a DFSA is an NFSA"
+          ],
+          "answerIndex": 2,
+          "explanation": "Minimality. Equivalence is a short argument — two reversals cancel and σ preserves the language — but that the result has the fewest possible states is called 'a remarkable fact, the proof of which we shall not trouble ourselves with here'.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-nfsa-corollary",
+          "kind": "short",
+          "prompt": "For an NFSA M, what is the corresponding minimisation expression?",
+          "answers": [
+            "σ(ρ(σ(ρ(σ(M)))))",
+            "sigma(rho(sigma(rho(sigma(M)))))",
+            "σρσρσ(M)",
+            "σ(ρ(σ(ρ(σ(M))))) - an extra subset method first"
+          ],
+          "tier": 2,
+          "hint": "One extra application of the subset method, and it goes innermost.",
+          "explanation": "σ(ρ(σ(ρ(σ(M))))) — an extra σ innermost, applied first. The method does not work on NFSAs directly, so the machine must be made deterministic before the σρσρ pattern begins.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-nfsa-why",
+          "kind": "mcq",
+          "prompt": "Why does the theorem require an extra σ when starting from an NFSA?",
+          "options": [
+            "Because NFSAs cannot be dualised",
+            "Because the language would otherwise be reversed",
+            "Because NFSAs may have several start states",
+            "Because the notes state the method does not work on NFSAs — σ(ρ(σ(ρ(M)))) may not be minimal — so an equivalent DFSA must be produced first"
+          ],
+          "answerIndex": 3,
+          "explanation": "The notes say plainly: 'the method does not work on NFSAs: σ(ρ(σ(ρ(M)))) may not be minimal. So to find a minimal equivalent DFSA to an NFSA: first use the subset method.' NFSAs certainly *can* be dualised — that is what ρ is defined on — and the language would not be reversed, since the count of ρ's is unchanged.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-slow",
+          "kind": "mcq",
+          "prompt": "What drawback do the notes acknowledge in this minimisation method?",
+          "options": [
+            "It can be slow, since two uses of the subset method are needed; quicker methods exist",
+            "It only works for binary alphabets",
+            "It may change the language accepted",
+            "It sometimes fails to terminate"
+          ],
+          "answerIndex": 0,
+          "explanation": "Two subset constructions, each of which can blow up towards 2^n states. Quicker methods exist, but this one is presented because it reuses ideas already established — the subset method and the dual machine — rather than needing new machinery.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-from-regex",
+          "kind": "recall",
+          "prompt": "You are given a regular expression and want the minimal DFSA accepting the language it defines. Describe the full route.",
+          "answer": "1. **Regular expression → NFSA.** Write the expression on the single edge of an ETG and unfold it with the three rules of §1.9, using transition graphs.\n2. **Minimise that NFSA.** Apply the NFSA corollary: **σ(ρ(σ(ρ(σ(M)))))** — subset method first to get a DFSA, then dual, subset, dual, subset.\n\nThe notes point out this involves **just one extra application of the subset method** compared with merely getting *some* DFSA, which would stop after the first σ.\n\nA useful by-product: the minimal DFSA may then be run through state elimination to give a regular expression **simpler than the one you started with**.",
+          "tier": 3,
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-several-minimal",
+          "kind": "mcq",
+          "prompt": "How many minimal DFSAs are there for a given regular language L?",
+          "options": [
+            "Exactly one",
+            "Generally several",
+            "One for each accepting state",
+            "As many as there are regular expressions for L"
+          ],
+          "answerIndex": 1,
+          "explanation": "Generally several — the notes say so directly, which is why they speak of 'a minimal equivalent machine' rather than 'the' one. Renaming the states of a minimal DFSA already produces another, since names carry no meaning.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-nfsa-smaller",
+          "kind": "mcq",
+          "prompt": "For a given minimal DFSA, can there be an equivalent NFSA with even fewer states?",
+          "options": [
+            "Yes, but only if the NFSA has no λ-edges",
+            "No — minimal means fewest states among all machines",
+            "Yes, and the notes give a reason for minimising DFSAs anyway: NFSAs are not viewed as modelling any sort of real-world computer or algorithm",
+            "No — the subset method guarantees the DFSA is smaller"
+          ],
+          "answerIndex": 2,
+          "explanation": "Yes there can be. Minimality is defined *within the class of DFSAs*. The notes justify the focus: 'we normally do not view NFSAs as modelling any sort of real-world computer or algorithm. So it's DFSAs we seek to minimise.' The bb*abb* pair is an instance — four states as an NFSA, five as a DFSA.",
+          "source": "fsa3 · §1.5, fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-sigma-rho-meaning",
+          "kind": "short",
+          "prompt": "In the notation of §1.13, what do σ(M) and ρ(M) each denote?",
+          "answers": [
+            "σ(M) is the equivalent DFSA from the subset method; ρ(M) is the dual machine",
+            "sigma is the subset method and rho is the dual",
+            "σ = subset method, ρ = dual machine",
+            "σ(M) the subset construction, ρ(M) the dual"
+          ],
+          "tier": 2,
+          "explanation": "σ is the subset method, giving an equivalent DFSA; ρ is the dual machine, giving one for the reversed language. Keeping the two straight is the whole of reading σ(ρ(σ(ρ(M)))) correctly.",
+          "source": "fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-simpler-regex",
+          "kind": "mcq",
+          "prompt": "What useful by-product do the notes mention from finding the minimal DFSA for a language given by a regular expression?",
+          "options": [
+            "It proves the language is not regular",
+            "It gives the reverse language for free",
+            "The minimal DFSA is unique, so it identifies the language",
+            "It may give rise to a regular expression simpler than the one started with"
+          ],
+          "answerIndex": 3,
+          "explanation": "Run state elimination on the minimal machine and the resulting expression may be much simpler than the original — a practical route out of monsters like a*b(aa*b)*b(b + aa*b(aa*b)*b)*, whose language is just 'ends in bb'.",
+          "source": "fsa4 · §1.10, fsa5 · §1.13"
+        },
+        {
+          "id": "cm-min-theorem-recall",
+          "kind": "recall",
+          "prompt": "State the minimisation theorem and its corollary, define the two operations involved, and say why one extra step is needed in the corollary.",
+          "answer": "**Notation.** For a machine M: **σ(M)** is the equivalent DFSA obtained by the **subset method**; **ρ(M)** is the **dual machine** — same states, all edges reversed, start and accepting sets exchanged.\n\n**Theorem.** For any **DFSA** M, a minimal equivalent machine is\n\n  **σ(ρ(σ(ρ(M))))**\n\nread inside out: dual, subset, dual, subset.\n\n**Corollary.** For any **NFSA** M, a minimal equivalent machine is\n\n  **σ(ρ(σ(ρ(σ(M)))))**\n\n**Why the extra σ.** The method does not work on NFSAs — σ(ρ(σ(ρ(M)))) may not be minimal when M is non-deterministic — so an equivalent DFSA must be produced first, with an innermost application of the subset method.\n\n**Why it is equivalent.** Each ρ reverses the language and each σ preserves it, so with two ρ's the language returns to L(M), and the outermost σ makes the result deterministic. That it is also *minimal* is the remarkable part, and the notes do not prove it.\n\n**Caveats.** There are generally several minimal DFSAs, so this finds *a* minimal machine, not *the* one. The method is slow — two subset constructions — and quicker ones exist.",
+          "tier": 3,
+          "hint": "Four operations for a DFSA, five for an NFSA; define σ and ρ before writing either down.",
+          "source": "fsa5 · §1.13"
+        }
+      ]
+    }
+  ]
+}
