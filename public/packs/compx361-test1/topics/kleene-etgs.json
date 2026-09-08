@@ -1,0 +1,1009 @@
+{
+  "id": "kleene-etgs",
+  "title": "ETGs & Kleene's Theorem",
+  "summary": "Transition graphs let edges carry whole regular expressions. Unfolding an ETG gives an NFSA for any regular expression; eliminating states gives a regular expression for any NFSA. Together the two directions prove Kleene's Theorem.",
+  "subtopics": [
+    {
+      "id": "ke-tgs",
+      "title": "Transition graphs and ETGs",
+      "emphasis": "standard",
+      "summary": "A transition graph labels edges with regular expressions and has a unique start vertex. An ETG is the two-state, one-edge extreme case, which accepts exactly the language on its single edge.",
+      "keyFacts": [
+        {
+          "term": "Transition graph",
+          "definition": "A directed graph T over a finite alphabet X in which each edge is labelled with a **regular expression over X**, there is a **unique** starting vertex, and some vertices may be accepting states.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "term": "L(T)",
+          "definition": "All strings w = w_1w_2 · · · w_k where each w_i ∈ R_i, with R_i the label on edge e_i, and e_1, e_2, …, e_k a path from the starting state through to an accepting state.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "term": "NFSAs are transition graphs",
+          "definition": "Every NFSA **with a unique start state** is a transition graph — one in which the regular expressions labelling edges happen to be restricted to elements of X ∪ {λ}.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "term": "Elementary transition graph (ETG)",
+          "definition": "A transition graph with **two states only**, one starting and the other accepting, and **at most one edge** between them.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "term": "Equivalent transition graphs",
+          "definition": "T1 and T2 are equivalent when L(T1) = L(T2).",
+          "source": "fsa4 · §1.8"
+        }
+      ],
+      "questions": [
+        {
+          "id": "ke-tg-definition",
+          "kind": "multi",
+          "prompt": "Which conditions define a transition graph T over a finite alphabet X? (Select all that apply.)",
+          "options": [
+            "Each edge is labelled with a regular expression over X",
+            "There is a unique starting vertex",
+            "Some vertices may be accepting states",
+            "Every vertex has exactly one outgoing edge per letter of X"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "explanation": "Regular-expression edge labels, a unique starting vertex, and optionally some accepting vertices. 'Exactly one outgoing edge per letter of X' is the DFSA totality condition, which transition graphs do not impose at all — indeed their edges are labelled by whole regular expressions rather than single letters, so 'one edge per letter' does not even typecheck.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-tg-unique-start",
+          "kind": "mcq",
+          "prompt": "Which NFSAs are already transition graphs?",
+          "options": [
+            "Only those that are deterministic",
+            "All of them",
+            "Only those with no λ-edges",
+            "Those with a unique start state"
+          ],
+          "answerIndex": 3,
+          "explanation": "Those with a unique start state — a transition graph is required to have exactly one. λ-edges are fine, since λ is a perfectly good regular expression; an NFSA is simply a transition graph whose edge labels are restricted to X ∪ {λ}.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-tg-language",
+          "kind": "mcq",
+          "prompt": "A path from the start state to an accepting state in a transition graph runs along edges labelled R_1, R_2, R_3. Which strings does that path contribute to L(T)?",
+          "options": [
+            "Every string w_1w_2w_3 with w_i ∈ R_i for each i",
+            "Every string in R_1 + R_2 + R_3",
+            "Only strings of length exactly three",
+            "Only the string R_1R_2R_3 read literally"
+          ],
+          "answerIndex": 0,
+          "explanation": "Each edge contributes *any* string from its language, and they are concatenated in path order — so the path contributes the language R_1R_2R_3. Since an edge label may be something like 0* it can contribute the empty string or a long one, so path length and string length are unrelated.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-tg-example",
+          "kind": "short",
+          "prompt": "A transition graph has start state q0 and accepting state q1, with two parallel edges from q0 to q1 labelled (0 + 11)* and 1*0. Which language does it accept?",
+          "answers": [
+            "(0 + 11)* + 1*0",
+            "(0+11)* + 1*0",
+            "(0+11)*+1*0",
+            "1*0 + (0 + 11)*"
+          ],
+          "tier": 2,
+          "hint": "Two parallel edges give two separate paths from start to accepting, and a string is in L(T) if it fits along either.",
+          "explanation": "(0 + 11)* + 1*0. Parallel edges mean alternative paths, and alternatives are summed — which is exactly why state elimination's first tidying rule combines two edges from q to r labelled R and S into a single edge labelled R + S.",
+          "source": "fsa4 · §1.8, §1.10"
+        },
+        {
+          "id": "ke-tg-vs-nfsa-labels",
+          "kind": "cloze",
+          "prompt": "In an NFSA the regular expressions labelling edges are restricted to be elements of {{1}} ∪ {{{2}}} only.",
+          "blanks": [
+            [
+              "X"
+            ],
+            [
+              "λ",
+              "lambda"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "X ∪ {λ}: single letters, or the empty string. A general transition graph lifts that restriction and allows any regular expression at all on an edge, which is what makes state elimination possible — deleting a state merges several labels into one compound expression.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-etg-definition",
+          "kind": "mcq",
+          "prompt": "What is an elementary transition graph (ETG)?",
+          "options": [
+            "A transition graph in which every edge is labelled by a single letter",
+            "A transition graph with two states only — one starting, one accepting — and at most one edge between them",
+            "A transition graph with exactly one accepting state",
+            "A transition graph with no λ-edges"
+          ],
+          "answerIndex": 1,
+          "explanation": "Two states, one start and one accepting, at most one edge. It is deliberately the most degenerate transition graph possible, so that its language is simply whatever expression sits on that single edge.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-etg-language",
+          "kind": "short",
+          "prompt": "An ETG has a single edge, from its start state to its accepting state, labelled with the regular expression R. What language does it accept?",
+          "answers": [
+            "R",
+            "the language R",
+            "exactly R",
+            "L = R"
+          ],
+          "tier": 2,
+          "explanation": "Exactly R. There is only one path from start to accepting, along one edge, so L(ETG) is precisely the language that edge's label denotes. This is why 'a language is accepted by an ETG if and only if it is regular' is immediate rather than deep.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-etg-iff-regular",
+          "kind": "mcq",
+          "prompt": "Why is it obvious that a language is accepted by some ETG if and only if it is regular?",
+          "options": [
+            "Because the subset method converts any ETG into a DFSA",
+            "Because every ETG has two states, and every two-state machine accepts a regular language",
+            "Because a regular language R is accepted by the ETG whose one edge is labelled R, and conversely an ETG's language is just its edge label, which is a regular expression",
+            "Because ETGs are DFSAs"
+          ],
+          "answerIndex": 2,
+          "explanation": "Both directions are one line. Given regular R, label the single edge R. Given an ETG, its language *is* the label, which is a regular expression by definition of transition graph. The content of Kleene's Theorem is therefore entirely in showing every NFSA is equivalent to an ETG and vice versa.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-etg-no-edge",
+          "kind": "mcq",
+          "prompt": "The ETG definition allows 'at most one edge' between the two states. What language does an ETG with **no** edge accept?",
+          "options": [
+            "All strings over X",
+            "It is not a valid ETG",
+            "Λ = {λ}",
+            "∅ — no path runs from the start state to the accepting state"
+          ],
+          "answerIndex": 3,
+          "explanation": "∅. With no edge there is no path from start to accepting, so no string qualifies. The notes meet this case at the end of state elimination: 'If no edges remain at the end, it means M accepts the empty language.'",
+          "source": "fsa4 · §1.8, §1.10"
+        },
+        {
+          "id": "ke-tg-equivalent",
+          "kind": "short",
+          "prompt": "Transition graphs T1 and T2 are called equivalent when what holds?",
+          "answers": [
+            "L(T1) = L(T2)",
+            "they accept the same language",
+            "L(T1)=L(T2)",
+            "their languages are equal"
+          ],
+          "tier": 2,
+          "explanation": "L(T1) = L(T2) — the same definition of equivalence used for machines. Every step of both the unfolding and the elimination algorithms preserves equivalence, which is what makes the endpoints comparable.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-tg-nfsa-equiv-example",
+          "kind": "mcq",
+          "prompt": "An NFSA has start state q0, accepting state q1, with q0 →0 q1 and q1 looping on both 0 and 1. Which single-edge transition graph is equivalent to it?",
+          "options": [
+            "q0 →0(0 + 1)* q1",
+            "q0 →(0 + 1)*0 q1",
+            "q0 →0* q1",
+            "q0 →(0 + 1)* q1"
+          ],
+          "answerIndex": 0,
+          "explanation": "0(0 + 1)*: a mandatory leading 0 to get from q0 to q1, then anything at all from the loops. The label (0 + 1)*0 reverses the order and would describe strings *ending* in 0. This is the notes' worked pair showing that an NFSA and a transition graph can be equivalent while looking nothing alike.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-tg-generalises",
+          "kind": "recall",
+          "prompt": "Why introduce transition graphs at all, when NFSAs already exist? What do the more general edge labels buy?",
+          "answer": "They give a **single framework that both ends of Kleene's Theorem live in**, and a workspace with room to manoeuvre.\n\n- An NFSA with one start state already *is* a transition graph, just one whose labels happen to be restricted to X ∪ {λ}. An ETG is a transition graph too. So 'unfold an ETG into an NFSA' and 'collapse an NFSA into an ETG' are moves within one class of object, not conversions between two.\n- Allowing an arbitrary regular expression on an edge is what makes both algorithms possible. **Unfolding** rewrites a complex label into simpler ones, passing through graphs that are neither ETG nor NFSA. **State elimination** does the reverse, merging several simple labels into one compound expression as states are deleted.\n\nWithout the general labels there would be nowhere for the intermediate stages of either algorithm to live.",
+          "tier": 3,
+          "source": "fsa4 · §1.8–1.10"
+        },
+        {
+          "id": "ke-tg-multiple-accepting",
+          "kind": "mcq",
+          "prompt": "How many accepting states may a transition graph have?",
+          "options": [
+            "Any number — 'some vertices may be accepting states'",
+            "One per start state",
+            "Exactly one",
+            "At most one"
+          ],
+          "answerIndex": 0,
+          "explanation": "Any number, including none. Only the *starting* vertex is required to be unique. An ETG is the special case restricted to exactly one accepting state, which is why state elimination must first add a single new accepting state qF and λ-edges into it.",
+          "source": "fsa4 · §1.8, §1.10"
+        }
+      ]
+    },
+    {
+      "id": "ke-theorem",
+      "title": "Kleene's Theorem",
+      "emphasis": "core",
+      "summary": "L is accepted by a DFSA if and only if it is regular. The proof is the two algorithms, and it yields methods as well as a fact.",
+      "keyFacts": [
+        {
+          "term": "Kleene's Theorem",
+          "definition": "The language L is accepted by a DFSA **if and only if** it is regular.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "term": "What the proof delivers",
+          "definition": "Two methods: one to find the language accepted by a given NFSA (which turns out to be defined by a regular expression, hence regular), and one to build an NFSA accepting any given regular language specified by a regular expression.",
+          "source": "fsa4 · §1.8"
+        }
+      ],
+      "questions": [
+        {
+          "id": "ke-thm-statement",
+          "kind": "cloze",
+          "prompt": "Kleene's Theorem: the language L is accepted by a DFSA {{1}} it is {{2}}.",
+          "blanks": [
+            [
+              "if and only if",
+              "iff",
+              "exactly when"
+            ],
+            [
+              "regular",
+              "a regular language"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "'If and only if' — the biconditional is the point. One direction says machines cannot recognise anything beyond the regular languages; the other says they can recognise all of them.",
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-thm-both-directions",
+          "kind": "mcq",
+          "prompt": "Which pair of algorithms constitutes the proof of Kleene's Theorem?",
+          "options": [
+            "The subset method and the dual construction",
+            "Unfolding an ETG into an NFSA, and eliminating states to turn an NFSA into an ETG",
+            "The subset method and the Pumping Lemma",
+            "Minimisation and complementation"
+          ],
+          "answerIndex": 1,
+          "explanation": "§1.9 unfolds an ETG (any regular expression) into an NFSA; §1.10 eliminates states to collapse an NFSA into an ETG (a regular expression). The subset method is what lets 'NFSA' and 'DFSA' be used interchangeably throughout, but it is a separate result.",
+          "source": "fsa4 · §1.8–1.10"
+        },
+        {
+          "id": "ke-thm-role-of-subset",
+          "kind": "mcq",
+          "prompt": "Kleene's Theorem is stated about DFSAs, but both halves of the proof work with NFSAs. What justifies the transfer?",
+          "options": [
+            "Nothing; the theorem is really about NFSAs",
+            "Every NFSA is a DFSA",
+            "The subset method, which produces for any NFSA an equivalent DFSA — so the two accept exactly the same languages",
+            "The dual machine construction"
+          ],
+          "answerIndex": 2,
+          "explanation": "The subset method (§1.6) makes 'accepted by an NFSA' and 'accepted by a DFSA' the same condition, so it is enough to prove either version. The notes say so directly: 'Of course this will also apply to DFSAs (the case of most interest).'",
+          "source": "fsa3 · §1.6, fsa4 · §1.8"
+        },
+        {
+          "id": "ke-thm-two-methods",
+          "kind": "recall",
+          "prompt": "Kleene's Theorem is a statement of fact, but the notes emphasise that proving it also yields two practical methods. What are they?",
+          "answer": "**1. Find the language accepted by a given NFSA.** State elimination (§1.10) collapses the machine to an ETG whose single edge label is a regular expression for its language — which incidentally proves the language is regular.\n\n**2. Build an NFSA to accept a given regular language**, specified by a regular expression. Start from the ETG carrying that expression and unfold it with the three rules of §1.9 until every label lies in X ∪ {λ}.\n\nBoth apply to DFSAs as well, via the subset method — and the DFSA case is the one of most interest.\n\nThe practical upshot is that you can move freely in both directions between a regular expression and a machine, by algorithm rather than by insight.",
+          "tier": 3,
+          "source": "fsa4 · §1.8"
+        },
+        {
+          "id": "ke-thm-consequence-nonregular",
+          "kind": "mcq",
+          "prompt": "A language L is shown not to be regular. What does Kleene's Theorem let you conclude?",
+          "options": [
+            "No DFSA accepts L, and hence no NFSA does either",
+            "L is accepted by an NFSA but not by any DFSA",
+            "L must be infinite",
+            "L is accepted by a Turing machine but not by a DFSA"
+          ],
+          "answerIndex": 0,
+          "explanation": "No DFSA accepts it, and by the subset method no NFSA does either. This is exactly how the Pumping Lemma is used: showing {0^n 1^n} is not regular proves no finite state machine of either kind can recognise it. That L must be infinite is a separate fact — every finite language is regular, so a non-regular language *is* infinite, but that does not follow from Kleene's Theorem.",
+          "source": "fsa4 · §1.8, fsa6 · §1.14"
+        },
+        {
+          "id": "ke-thm-direction-names",
+          "kind": "mcq",
+          "prompt": "Which direction of Kleene's Theorem does the §1.9 unfolding of an ETG into an NFSA establish?",
+          "options": [
+            "Every NFSA has an equivalent DFSA",
+            "Every regular expression has a unique NFSA",
+            "Every language accepted by a DFSA is regular",
+            "Every regular language is accepted by some NFSA, and hence by some DFSA"
+          ],
+          "answerIndex": 3,
+          "explanation": "Regular ⟹ accepted by a machine. Start from any regular expression as an ETG label and unfold it into an NFSA; the subset method then supplies a DFSA. The converse direction — accepted ⟹ regular — is state elimination in §1.10.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-thm-direction-names-2",
+          "kind": "mcq",
+          "prompt": "Which direction of Kleene's Theorem does the §1.10 state-elimination algorithm establish?",
+          "options": [
+            "Every language accepted by an NFSA (hence by a DFSA) is regular",
+            "Regular languages are closed under complement",
+            "Every regular language is accepted by a DFSA",
+            "Every finite language is regular"
+          ],
+          "answerIndex": 0,
+          "explanation": "Accepted ⟹ regular. Eliminating states leaves an ETG whose single label is a regular expression defining the machine's language, so that language is regular. 'Every finite language is regular' is FSA1, and closure under complement is FSA5.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-thm-answers-not-unique",
+          "kind": "mcq",
+          "prompt": "Two students apply state elimination to the same NFSA and obtain different regular expressions. What follows?",
+          "options": [
+            "At least one of them has made an error",
+            "Nothing is wrong — deleting states in a different order gives a different regular expression defining the same language",
+            "The NFSA was not deterministic",
+            "The machine accepts two different languages"
+          ],
+          "answerIndex": 1,
+          "explanation": "The notes close §1.10 with exactly this warning: deleting vertices in a different order results in a different regular expression, but one defining the same language, if no errors have been made. Answers are not unique — so 'my answer doesn't match the model answer' is not by itself evidence of a mistake.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-thm-recall-statement",
+          "kind": "recall",
+          "prompt": "State Kleene's Theorem and outline how it is proved.",
+          "answer": "**Kleene's Theorem.** The language L is accepted by a DFSA **if and only if** it is regular.\n\n**Proof outline.** Both directions go through transition graphs, using the fact that a language is accepted by an ETG exactly when it is regular — an ETG's single edge label *is* a regular expression, and any regular expression can label one.\n\n**Regular ⟹ accepted (§1.9).** Take the ETG whose one edge is labelled R. Repeatedly apply the three unfolding rules — for R + S, RS and R* — until every edge label lies in X ∪ {λ}. The process terminates because each rule strictly simplifies the labels, and every intermediate graph is equivalent to the original. The result is an NFSA accepting R; the subset method converts it to a DFSA.\n\n**Accepted ⟹ regular (§1.10).** Given an NFSA, add a new start state and a new accepting state joined by λ-edges, then repeatedly combine parallel edges and eliminate the remaining original states one at a time. What is left is an ETG, whose single label R satisfies L(M) = R. Since R is a regular expression, L(M) is regular.\n\nBy the subset method the NFSA and DFSA versions of both directions are interchangeable.",
+          "tier": 3,
+          "hint": "One sentence for the statement, then one algorithm per direction — and say what makes each direction terminate.",
+          "source": "fsa4 · §1.8–1.10"
+        },
+        {
+          "id": "ke-thm-scope",
+          "kind": "mcq",
+          "prompt": "Kleene's Theorem characterises the languages accepted by finite state automata. Which of these does it therefore rule out?",
+          "options": [
+            "That two regular expressions can define the same language",
+            "That a DFSA can have unreachable states",
+            "That some DFSA accepts a non-regular language",
+            "That some regular language needs more than one DFSA"
+          ],
+          "answerIndex": 2,
+          "explanation": "It rules out exactly that: the languages accepted by DFSAs are precisely the regular ones, no more. The other three are all perfectly possible — many DFSAs accept a given language, many expressions define one language, and unreachable states are legal if useless.",
+          "source": "fsa4 · §1.8"
+        }
+      ]
+    },
+    {
+      "id": "ke-unfold",
+      "title": "ETG to NFSA: the three unfolding rules",
+      "emphasis": "core",
+      "summary": "Rewrite an edge labelled R + S as parallel edges, one labelled RS as two edges through a new state, and one labelled R* as a λ-in, R-loop, λ-out gadget. Repeat until every label is a single letter or λ.",
+      "keyFacts": [
+        {
+          "term": "Sum rule",
+          "definition": "Replace an edge from q1 to q2 labelled R + S by two **parallel edges** from q1 to q2, one labelled R and the other labelled S.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "term": "Concatenation rule",
+          "definition": "Replace an edge from q1 to q2 labelled RS by an edge from q1 to a **new state** q3 labelled R, and an edge from q3 to q2 labelled S.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "term": "Kleene closure rule",
+          "definition": "Replace an edge from q1 to q2 labelled R* by an edge from q1 to a **new state** q3 labelled λ, a **loop on q3 labelled R**, and an edge from q3 to q2 labelled λ.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "term": "Why unfolding terminates",
+          "definition": "Each transition graph along the way is equivalent to the ETG started from, and the process can only be repeated finitely many times before all edge labels are single elements of X ∪ {λ}.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "term": "Generalised rules",
+          "definition": "The sum rule extends to R_1 + R_2 + … + R_n as n parallel edges, and the concatenation rule to R_1R_2 … R_n as a chain through n − 1 new states.",
+          "source": "fsa4 · §1.9"
+        }
+      ],
+      "questions": [
+        {
+          "id": "ke-unfold-sum",
+          "kind": "mcq",
+          "prompt": "An edge from q1 to q2 is labelled R + S. What does the unfolding rule replace it with?",
+          "options": [
+            "An edge from q1 to a new state labelled R, and one from that state to q2 labelled S",
+            "Two parallel edges from q1 to q2, one labelled R and one labelled S",
+            "An edge from q1 to q2 labelled R, and a loop on q2 labelled S",
+            "A λ-edge to a new state carrying an R-loop"
+          ],
+          "answerIndex": 1,
+          "explanation": "Parallel edges — alternatives become alternative paths, and no new states are needed. Routing through a new intermediate state is the *concatenation* rule, and a λ-edge to a new state carrying an R-loop is the *closure* rule; mixing the three up is the standard error, so anchor each to its operation: sum → choice → parallel edges.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-concat",
+          "kind": "mcq",
+          "prompt": "An edge from q1 to q2 is labelled RS. What does the unfolding rule replace it with?",
+          "options": [
+            "An edge from q1 to q2 labelled R, then a λ-edge back",
+            "Two parallel edges from q1 to q2, labelled R and S",
+            "A loop on q1 labelled R and an edge to q2 labelled S",
+            "An edge from q1 to a new state q3 labelled R, and an edge from q3 to q2 labelled S"
+          ],
+          "answerIndex": 3,
+          "explanation": "One new intermediate state, split in two. Concatenation means 'first R, then S', so the path must pass through a point where R has finished and S has not started — that point is the new state q3.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-star",
+          "kind": "mcq",
+          "prompt": "An edge from q1 to q2 is labelled R*. What does the unfolding rule replace it with?",
+          "options": [
+            "An edge from q1 to a new state q3 labelled λ, a loop on q3 labelled R, and an edge from q3 to q2 labelled λ",
+            "Two parallel edges from q1 to q2, labelled λ and R",
+            "A loop on q2 labelled R",
+            "A loop on q1 labelled R, and an edge from q1 to q2 labelled λ"
+          ],
+          "answerIndex": 0,
+          "explanation": "λ in, R-loop, λ out — three edges and one new state. The loop must sit on a *fresh* state: putting it on q1 or q2 would let the R-repetitions be entered or left by other paths through those states, changing the language.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-star-why-new-state",
+          "kind": "recall",
+          "prompt": "The Kleene rule puts the R-loop on a **new** state q3 rather than on q1 or q2. Explain why the λ-edges on either side are necessary.",
+          "answer": "The gadget has to accept **exactly R\\*** on this edge and interfere with nothing else.\n\n**Why a new state:** q1 and q2 generally have other edges in and out. A loop placed on q1 would be available to every path that passes through q1, not just the ones traversing this edge — so strings from R could be inserted in places the original expression never allowed. A fresh q3 is reachable only through the new λ-edge, so the loop is private to this edge.\n\n**Why λ on both sides:** the entry and exit must cost nothing. R* includes the empty string, so it must be possible to go q1 → q3 → q2 consuming no input at all, which needs λ on both edges. Anything else would force at least one letter and lose the 'zero repetitions' case.\n\nThe result is that traversing the gadget contributes exactly zero or more strings of R, which is R*.",
+          "tier": 3,
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-terminates",
+          "kind": "mcq",
+          "prompt": "Why must the unfolding process terminate?",
+          "options": [
+            "Because the number of states is bounded by 2^n",
+            "Because each rule application strictly simplifies edge labels, so after finitely many steps every label is a single element of X ∪ {λ}",
+            "Because no new states are ever created",
+            "Because the language shrinks at each step"
+          ],
+          "answerIndex": 1,
+          "explanation": "The labels get structurally simpler each time a rule fires, and a regular expression is a finite object, so it can only be decomposed finitely often. New states *are* created — two of the three rules add one — so the state count grows; it is the label complexity that shrinks. And the language never changes at all: every intermediate graph is equivalent to the original.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-equivalence-preserved",
+          "kind": "short",
+          "prompt": "What is true of every transition graph produced along the way while unfolding an ETG labelled R?",
+          "answers": [
+            "it is equivalent to the original ETG",
+            "each one accepts R",
+            "it accepts the same language R",
+            "equivalent to the ETG we started with"
+          ],
+          "tier": 2,
+          "explanation": "Each is equivalent to the ETG started from, so each accepts R. That invariant is what makes the endpoint meaningful: the final NFSA M satisfies L(M) = R because every step preserved the language.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-generalised-sum",
+          "kind": "short",
+          "prompt": "The sum rule generalises to an edge labelled R_1 + R_2 + … + R_n. How many parallel edges does it produce, and how many new states?",
+          "answers": [
+            "n parallel edges and no new states",
+            "n edges, 0 new states",
+            "n parallel edges, none",
+            "n edges and no new states"
+          ],
+          "tier": 2,
+          "explanation": "n parallel edges, no new states at all. The sum rule never adds states — alternatives are alternative routes between the two endpoints that already exist.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-generalised-concat",
+          "kind": "computation",
+          "prompt": "The generalised concatenation rule is applied to a single edge labelled R_1R_2 … R_n, with n = {{n}}. How many **new states** does this one application introduce?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 2,
+              "max": 8,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "The rule chains the n factors along a path from q1 to q2, one edge per factor, so the path has {{n}} edges."
+            },
+            {
+              "text": "A path of {{n}} edges has {{n}} + 1 = {{n + 1}} vertices, but q1 and q2 already exist — only the interior ones are new."
+            },
+            {
+              "text": "So the number of new states is {{n}} − 1 = {{n - 1}}."
+            }
+          ],
+          "answer": {
+            "expr": "n - 1",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Draw the chain: one edge per factor, with the two endpoints already present.",
+          "explanation": "n − 1. The binary case n = 2 gives one new state, matching the basic rule. Contrast the sum rule, which adds none however many terms there are.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-first-step",
+          "kind": "short",
+          "prompt": "You want an NFSA accepting 10*1 + 0*10*. What is the very first object you write down, before applying any rule?",
+          "answers": [
+            "an ETG with a single edge labelled 10*1 + 0*10*",
+            "the ETG whose one edge is labelled 10*1 + 0*10*",
+            "a two-state ETG labelled with the whole expression",
+            "an ETG with the whole regular expression on its single edge"
+          ],
+          "tier": 2,
+          "explanation": "The ETG with one edge, from its start state to its accepting state, labelled with the entire expression 10*1 + 0*10*. That ETG already accepts the language; unfolding merely rewrites it into a machine whose labels are single letters.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-which-rule-first",
+          "kind": "mcq",
+          "prompt": "The ETG for 10*1 + 0*10* has a single edge with that label. Which rule applies to it first, and what results?",
+          "options": [
+            "No rule applies until the stars are removed",
+            "The concatenation rule, giving a chain of new states",
+            "The sum rule, giving two parallel edges labelled 10*1 and 0*10*",
+            "The Kleene rule, since the expression contains stars"
+          ],
+          "answerIndex": 2,
+          "explanation": "The sum rule. Because + binds *least* tightly, the whole expression is a sum at top level — 10*1 + 0*10* parses as (10*1) + (0*10*) — so the outermost structure is the alternation, and that is what the first rule must address. Working outside in is the systematic way to unfold.",
+          "source": "fsa1 · §1.2, fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-second-step",
+          "kind": "short",
+          "prompt": "Unfolding 10*1 + 0*10*, the sum rule has produced two parallel edges labelled 10*1 and 0*10*. Applying the generalised concatenation rule to the edge labelled **10*1** produces a chain of edges. What are their three labels, in order?",
+          "answers": [
+            "1, 0*, 1",
+            "1 then 0* then 1",
+            "1, 0*, and 1",
+            "1 0* 1"
+          ],
+          "tier": 2,
+          "hint": "The expression is a concatenation of three factors; each becomes one edge of the chain.",
+          "explanation": "1, then 0*, then 1 — three edges through two new states. The stars are still there; they get dealt with afterwards by the Kleene rule, which is why the notes apply the concatenation rule to both parallel edges before turning to the closures.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-when-done",
+          "kind": "mcq",
+          "prompt": "How do you know the unfolding is finished and you have an NFSA?",
+          "options": [
+            "When there are no parallel edges left",
+            "When the number of states stops growing",
+            "When no state has more than one outgoing edge per letter",
+            "When every edge label is a single element of X ∪ {λ}"
+          ],
+          "answerIndex": 3,
+          "explanation": "Every label a single letter or λ — that is precisely the restriction distinguishing an NFSA from a general transition graph. Parallel edges are perfectly legal in an NFSA, and so is a state with several outgoing edges on one letter; the first and third options describe DFSAs.",
+          "source": "fsa4 · §1.8, §1.9"
+        },
+        {
+          "id": "ke-unfold-simplify-warning",
+          "kind": "mcq",
+          "prompt": "Having unfolded an expression into an NFSA, the notes tidy the result into an obviously equivalent but smaller machine, then add a warning. What is it?",
+          "options": [
+            "Such simplifications are not always possible — when in doubt at all, don't use them",
+            "Simplification changes the language, so it must be undone before the subset method",
+            "Simplification is only valid on DFSAs",
+            "Such simplifications always work, so they should be applied routinely"
+          ],
+          "answerIndex": 0,
+          "explanation": "'Note that such simplifications are not always possible. When in doubt at all, don't use them!' Tidying by eye is an optimisation, not part of the algorithm — the unfolded machine is already correct, and an unjustified 'obvious' simplification can silently change the language.",
+          "source": "fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-then-subset",
+          "kind": "mcq",
+          "prompt": "You have unfolded a regular expression into an NFSA. What is the natural next step if a DFSA is wanted?",
+          "options": [
+            "Apply the three unfolding rules again",
+            "Apply the subset method",
+            "Apply state elimination",
+            "Apply the dual construction ρ"
+          ],
+          "answerIndex": 1,
+          "explanation": "The subset method. The notes do exactly this at the end of the 10*1 + 0*10* example, producing a six-state DFSA. State elimination would run backwards, returning a regular expression.",
+          "source": "fsa3 · §1.6, fsa4 · §1.9"
+        },
+        {
+          "id": "ke-unfold-three-rules-recall",
+          "kind": "recall",
+          "prompt": "State all three unfolding rules precisely, including how many new states each introduces.",
+          "answer": "For an edge from q1 to q2:\n\n**Sum — label R + S.** Replace it with **two parallel edges** from q1 to q2, one labelled R, the other labelled S. *New states: none.*\n\n**Concatenation — label RS.** Replace it with an edge from q1 to a **new state q3** labelled R, and an edge from q3 to q2 labelled S. *New states: one.*\n\n**Kleene closure — label R\\*.** Replace it with an edge from q1 to a **new state q3** labelled λ, a **loop on q3** labelled R, and an edge from q3 to q2 labelled λ. *New states: one.*\n\n**Generalisations.** R_1 + … + R_n becomes n parallel edges (no new states); R_1R_2 … R_n becomes a chain of n edges through n − 1 new states.\n\nApply repeatedly until every label lies in X ∪ {λ}. Every intermediate graph is equivalent to the ETG started from, and the process terminates because each application strictly simplifies the labels.",
+          "tier": 3,
+          "hint": "One rule per regular operation. Two of the three need a fresh state; the third needs none.",
+          "source": "fsa4 · §1.9"
+        }
+      ]
+    },
+    {
+      "id": "ke-eliminate",
+      "title": "NFSA to regular expression: state elimination",
+      "emphasis": "core",
+      "summary": "Add a fresh start and accepting state, combine parallel edges into sums, then delete the original states one at a time — absorbing each loop as a star and bridging each in-edge to each out-edge.",
+      "keyFacts": [
+        {
+          "term": "Setup step",
+          "definition": "Introduce a new starting state q0 and a new accepting state qF, ensure the originals are no longer starting or accepting, and join q0 to each old start state and each old accepting state to qF with edges labelled λ. This must be done **even if there was only one of each already**.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "term": "Parallel edge rule",
+          "definition": "If there are two edges from state q to state r labelled R and S, combine them into a single edge from q to r labelled R + S.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "term": "Loop removal",
+          "definition": "If there is a loop on q labelled R and an edge from q to r labelled S, replace that label by **R*S**. Do this for each edge coming out of q, then delete the loop.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "term": "Bypass rule",
+          "definition": "If there is an edge from p to q labelled R and an edge from q to r labelled S, add an edge from p to r labelled **RS**. Once done wherever possible, delete q and all edges into and out of it.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "term": "Termination and result",
+          "definition": "The process stops when all states except q0 and qF are deleted, leaving at most one edge (q0, qF) labelled R — an ETG. Each deletion preserves the language, so L(M) = R. If no edges remain, M accepts the empty language.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "term": "λ in products versus sums",
+          "definition": "λ may be dropped from a concatenation, since Rλ = λR = R. It may **not** be dropped from a sum: R + λ ≠ R in general, because the first language includes the empty string while the second may not.",
+          "source": "fsa4 · §1.10"
+        }
+      ],
+      "questions": [
+        {
+          "id": "ke-elim-setup",
+          "kind": "mcq",
+          "prompt": "An NFSA already has exactly one start state and exactly one accepting state. Does state elimination still require new q0 and qF states to be added?",
+          "options": [
+            "Only if the single accepting state has a loop",
+            "No — the setup step is only needed when there are several of either",
+            "Yes — the notes say this must be done even if there is only one of each anyway",
+            "Only the new accepting state qF is needed"
+          ],
+          "answerIndex": 2,
+          "explanation": "Always. The algorithm needs q0 to have no incoming edges and qF no outgoing ones, so that neither can be caught up in a loop or a bypass. An original start state may well have edges coming into it, which would break the construction — so the notes add both even in the one-of-each case.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-setup-labels",
+          "kind": "cloze",
+          "prompt": "In the setup step, join q0 to each old {{1}} state and each old {{2}} state to qF, labelling all these new edges {{3}}.",
+          "blanks": [
+            [
+              "starting",
+              "start",
+              "initial"
+            ],
+            [
+              "accepting",
+              "accept",
+              "final"
+            ],
+            [
+              "λ",
+              "lambda"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "λ throughout, so the new plumbing consumes no input and the language is unchanged. The old start and accepting states must also be demoted — they stop being start or accepting states themselves.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-parallel",
+          "kind": "short",
+          "prompt": "During state elimination there are two edges from q to r, labelled R and S. What single edge replaces them?",
+          "answers": [
+            "an edge from q to r labelled R + S",
+            "R + S",
+            "one edge labelled R+S",
+            "R+S"
+          ],
+          "tier": 2,
+          "explanation": "One edge labelled R + S. Two routes between the same pair of states are alternatives, and alternatives sum. It has to be done before deleting either endpoint, since the bypass rule assumes at most one edge per ordered pair.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-loop-rule",
+          "kind": "mcq",
+          "prompt": "State q carries a loop labelled R, and an edge from q to r labelled S. What does loop removal do?",
+          "options": [
+            "Relabels the edge to r as R + S and deletes the loop",
+            "Deletes the loop with no other change",
+            "Relabels the edge to r as SR* and deletes the loop",
+            "Relabels the edge to r as R*S and deletes the loop"
+          ],
+          "answerIndex": 3,
+          "explanation": "R*S — the loop is traversed any number of times *before* leaving, so the star goes on the left. SR* would mean going round after leaving, which is not what the path does. Note the rule applies to **every** edge coming out of q, not just one.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-loop-no-out",
+          "kind": "mcq",
+          "prompt": "State q3 has a loop labelled 0 + 1 but **no** outgoing edges at all. What does loop removal do?",
+          "options": [
+            "The loop simply drops off with no other changes, since there is nowhere to concatenate (0 + 1)* to",
+            "The loop becomes a new edge to qF labelled (0 + 1)*",
+            "The construction fails and another state must be chosen",
+            "The loop is kept until every other state has been deleted"
+          ],
+          "answerIndex": 0,
+          "explanation": "It just drops off. With no out-edges there is nothing to prefix with (0 + 1)*, and with no out-edges no bypass edges are needed either — so q3 can be deleted outright along with its incoming edge. The notes observe this is unsurprising, since such a q3 is simply a trap state.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bypass",
+          "kind": "mcq",
+          "prompt": "There is an edge from p to q labelled R and an edge from q to r labelled S, and q is being eliminated. What edge must be added?",
+          "options": [
+            "An edge from r to p labelled SR",
+            "An edge from p to r labelled RS",
+            "A loop on p labelled RS",
+            "An edge from p to r labelled R + S"
+          ],
+          "answerIndex": 1,
+          "explanation": "p → r labelled RS: the path through q read R and then S, so the direct replacement reads their concatenation, in that order. Getting the order backwards is the commonest slip, and it silently produces the reverse language.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-edge-count",
+          "kind": "computation",
+          "prompt": "A state q is being eliminated. After its loop (if any) has been removed, q has {{i}} incoming edges and {{o}} outgoing edges. How many new bypass edges must be inserted before q can be deleted?",
+          "vars": {
+            "i": {
+              "type": "int",
+              "min": 1,
+              "max": 5,
+              "step": 1
+            },
+            "o": {
+              "type": "int",
+              "min": 1,
+              "max": 4,
+              "step": 1
+            }
+          },
+          "steps": [
+            {
+              "text": "Every route through q enters on one of its incoming edges and leaves on one of its outgoing edges, and every such pairing must be preserved once q is gone."
+            },
+            {
+              "text": "So one new edge is needed for each (incoming, outgoing) pair: {{i}} × {{o}}."
+            },
+            {
+              "text": "That is {{i * o}} new edges. Each is labelled with the concatenation of the incoming label followed by the outgoing label."
+            }
+          ],
+          "answer": {
+            "expr": "i * o",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Count the routes through the state: one for each way in paired with each way out.",
+          "explanation": "in × out. The notes count exactly this way when deleting q0 from the 'ends in bb' machine: 'There are three edges into q0 but only one coming out, so we need 3 × 1 = 3 new edges.' Note that if either count is zero, no bypass edges are needed at all.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-lambda-product",
+          "kind": "mcq",
+          "prompt": "A bypass produces an edge labelled λ0*1. May the λ be dropped?",
+          "options": [
+            "Only if the edge leads to qF",
+            "Only if 0*1 does not contain λ",
+            "Yes — Rλ = λR = R, so the label is just 0*1",
+            "No — dropping λ changes the language"
+          ],
+          "answerIndex": 2,
+          "explanation": "Yes. λ is the identity for concatenation, so λ0*1 = 0*1. The notes drop it routinely. But be careful: the same is **not** true in a sum — R + λ ≠ R in general, because R + λ contains the empty string and R may not.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-lambda-sum",
+          "kind": "mcq",
+          "prompt": "Why can λ **not** be dropped from a sum, so that R + λ ≠ R in general?",
+          "options": [
+            "Because λ is not a regular expression",
+            "Because sums must have at least two non-empty terms",
+            "Because + is not associative",
+            "Because R + λ contains the empty string while R may not"
+          ],
+          "answerIndex": 3,
+          "explanation": "R + λ is the union of R with {λ}, so it always contains the empty string; R need not. The two coincide only when λ ∈ R already. This is the notes' explicit warning immediately after they drop a λ from a product — the two cases look similar and behave differently.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-stop",
+          "kind": "mcq",
+          "prompt": "When does the state-elimination process stop, and what is left?",
+          "options": [
+            "When all states except q0 and qF have been deleted; at most one edge (q0, qF) remains, labelled R, so the result is an ETG",
+            "When every edge label is a single letter; the result is a DFSA",
+            "When the start state has no incoming edges",
+            "When no parallel edges remain; the result is an NFSA"
+          ],
+          "answerIndex": 0,
+          "explanation": "All original states gone, leaving q0, qF and at most one edge between them — an ETG. Its label R satisfies L(M) = R because each deletion preserved the language. If no edge remains, M accepts ∅.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-empty-result",
+          "kind": "short",
+          "prompt": "State elimination finishes with q0 and qF present but **no edge** between them. What does this tell you about the original machine M?",
+          "answers": [
+            "M accepts the empty language",
+            "L(M) = empty set",
+            "it accepts no strings",
+            "M accepts no strings at all"
+          ],
+          "tier": 2,
+          "explanation": "L(M) = ∅ — no strings are accepted. With no edge there is no path from q0 to qF, and since every step preserved the language, there was no accepting path in M either.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-simple-q1",
+          "kind": "short",
+          "prompt": "An NFSA over {0, 1} has start state q1, F = {q2}, and transitions `q1: 0→{q1}, 1→{q2}`, `q2: 0→{q2}, 1→{q3}`, `q3: 0→{q3}, 1→{q3}`. After adding q0 →λ q1 and q2 →λ qf, and disposing of the trap q3, state **q1** is eliminated. Removing its loop relabels the edge q1 → q2. What does that label become?",
+          "answers": [
+            "0*1",
+            "0* 1",
+            "0star1"
+          ],
+          "tier": 2,
+          "hint": "Loop label first, starred, then the outgoing label.",
+          "explanation": "0*1 — the loop label 0 becomes 0*, prefixed to the outgoing label 1. The rule is R*S with R the loop and S the exit, so the star goes on the left.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-simple-final",
+          "kind": "short",
+          "prompt": "Continuing that elimination: after q1 is gone the graph is q0 →0*1 q2, with a loop 0 on q2 and q2 →λ qf. Eliminating q2 gives the final ETG. What is its edge label — that is, L(M)?",
+          "answers": [
+            "0*10*",
+            "0* 1 0*",
+            "0*1 0*"
+          ],
+          "tier": 2,
+          "hint": "Remove q2's loop first (which restyles its outgoing λ-edge), then bridge the one edge in to the one edge out.",
+          "explanation": "0*10*. Loop removal turns q2's outgoing λ into 0*λ = 0*. The single in-edge 0*1 then bridges to it, giving 0*1 · 0* = 0*10*. Sanity check: the machine reads any number of 0s, exactly one 1, then any number of 0s.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-setup",
+          "kind": "short",
+          "prompt": "State elimination is applied to a DFSA over {a, b} with start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`, and the new states are named Q0 and Qf. Why are they called Q0 and Qf rather than q0 and qf?",
+          "answers": [
+            "because the name q0 is already in use by a state of the machine",
+            "q0 is already taken",
+            "the name q0 is already being used",
+            "to avoid clashing with the existing q0"
+          ],
+          "tier": 2,
+          "explanation": "The name q0 is already being used by the machine, so the notes choose Q0 and Qf for the new pair. State names carry no meaning, but they must be distinct — reusing one would silently merge two states.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-stage1",
+          "kind": "short",
+          "prompt": "A DFSA over {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`, and Q0 →λ q0 and q2 →λ Qf have already been added. **q0** is now eliminated. It has a loop labelled a and one outgoing edge, to q1 labelled b. After loop removal, what does that outgoing edge read?",
+          "answers": [
+            "a*b",
+            "a* b",
+            "astarb"
+          ],
+          "tier": 2,
+          "explanation": "a*b. Loop label a starred, then the exit label b: R*S with R = a, S = b.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-stage2",
+          "kind": "mcq",
+          "prompt": "Still eliminating q0 from the 'ends in bb' machine: q0 has three incoming edges — Q0 →λ q0, q1 →a q0, q2 →a q0 — and one outgoing edge, now labelled a*b, to q1. Which three bypass edges are created?",
+          "options": [
+            "A single edge Q0 →a*b q1, since all three sources merge",
+            "Q0 →a*b q1, a loop on q1 labelled aa*b, and q2 →aa*b q1",
+            "Q0 →a*b q1, q1 →a*b q2, and q2 →a*b q1",
+            "Q0 →λ q1, q1 →a q1, and q2 →a q1"
+          ],
+          "answerIndex": 1,
+          "explanation": "Three in-edges × one out-edge = three new edges, each labelled (incoming label)(outgoing label): λ·a*b = a*b from Q0, a·a*b = aa*b from q1 — which lands back on q1, so it is a **loop** — and a·a*b = aa*b from q2. Noticing that one of them is a self-loop matters, because it must be removed by the loop rule when q1 is eliminated next.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-stage3",
+          "kind": "short",
+          "prompt": "After q0 is deleted from the 'ends in bb' machine, the graph is: `Q0 →a*b q1`; `q1 →b q2` with a loop on q1 labelled `aa*b`; `q2 →aa*b q1` with a loop on q2 labelled `b`; and `q2 →λ Qf`. Now eliminate **q1**. Loop removal restyles its single outgoing edge, to q2. What does that edge become?",
+          "answers": [
+            "(aa*b)*b",
+            "(aa* b)*b",
+            "(aa*b)* b"
+          ],
+          "tier": 2,
+          "hint": "The loop label is aa*b; star it and prefix it to the exit label b.",
+          "explanation": "(aa*b)*b. The whole loop label is starred as a unit — brackets are essential, since aa*b*b would be a different expression entirely.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-stage4",
+          "kind": "mcq",
+          "prompt": "Eliminating q1 continues: it has two incoming edges — Q0 →a*b q1 and q2 →aa*b q1 — and one outgoing edge, now (aa*b)*b, to q2. Which two bypass edges result?",
+          "options": [
+            "Q0 →a*b(aa*b)*b q2, and a loop on q2 labelled aa*b(aa*b)*b",
+            "Q0 →(aa*b)*b q2, and q2 →a*b q2",
+            "Q0 →a*b q2, and a loop on q2 labelled (aa*b)*b",
+            "Q0 →a*b + (aa*b)*b q2 only"
+          ],
+          "answerIndex": 0,
+          "explanation": "Two in × one out = two edges, each the incoming label followed by the outgoing one: a*b · (aa*b)*b from Q0, and aa*b · (aa*b)*b from q2 — which returns to q2, so it is a second **loop** there. The answer offering a single edge labelled a*b + (aa*b)*b wrongly sums two edges that do not share a source-and-target pair — only genuinely parallel edges may be combined.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-stage5",
+          "kind": "short",
+          "prompt": "After q1 is deleted, q2 carries **two** loops — one labelled b, one labelled aa*b(aa*b)*b — plus Q0 →a*b(aa*b)*b q2 and q2 →λ Qf. What is the next step, and what label results?",
+          "answers": [
+            "combine the parallel loops into one labelled b + aa*b(aa*b)*b",
+            "b + aa*b(aa*b)*b",
+            "combine the two loops, giving b + aa*b(aa*b)*b",
+            "merge parallel edges into b + aa*b(aa*b)*b"
+          ],
+          "tier": 2,
+          "hint": "Two edges sharing the same source and target are parallel, loops included.",
+          "explanation": "Combine the parallel edges: b + aa*b(aa*b)*b. Two loops on the same state are parallel edges from q2 to q2, so the parallel rule applies and must be used before q2 is eliminated — the loop-removal rule assumes a single loop.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-bb-final",
+          "kind": "short",
+          "prompt": "Final stage: q2 has one loop labelled b + aa*b(aa*b)*b, one incoming edge Q0 →a*b(aa*b)*b, and one outgoing edge q2 →λ Qf. Eliminate q2 and give the regular expression on the resulting ETG.",
+          "answers": [
+            "a*b(aa*b)*b(b + aa*b(aa*b)*b)*",
+            "a*b(aa*b)*b (b + aa*b(aa*b)*b)*"
+          ],
+          "tier": 2,
+          "hint": "Loop removal first — star the loop label and prefix it to the outgoing λ, which then disappears. Then bridge the single in-edge to the single out-edge.",
+          "explanation": "a*b(aa*b)*b(b + aa*b(aa*b)*b)*. Loop removal turns the outgoing λ into (b + aa*b(aa*b)*b)*λ = (b + aa*b(aa*b)*b)*; the one in-edge then concatenates onto it. The notes call the result 'a mouthful' — and it describes the strings over {a, b} ending in bb, which is a far simpler way to say the same thing.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-order-choice",
+          "kind": "mcq",
+          "prompt": "The notes choose to delete q3 first in one example, calling it 'easy: involves few edges'. What is the practical guidance?",
+          "options": [
+            "Delete states with loops last, since loops cannot be removed early",
+            "States must be deleted in numerical order",
+            "Delete states with few incoming and outgoing edges first, since the number of bypass edges is in × out",
+            "Delete accepting states first"
+          ],
+          "answerIndex": 2,
+          "explanation": "Bypass edges multiply as in × out, and each one carries a label built from two others — so eliminating a heavily connected state early produces many long expressions that then have to be carried through the rest of the run. Order is free and affects only how ugly the working gets, not the final language.",
+          "source": "fsa4 · §1.10"
+        },
+        {
+          "id": "ke-elim-procedure-recall",
+          "kind": "recall",
+          "prompt": "State the full state-elimination algorithm for turning an NFSA into a regular expression.",
+          "answer": "**Setup.**\n1. Introduce a new start state q0 and a new accepting state qF, and make sure the original states are no longer start or accepting states.\n2. Join q0 to each original start state, and each original accepting state to qF, labelling all these edges λ. Do this **even if there was only one of each already**.\n\n**Then repeat until only q0 and qF remain.**\n3. **Combine parallel edges**: two edges from q to r labelled R and S become one labelled R + S. (Two loops on the same state count as parallel.)\n4. Pick any remaining original state q and eliminate it:\n   - **Remove its loop.** If q has a loop labelled R, replace the label S on *each* edge out of q by R*S, then delete the loop.\n   - **Bypass it.** For each edge p →R q and each edge q →S r, add an edge p →RS r. This creates in × out new edges.\n   - **Delete q** and every edge into or out of it.\n\n**Stop.** At most one edge (q0, qF) remains, labelled R — an ETG. Since each step preserves the language, L(M) = R. If no edge remains, L(M) = ∅.\n\n**Watch:** R*S not SR* on loop removal; RS in path order on bypasses; λ may be dropped from a product but never from a sum. Different deletion orders give different — equally correct — expressions.",
+          "tier": 3,
+          "hint": "Setup, then a loop over three rules, then a stopping condition. Two of the rules are about a single state being deleted.",
+          "source": "fsa4 · §1.10"
+        }
+      ]
+    }
+  ]
+}

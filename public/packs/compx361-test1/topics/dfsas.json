@@ -1,0 +1,942 @@
+{
+  "id": "dfsas",
+  "title": "DFSAs",
+  "summary": "Deterministic finite state automata: the four-part definition, how a string traces a path through one, how to build one for a given language, and how to read the language back off a machine you are handed.",
+  "subtopics": [
+    {
+      "id": "df-definition",
+      "title": "The DFSA definition and δ",
+      "emphasis": "core",
+      "summary": "M = (Q, δ, q0, F) with input alphabet X. δ is a total function Q × X → Q, which is what forces every state to have an outgoing edge for every letter.",
+      "keyFacts": [
+        {
+          "term": "DFSA",
+          "definition": "A deterministic finite state automaton M = (Q, δ, q0, F) with finite input alphabet X, consisting of a finite set Q of states, a transition function δ : Q × X → Q, a start state q0 ∈ Q, and a set F ⊆ Q of accepting states.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "Transition function δ",
+          "definition": "δ : Q × X → Q takes an ordered pair (q, x) with q ∈ Q and x ∈ X and produces a single state δ(q, x) ∈ Q. The notes call it the **brain** of the DFSA: it says which state to move to given the current state and the letter being read.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "What a DFSA cannot do",
+          "definition": "There is **no capacity for memory, only internal architecture**, and the machine can only respond yes or no based on an input string. It cannot produce any other output.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "Trap state",
+          "definition": "A state from which, whatever letter is read, the machine remains in that state. Once in it the string can never be accepted. Used to absorb input that has already gone wrong.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "State diagram conventions",
+          "definition": "States are vertices of a directed multigraph and labelled edges carry δ. The start state has an incoming unlabelled edge with no source; accepting states are drawn with a double line. An edge labelled 'a, b' is shorthand for two edges.",
+          "source": "fsa2 · §1.4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "df-tuple",
+          "kind": "mcq",
+          "prompt": "In the notation M = (Q, δ, q0, F) for a DFSA, what are the four components, in order?",
+          "options": [
+            "States, transition function, start state, accepting states",
+            "Input alphabet, transition function, start state, accepting states",
+            "States, transition function, accepting states, start state",
+            "States, start state, transition function, accepting states"
+          ],
+          "answerIndex": 0,
+          "explanation": "Q the finite set of states, δ the transition function, q0 the start state, F the set of accepting states. The order in the tuple is worth knowing exactly, because δ sits second — not third.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-alphabet-not-in-tuple",
+          "kind": "mcq",
+          "prompt": "Where does the input alphabet X appear in the notes' DFSA notation M = (Q, δ, q0, F)?",
+          "options": [
+            "It is the second component, written δ",
+            "It is not one of the four components; the machine is said to have finite input alphabet X alongside the tuple",
+            "It is Q, since states and letters are identified",
+            "It is F, the set of accepting states"
+          ],
+          "answerIndex": 1,
+          "explanation": "The notes write M = (Q, δ, q0, F) as a four-tuple and give X separately as 'with finite input alphabet X'. Some textbooks use a five-tuple including X — this course does not, and the tuple is what you would be asked to reproduce.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-delta-signature",
+          "kind": "cloze",
+          "prompt": "For a DFSA the transition function has signature δ : {{1}} × {{2}} → {{3}}.",
+          "blanks": [
+            [
+              "Q"
+            ],
+            [
+              "X"
+            ],
+            [
+              "Q"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "δ : Q × X → Q. State and letter in, a single state out. Contrast the NFSA, where the codomain becomes 2^Q and the domain widens to Q × (X ∪ {λ}).",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-delta-single-valued",
+          "kind": "mcq",
+          "prompt": "Because δ is a function Q × X → Q, how many edges labelled with a given letter x leave a given state q in a DFSA's state diagram?",
+          "options": [
+            "Exactly one for each accepting state reachable from q",
+            "At most one, possibly none",
+            "Exactly one",
+            "Any number, including none"
+          ],
+          "answerIndex": 2,
+          "explanation": "Exactly one. δ being a *total* function on Q × X means every (state, letter) pair has a value, and being a function means it has only one. 'At most one' is the NFSA answer, where δ maps into 2^Q and may return the empty set.",
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "df-accepting-subset",
+          "kind": "cloze",
+          "prompt": "The set of accepting states satisfies F {{1}} Q, and the start state satisfies q0 {{2}} Q.",
+          "blanks": [
+            [
+              "⊆",
+              "subseteq",
+              "is a subset of",
+              "⊂"
+            ],
+            [
+              "∈",
+              "in",
+              "is an element of",
+              "is a member of"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "F ⊆ Q — a *set* of states, which may be empty or may be all of Q. q0 ∈ Q — a single state, which always exists. The difference in symbol reflects the difference in kind.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-f-can-be-empty",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {0, 1} has a single state q0 with δ(q0, 0) = δ(q0, 1) = q0, and F = ∅. What language does it accept?",
+          "options": [
+            "It is not a valid DFSA, since F must be non-empty",
+            "Λ = {λ}",
+            "(0 + 1)*, every binary string",
+            "∅, no strings at all"
+          ],
+          "answerIndex": 3,
+          "explanation": "∅. F ⊆ Q permits F = ∅, and with no accepting states no transition sequence can end in one — so nothing is accepted. This is one of the notes' four small examples. Note the contrast with Λ: making q0 accepting instead would accept every string, not just λ.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-brain",
+          "kind": "short",
+          "prompt": "The notes call one component of a DFSA its 'brain'. Which one?",
+          "answers": [
+            "the transition function",
+            "transition function",
+            "δ",
+            "delta",
+            "the transition function δ"
+          ],
+          "explanation": "The transition function δ — because it alone decides which state to move to given the current state and the letter being read. Everything else is bookkeeping.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-no-memory",
+          "kind": "mcq",
+          "prompt": "What does it mean that a DFSA has 'no capacity for memory, only internal architecture'?",
+          "options": [
+            "It has no storage beyond which of its finitely many states it is currently in",
+            "It can store any finite amount of data but cannot write it back out",
+            "It reads the input only once and cannot rewind",
+            "It can remember only the last letter read, not the whole string"
+          ],
+          "answerIndex": 0,
+          "explanation": "The current state is the entire memory, and there are only finitely many states. That is precisely the limitation the Pumping Lemma exploits: on a long enough string some state must repeat, and the machine cannot tell the two visits apart.",
+          "source": "fsa2 · §1.4, fsa6 · §1.14"
+        },
+        {
+          "id": "df-yes-no-only",
+          "kind": "short",
+          "prompt": "What is the only kind of response a DFSA can give to an input string?",
+          "answers": [
+            "yes or no",
+            "yes/no",
+            "accept or reject",
+            "accept or not accept",
+            "yes or no, accept or reject"
+          ],
+          "tier": 2,
+          "explanation": "Yes or no — accept or not accept. TM1 opens by naming exactly this as the limitation Turing machines are introduced to remove: DFSAs have no memory and no ability to give an output other than yes or no.",
+          "source": "fsa2 · §1.4, tm1 · §2.1"
+        },
+        {
+          "id": "df-read-table",
+          "kind": "short",
+          "prompt": "A DFSA's transition table has one row per state and one column per letter, and the entry in row q, column x is δ(q, x). In a machine over X = {a, b}, the row for q1 reads q0 under the a column and q2 under the b column. What is δ(q1, b)?",
+          "answers": [
+            "q2",
+            "q_2",
+            "state q2"
+          ],
+          "tier": 2,
+          "explanation": "Read the row for the current state and the column for the letter: row q1, column b gives q2. This is the notes' first worked DFSA, and it reappears in FSA4 and FSA5.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-table-vs-diagram",
+          "kind": "mcq",
+          "prompt": "In a DFSA state diagram, how is the start state indicated?",
+          "options": [
+            "By a double line around the state",
+            "By an incoming unlabelled edge with no source",
+            "By always being drawn leftmost",
+            "By being labelled q0"
+          ],
+          "answerIndex": 1,
+          "explanation": "An incoming unlabelled edge with no source vertex. The double line marks *accepting* states — a state can of course be both, as in the even-number-of-1s machine where the start state is the only accepting state. Being leftmost or named q0 is convention, not notation.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-comma-label",
+          "kind": "short",
+          "prompt": "In a state diagram, an edge from q2 to itself is labelled 'a, b'. What is this shorthand for?",
+          "answers": [
+            "two edges, one labelled a and one labelled b",
+            "two edges from q2 to q2, one for a and one for b",
+            "two separate edges, one per letter",
+            "an edge labelled a and an edge labelled b"
+          ],
+          "tier": 2,
+          "explanation": "Two edges, both starting and finishing at q2 — one labelled a, one labelled b. It is purely a drawing convenience; the transition table would show two separate entries.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trap-definition",
+          "kind": "recall",
+          "prompt": "What is a trap state, and why do DFSAs need them when NFSAs generally do not?",
+          "answer": "A **trap state** is one where, regardless of which letter is read, the machine remains in that state — so once entered, no accepting state is ever reachable and the string cannot be accepted.\n\nDFSAs need them because **δ is a total function on Q × X**: every state must have an outgoing edge for every letter, so input that has already gone wrong has to go *somewhere*. The trap is that somewhere.\n\nAn NFSA has no such obligation — δ maps into 2^Q and may return the empty set, so a bad letter can simply have nowhere to go. The notes make this point directly: the NFSA for bb*abb* is simpler than the DFSA because there is no need to insert trap states.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "df-define-dfsa",
+          "kind": "recall",
+          "prompt": "State the full definition of a DFSA: the tuple and what each of its four components is.",
+          "answer": "A **deterministic finite state automaton** M = (Q, δ, q0, F), with finite input alphabet X, consists of:\n\n- a **finite set Q of states**;\n- a **transition function δ : Q × X → Q**, taking an ordered pair (q, x) with q ∈ Q, x ∈ X, and producing an element δ(q, x) ∈ Q;\n- a **start state q0 ∈ Q**;\n- a **set F ⊆ Q of accepting states**.\n\nX is stated alongside the tuple rather than inside it.",
+          "tier": 3,
+          "hint": "Four components, and the alphabet is not one of them.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-totality-count",
+          "kind": "computation",
+          "prompt": "A DFSA has {{n}} states and an input alphabet of {{s}} letters. Exactly how many entries does its transition table have — that is, how many values of δ must be specified?",
+          "vars": {
+            "n": {
+              "type": "int",
+              "min": 2,
+              "max": 9,
+              "step": 1
+            },
+            "s": {
+              "type": "choice",
+              "values": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          "steps": [
+            {
+              "text": "δ is a **total function** on Q × X, so every (state, letter) pair has exactly one value. Nothing may be left blank."
+            },
+            {
+              "text": "The number of such pairs is |Q| × |X| = {{n}} × {{s}}."
+            },
+            {
+              "text": "So the table has {{n * s}} entries — one per cell of an {{n}}-row, {{s}}-column table."
+            }
+          ],
+          "answer": {
+            "expr": "n * s",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "The table has one row per state and one column per letter, and the definition of δ leaves no cell empty.",
+          "explanation": "|Q| × |X|. The point of the drill is totality: an NFSA's table may have empty cells and extra λ column, a DFSA's may not. If your DFSA is missing an entry, you have not finished it — that is what trap states are for.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-total-vs-partial",
+          "kind": "mcq",
+          "prompt": "Which of these is a valid criticism of a proposed DFSA over X = {a, b} whose table leaves δ(q3, a) unspecified?",
+          "options": [
+            "It is fine — an unspecified transition is treated as rejection",
+            "It is fine — an unspecified transition is treated as a λ-move",
+            "It is invalid, because δ must be a total function on Q × X, so every state needs an entry for every letter",
+            "It is invalid, because q3 must then be an accepting state"
+          ],
+          "answerIndex": 2,
+          "explanation": "Invalid. δ : Q × X → Q is total, so all possibilities must be covered — the notes say so explicitly while building the bb*abb* machine: 'It was annoying having to worry about all the things that could go wrong as well as what was acceptable, but all possibilities must be covered in a DFSA.' The usual fix is a trap state. Note that a *Turing machine's* δ is explicitly a **partial** function, so the same omission there is legal and means the computation ceases.",
+          "source": "fsa2 · §1.4, tm1 · §2.1"
+        },
+        {
+          "id": "df-multigraph",
+          "kind": "short",
+          "prompt": "The notes describe a DFSA state diagram as the vertices and labelled edges of what kind of mathematical object?",
+          "answers": [
+            "a directed multigraph",
+            "directed multigraph",
+            "multigraph",
+            "a directed multi-graph"
+          ],
+          "tier": 2,
+          "explanation": "A directed multigraph. 'Multi' because two different letters can give edges between the same ordered pair of states, so parallel edges are allowed; 'directed' because transitions have a direction.",
+          "source": "fsa2 · §1.4"
+        }
+      ]
+    },
+    {
+      "id": "df-trace",
+      "title": "Tracing a string and acceptance",
+      "emphasis": "core",
+      "summary": "A string defines a path through the machine — its transition sequence. It is accepted exactly when that sequence ends in an accepting state.",
+      "keyFacts": [
+        {
+          "term": "Transition sequence",
+          "definition": "The sequence of state changes a string gives rise to when its letters are followed through the machine from the start state, written q0 →^a q0 →^b q1 → … .",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "Acceptance (DFSA)",
+          "definition": "A string is accepted by the DFSA M if its transition sequence **ends in an accepting state**. Otherwise it is not accepted.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "L(M)",
+          "definition": "The set of strings accepted by a given machine M — a set of strings, hence a language.",
+          "source": "fsa2 · §1.4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "df-acceptance-criterion",
+          "kind": "mcq",
+          "prompt": "When is a string accepted by a DFSA M?",
+          "options": [
+            "When every state its transition sequence visits is accepting",
+            "When its transition sequence never enters a trap state",
+            "When its transition sequence visits an accepting state at some point",
+            "When its transition sequence ends in an accepting state"
+          ],
+          "answerIndex": 3,
+          "explanation": "Only the final state matters. Passing through an accepting state on the way counts for nothing — the notes' abbba example ends in q0 after visiting the accepting q2 twice, and is not accepted.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-abbba-trace",
+          "kind": "short",
+          "prompt": "A DFSA over X = {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`. Which state does the string **abbba** end in?",
+          "answers": [
+            "q0",
+            "q_0",
+            "state q0"
+          ],
+          "tier": 2,
+          "hint": "Five letters, so five steps from q0. Watch what the final 'a' does from an accepting state.",
+          "explanation": "q0 →a q0 →b q1 →b q2 →b q2 →a q0. It ends in q0, which is not accepting, so abbba is **not** accepted — even though the path passed through the accepting q2. The final 'a' throws it away.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-abbba-accepted",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`. Is the string **abbba** accepted?",
+          "options": [
+            "Yes — it reaches q2 during the trace",
+            "Yes — it ends in q2",
+            "No — it ends in q0, which is not accepting",
+            "No — the trace is undefined at the third letter"
+          ],
+          "answerIndex": 2,
+          "explanation": "The trace is q0 →a q0 →b q1 →b q2 →b q2 →a q0, ending at q0. Reaching q2 partway through is irrelevant; only the last state counts. The answer 'yes — it reaches q2 during the trace' is the exact misconception this question exists to catch.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trace-bb",
+          "kind": "short",
+          "prompt": "A DFSA over X = {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`. Give the final state reached by the string **abb**.",
+          "answers": [
+            "q2",
+            "q_2",
+            "state q2"
+          ],
+          "tier": 2,
+          "explanation": "q0 →a q0 →b q1 →b q2. It ends in the accepting state q2, so abb is accepted. Comparing with abbba shows the pattern: this machine accepts exactly the strings ending in bb.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-lambda-trace",
+          "kind": "mcq",
+          "prompt": "A DFSA has start state q0 and F = {q2}, with q0 ≠ q2. Is the empty string λ accepted?",
+          "options": [
+            "No — λ has no transitions, so it ends in the start state q0, which is not accepting",
+            "It depends on whether q2 is reachable from q0",
+            "No — λ is not a string, so acceptance is undefined for it",
+            "Yes — λ is accepted by every DFSA"
+          ],
+          "answerIndex": 0,
+          "explanation": "λ takes no steps at all, so the transition sequence is just the start state. λ is accepted precisely when the start state is accepting. This is why the notes' 'accepts Λ only' example makes q0 accepting and sends every letter to a non-accepting trap.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-path-determinism",
+          "kind": "mcq",
+          "prompt": "How many transition sequences does a single string define through a DFSA?",
+          "options": [
+            "Any number, since paths may branch",
+            "Exactly one",
+            "At most one, possibly none",
+            "One per accepting state"
+          ],
+          "answerIndex": 1,
+          "explanation": "Exactly one — that is what deterministic means, and it follows from δ being a total function. In an NFSA a string may define several paths, or none, which is why NFSA acceptance has to be phrased as 'one of the paths ends in an accepting state'.",
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "df-trace-evenones",
+          "kind": "short",
+          "prompt": "A DFSA over X = {0, 1} has start state q0, F = {q0}, and transitions `δ(q0,0)=q0`, `δ(q0,1)=q1`, `δ(q1,0)=q1`, `δ(q1,1)=q0`. Which state does **10110** end in?",
+          "answers": [
+            "q1",
+            "q_1",
+            "state q1"
+          ],
+          "tier": 2,
+          "hint": "Reading a 0 never changes the state, so only the 1s matter. Count them.",
+          "explanation": "q0 →1 q1 →0 q1 →1 q0 →1 q1 →0 q1, ending in q1. Cross-check with the rule: 10110 contains three 1s, an odd number, and q1 is the odd-parity state. Since F = {q0}, the string is **not** accepted.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-evenones-parity",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {0, 1} has start state q0, F = {q0}, and transitions `δ(q0,0)=q0`, `δ(q0,1)=q1`, `δ(q1,0)=q1`, `δ(q1,1)=q0`. Which strings does it accept?",
+          "options": [
+            "All binary strings of even length",
+            "All binary strings beginning and ending with 0",
+            "All binary strings containing an even number of 1s",
+            "All binary strings containing an even number of 0s"
+          ],
+          "answerIndex": 2,
+          "explanation": "Reading a 0 never changes state, so however many 0s occur they are irrelevant. Each 1 flips between q0 and q1, so the machine ends back at the accepting q0 exactly when the number of 1s is even. λ has zero 1s, which is even, and is accepted.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-transition-sequence-name",
+          "kind": "short",
+          "prompt": "What do the notes call the sequence of state changes q0 →^a q0 →^b q1 →^b q2 that a string gives rise to in a DFSA?",
+          "answers": [
+            "the transition sequence",
+            "transition sequence",
+            "its transition sequence",
+            "the transition sequence for the string"
+          ],
+          "tier": 2,
+          "explanation": "The transition sequence for the string. The Turing-machine analogue is the *configuration sequence*, which has to carry more information — the tape contents and head position as well as the state.",
+          "source": "fsa2 · §1.4, tm1 · §2.1"
+        },
+        {
+          "id": "df-lm-is-language",
+          "kind": "cloze",
+          "prompt": "Asking exactly which strings are accepted by a given DFSA yields a {{1}} of strings, and hence a {{2}}.",
+          "blanks": [
+            [
+              "set"
+            ],
+            [
+              "language",
+              "formal language"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "A set of strings is by definition a language — which is what makes the question 'what does this machine accept?' a question about languages, and sets up Kleene's Theorem as the answer.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trace-bbabb",
+          "kind": "short",
+          "prompt": "This DFSA over X = {a, b} accepts bb*abb*. It has start state q0, F = {q4}, and transitions `δ(q0,a)=q2`, `δ(q0,b)=q1`, `δ(q1,a)=q3`, `δ(q1,b)=q1`, `δ(q2,a)=q2`, `δ(q2,b)=q2`, `δ(q3,a)=q2`, `δ(q3,b)=q4`, `δ(q4,a)=q2`, `δ(q4,b)=q4`. Which state does the string **bab** end in?",
+          "answers": [
+            "q4",
+            "q_4",
+            "state q4"
+          ],
+          "tier": 2,
+          "explanation": "q0 →b q1 →a q3 →b q4. Accepted — and correctly so, since bab = b·b^0·a·b·b^0 is of the form bb^n a bb^m with n = m = 0.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trace-bbabb-reject",
+          "kind": "short",
+          "prompt": "For the same bb*abb* machine — start state q0, F = {q4}, and transitions `δ(q0,a)=q2`, `δ(q0,b)=q1`, `δ(q1,a)=q3`, `δ(q1,b)=q1`, `δ(q2,a)=q2`, `δ(q2,b)=q2`, `δ(q3,a)=q2`, `δ(q3,b)=q4`, `δ(q4,a)=q2`, `δ(q4,b)=q4` — which state does **ab** end in?",
+          "answers": [
+            "q2",
+            "q_2",
+            "state q2",
+            "the trap state"
+          ],
+          "tier": 2,
+          "hint": "Look at what the very first letter does from q0.",
+          "explanation": "q0 →a q2 →b q2. The leading 'a' goes straight to the trap q2, because every string in bb*abb* must begin with b. Once in q2 nothing escapes.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trap-identify",
+          "kind": "short",
+          "prompt": "A DFSA over {a, b} has start state q0, F = {q4}, and transitions `δ(q0,a)=q2`, `δ(q0,b)=q1`, `δ(q1,a)=q3`, `δ(q1,b)=q1`, `δ(q2,a)=q2`, `δ(q2,b)=q2`, `δ(q3,a)=q2`, `δ(q3,b)=q4`, `δ(q4,a)=q2`, `δ(q4,b)=q4`. Which state is the trap state?",
+          "answers": [
+            "q2",
+            "q_2",
+            "state q2"
+          ],
+          "tier": 2,
+          "explanation": "q2 — its row reads q2 for every letter, so once entered the machine can never leave, and q2 is not accepting. Spotting this in a table is quicker than in a diagram: look for a row whose every entry is the row's own name.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-trace-recall",
+          "kind": "recall",
+          "prompt": "Describe how to determine whether a given string is accepted by a given DFSA, and state the one thing that decides it.",
+          "answer": "**Start at q0.** Read the string one letter at a time, left to right. For each letter x in the current state q, move to δ(q, x) — read off the table as row q, column x.\n\nThis produces the **transition sequence** for the string.\n\n**The string is accepted if and only if the final state — the one reached after the last letter — is in F.**\n\nNothing else matters: not which states were visited on the way, not whether an accepting state was passed through, not the length of the string. In a DFSA the path always exists and is always unique, so there is never a choice to make.",
+          "tier": 3,
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-all-strings-example",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {0, 1} has one state q0 with δ(q0, 0) = δ(q0, 1) = q0, and F = {q0}. What is L(M)?",
+          "options": [
+            "∅",
+            "(0 + 1)*(0 + 1), all non-empty binary strings",
+            "Λ = {λ}",
+            "(0 + 1)*, all binary strings"
+          ],
+          "answerIndex": 3,
+          "explanation": "Every string ends where it started, at the accepting q0, so everything is accepted: (0 + 1)*. Making the same single state non-accepting instead gives ∅ — the notes present these two as a pair.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-nonempty-example",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {0, 1} has states q0 (start, not accepting) and q1 (accepting), with δ(q0, 0) = δ(q0, 1) = q1 and δ(q1, 0) = δ(q1, 1) = q1. What language does it accept?",
+          "options": [
+            "All non-empty binary strings, (0 + 1)*(0 + 1)",
+            "All binary strings of length exactly one",
+            "Λ = {λ}",
+            "∅"
+          ],
+          "answerIndex": 0,
+          "explanation": "The first letter — whichever it is — moves to the accepting q1, and nothing ever leaves. So every string of length ≥ 1 is accepted and λ is not: (0 + 1)*(0 + 1). Length exactly one is wrong because q1 loops on both letters rather than dropping out.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-lambda-only-example",
+          "kind": "mcq",
+          "prompt": "A DFSA over X = {0, 1} has states q0 (start, accepting) and q1 (not accepting), with δ(q0, 0) = δ(q0, 1) = q1 and δ(q1, 0) = δ(q1, 1) = q1. What language does it accept?",
+          "options": [
+            "(0 + 1)*",
+            "Λ = {λ}, the empty string only",
+            "∅",
+            "All non-empty binary strings"
+          ],
+          "answerIndex": 1,
+          "explanation": "λ takes no steps and so ends at the accepting start state. Any letter at all drops into the non-accepting trap q1 forever. So exactly one string is accepted, and L(M) = Λ. Compare with ∅, which is what you get by having *no* accepting state — a different language, as FSA1 insists.",
+          "source": "fsa2 · §1.4"
+        }
+      ]
+    },
+    {
+      "id": "df-build",
+      "title": "Building a DFSA for a language",
+      "emphasis": "core",
+      "summary": "Work left to right across the page from q0, add a good path for the strings you want, and send everything else to a trap — because δ must be total, all possibilities have to be covered.",
+      "keyFacts": [
+        {
+          "term": "The construction strategy",
+          "definition": "Start at the left of the page with q0 and work across. Move towards an accepting state on letters that keep the string acceptable, and to a trap state on letters that have already ruined it. Loops carry the 'any number of' parts.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "term": "The obligation that makes it awkward",
+          "definition": "'All possibilities must be covered in a DFSA' — you have to worry about everything that could go wrong as well as what is acceptable, because δ is total.",
+          "source": "fsa2 · §1.4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "df-build-typical-string",
+          "kind": "short",
+          "prompt": "The language L = bb*abb* over {a, b} is to be accepted by a DFSA. What is the general form of a typical string in L, written using exponents n and m?",
+          "answers": [
+            "bb^n a bb^m",
+            "bb^nabb^m",
+            "b b^n a b b^m",
+            "bbnabbm"
+          ],
+          "tier": 2,
+          "hint": "b* means 'any number of b, including none', so each b* contributes an exponent that may be zero.",
+          "explanation": "bb^n a bb^m for some n, m ≥ 0. Note the mandatory b at each end of the a: the expression is bb*abb*, not b*ab*, so at least one b must precede and at least one must follow the a.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-first-letter",
+          "kind": "mcq",
+          "prompt": "You are building a DFSA for L = bb*abb* over {a, b}. From the start state q0, where should the letter **a** lead, and why?",
+          "options": [
+            "Nowhere — leave δ(q0, a) undefined",
+            "To an accepting state, since a appears in every string of L",
+            "To a trap state, since every string of L begins with b",
+            "Back to q0, since a leading a can be ignored"
+          ],
+          "answerIndex": 2,
+          "explanation": "Every string of L starts with b, so a leading a has already ruined the string and it can never recover. It must go to a trap. Leaving δ(q0, a) undefined is not an option in a DFSA, where δ is total.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-loop-purpose",
+          "kind": "mcq",
+          "prompt": "While building the DFSA for bb*abb*, a loop labelled b is placed on the 'good' state q1. What does that loop implement?",
+          "options": [
+            "The trap behaviour for unwanted b's",
+            "The acceptance of the empty string",
+            "The mandatory single b at the start of every string in L",
+            "The b* factor, letting any number of further b's be read before moving on"
+          ],
+          "answerIndex": 3,
+          "explanation": "A loop is how 'any number of, including none' is expressed in a machine — it lets you go around as many times as you like before moving on towards the accepting state. The mandatory first b is the *edge into* q1, not the loop on it.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-q3-a",
+          "kind": "short",
+          "prompt": "In the DFSA being built for bb*abb*, state q3 is reached after reading bb^n a. Where must δ(q3, a) lead? Answer with the destination.",
+          "answers": [
+            "the trap state",
+            "trap state",
+            "a trap state",
+            "q2",
+            "the trap",
+            "trap"
+          ],
+          "tier": 2,
+          "hint": "After bb^n a, what would a second a mean for membership of bb*abb*?",
+          "explanation": "To the trap. Having already read bb^n a, another a gives bb^n aa, and no string of bb*abb* contains two a's. The notes reason exactly this way, and likewise send δ(q4, a) to the trap since that would give bb^n abb^m a.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-annoying",
+          "kind": "mcq",
+          "prompt": "The notes describe building the bb*abb* DFSA as 'annoying'. What specifically is annoying about it?",
+          "options": [
+            "You must worry about everything that could go wrong, not just what is acceptable, because all possibilities must be covered",
+            "The transition function must be computed by hand for every string in the language",
+            "Loops cannot be used, so every repetition needs its own state",
+            "The language has infinitely many strings, so the machine must be infinite"
+          ],
+          "answerIndex": 0,
+          "explanation": "Totality of δ. Every state needs an outgoing edge for every letter, so the failure cases demand as much attention as the successes. This is precisely the bookkeeping NFSAs let you drop — the notes immediately show a four-state NFSA for the same language with no trap at all.",
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "df-build-checklist",
+          "kind": "recall",
+          "prompt": "Describe the notes' method for building a DFSA to accept a given regular language, as a procedure.",
+          "answer": "1. **Write down the start state q0** at the left of the page and work across.\n2. **Identify the general form** of a typical string in the language, e.g. bb^n a bb^m for bb*abb*.\n3. **Follow that form letter by letter**, adding a new state each time a mandatory letter is consumed, and moving towards the accepting state(s).\n4. **Put a loop** on a state wherever the language allows 'any number of' a letter at that point — that is what a star becomes.\n5. **Make accepting** the state(s) reached once a complete string of the language has been read.\n6. **Add a trap state** and send to it every transition that has already made the string unacceptable.\n7. **Check totality**: every state must have exactly one outgoing edge per letter of X. Any missing entry means the machine is not finished.\n\nStep 7 is the one people skip, and it is the one the definition of δ actually requires.",
+          "tier": 3,
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-empty-lang",
+          "kind": "short",
+          "prompt": "Over X = {0, 1}, describe the simplest DFSA that accepts the empty language ∅. How many states does it need, and what is F?",
+          "answers": [
+            "one state with F empty",
+            "a single state looping on both letters with no accepting states",
+            "one state, F = empty set",
+            "1 state and F = {}",
+            "one state, no accepting states"
+          ],
+          "tier": 2,
+          "explanation": "A single state q0 with δ(q0, 0) = δ(q0, 1) = q0 and F = ∅. With no accepting states nothing can be accepted, whatever the transitions do. Note F = ∅ is legal — F ⊆ Q permits it.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-lambda-only",
+          "kind": "recall",
+          "prompt": "Over X = {0, 1}, design a DFSA accepting exactly Λ = {λ}. Give its states, start state, accepting states and transitions.",
+          "answer": "**Q = {q0, q1}**, start **q0**, **F = {q0}**.\n\nTransitions: δ(q0, 0) = δ(q0, 1) = q1, and δ(q1, 0) = δ(q1, 1) = q1.\n\nλ takes no steps so ends at the accepting q0. Any letter at all drops into q1, a non-accepting trap from which there is no escape, so no non-empty string is accepted.\n\nTwo states are genuinely needed: with one state you can only get ∅ or (0 + 1)*.",
+          "tier": 3,
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-all-strings",
+          "kind": "short",
+          "prompt": "Over X = {0, 1}, how many states does the simplest DFSA accepting (0 + 1)* — every binary string — require?",
+          "answers": [
+            "one",
+            "1",
+            "one state",
+            "a single state"
+          ],
+          "tier": 2,
+          "explanation": "One: a single accepting state looping on both letters. Every string ends where it started, and the start state is accepting, so everything is accepted.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-endswith-bb",
+          "kind": "recall",
+          "prompt": "Design a DFSA over X = {a, b} accepting exactly the strings that end in **bb**. Give the transition table, start state and accepting states, and say what each state is remembering.",
+          "answer": "**Q = {q0, q1, q2}**, start **q0**, **F = {q2}**.\n\n```\nδ  | a   b\nq0 | q0  q1\nq1 | q0  q2\nq2 | q0  q2\n```\n\nWhat each state means — how the run of b's *currently at the end* stands:\n- **q0**: the string so far ends in a, or is empty — zero trailing b's.\n- **q1**: exactly one trailing b.\n- **q2**: two or more trailing b's — accept.\n\nEvery a resets the count to zero, which is why all three a-entries are q0. From q2 a further b keeps you at 'two or more', so δ(q2, b) = q2.\n\nThis is the notes' very first DFSA, and FSA4 later derives the regular expression a*b(aa*b)*b(b + aa*b(aa*b)*b)* for the same language.",
+          "tier": 3,
+          "hint": "Three states, each recording how many b's the string currently ends with: none, one, or two-or-more.",
+          "source": "fsa2 · §1.4, fsa4 · §1.10"
+        },
+        {
+          "id": "df-build-trap-needed",
+          "kind": "mcq",
+          "prompt": "Does every DFSA need a trap state?",
+          "options": [
+            "Yes — δ is total, so a trap is always required",
+            "No — a trap is needed only when some input can make a string permanently unacceptable; the 'ends in bb' machine has none",
+            "Yes — otherwise the empty string cannot be rejected",
+            "No — trap states are forbidden in DFSAs and belong only to NFSAs"
+          ],
+          "answerIndex": 1,
+          "explanation": "Totality forces every state to have an outgoing edge for every letter, but those edges need not lead anywhere hopeless. The 'ends in bb' machine is total with no trap at all, because any string can still be rescued by appending bb. bb*abb* needs one because a second 'a' is unrecoverable.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-star-to-loop",
+          "kind": "cloze",
+          "prompt": "When translating a regular expression into a machine by hand, a Kleene star in the expression typically becomes a {{1}} in the state diagram, while a mandatory letter becomes an {{2}} between two distinct states.",
+          "blanks": [
+            [
+              "loop",
+              "self-loop",
+              "a loop"
+            ],
+            [
+              "edge",
+              "arrow",
+              "transition",
+              "an edge"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Star means 'any number of, including none', which is exactly a loop — you may traverse it zero or more times. A mandatory letter has to make progress, so it is an edge to a new state.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-count-states",
+          "kind": "short",
+          "prompt": "The notes' final DFSA for bb*abb* over {a, b} has how many states in total, counting the trap?",
+          "answers": [
+            "five",
+            "5",
+            "five states",
+            "5 states"
+          ],
+          "tier": 2,
+          "explanation": "Five: q0 (start), q1 (read the first b, looping on further b's), q3 (read the a), q4 (read the b after the a, accepting and looping), and q2 (the trap). The NFSA for the same language needs only four states and no trap.",
+          "source": "fsa2 · §1.4, fsa3 · §1.5"
+        },
+        {
+          "id": "df-build-why-trap-absorbs",
+          "kind": "mcq",
+          "prompt": "Why must a trap state have edges looping back to itself for **every** letter of the alphabet?",
+          "options": [
+            "Because otherwise the machine would be non-deterministic",
+            "So that it can never be an accepting state",
+            "Because δ is total, so the trap needs an entry for every letter — and any edge leaving it would let a ruined string recover",
+            "So that the machine terminates"
+          ],
+          "answerIndex": 2,
+          "explanation": "Two requirements meet here. Totality means the trap's row cannot be blank. And the trap's *purpose* is that a string which has already failed can never be rescued, so every one of those entries must point back at the trap itself.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-build-alphabet-matters",
+          "kind": "mcq",
+          "prompt": "A DFSA is built to accept strings ending in bb over X = {a, b}. The alphabet is now widened to X = {a, b, c}, with the language still 'strings over X ending in bb'. What must change?",
+          "options": [
+            "A trap state must be added, since c can never appear in an accepted string",
+            "The accepting state must be changed",
+            "Nothing — the machine already works",
+            "Every state needs an additional entry for c, each behaving like the a entry, since a c also resets the trailing-b count to zero"
+          ],
+          "answerIndex": 3,
+          "explanation": "Totality is relative to the alphabet: a wider X means a wider table. Here c breaks a run of trailing b's exactly as a does, so δ(q, c) = q0 for every q, and no trap is needed — a string containing c can still end in bb.",
+          "source": "fsa2 · §1.4"
+        }
+      ]
+    },
+    {
+      "id": "df-read",
+      "title": "Reading the language off a DFSA",
+      "emphasis": "standard",
+      "summary": "The reverse problem: given a machine, describe L(M). Ask what each state remembers about the input read so far, then say which of those conditions are accepting.",
+      "keyFacts": [
+        {
+          "term": "The reverse problem",
+          "definition": "Given a state diagram or table, determine what language the machine accepts. The technique is to work out what property of the input read so far each state records, then read off which properties are accepting.",
+          "source": "fsa2 · §1.4"
+        }
+      ],
+      "questions": [
+        {
+          "id": "df-read-evenones-reasoning",
+          "kind": "recall",
+          "prompt": "A DFSA over X = {0, 1} has start state q0, F = {q0}, and transitions `δ(q0,0)=q0`, `δ(q0,1)=q1`, `δ(q1,0)=q1`, `δ(q1,1)=q0`. State the language it accepts, and justify it by saying what each state records.",
+          "answer": "**L(M) = all binary strings containing an even number of 1s.**\n\nWhat each state records — the parity of the number of 1s read so far:\n- **q0**: an even number of 1s so far (including zero).\n- **q1**: an odd number of 1s so far.\n\nBoth 0-entries are self-loops, so however many 0s occur they never change the state — 0s are irrelevant to the condition. Each 1 flips parity, swapping q0 and q1.\n\nSince F = {q0}, a string is accepted exactly when it ends in the even-parity state. λ has zero 1s, which is even, and is accepted.",
+          "tier": 3,
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-what-states-mean",
+          "kind": "mcq",
+          "prompt": "What is the general technique for working out which language a given DFSA accepts?",
+          "options": [
+            "Work out what property of the input read so far each state records, then read off which of those properties are accepting",
+            "Apply the subset method to the machine",
+            "Count the states and take the alphabet to the power of that number",
+            "Enumerate all strings up to some length and look for a pattern"
+          ],
+          "answerIndex": 0,
+          "explanation": "Naming what each state 'remembers' is the technique the notes use, and it is what makes the answer justifiable rather than guessed. Enumerating strings can suggest a pattern but never proves one. There is also a mechanical alternative from FSA4 — state elimination — which produces a regular expression by algorithm.",
+          "source": "fsa2 · §1.4, fsa4 · §1.10"
+        },
+        {
+          "id": "df-read-endsbb",
+          "kind": "mcq",
+          "prompt": "Which language does this DFSA over {a, b} accept? It has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`.",
+          "options": [
+            "All strings containing bb somewhere",
+            "All strings ending in bb",
+            "All strings beginning with bb",
+            "All strings with an even number of b's"
+          ],
+          "answerIndex": 1,
+          "explanation": "Every a sends the machine back to q0, wiping out any progress, so the run of b's at the *end* is all that matters: q0 = no trailing b, q1 = one, q2 = two or more. 'Contains bb' would be wrong because δ(q2, a) = q0 rather than a self-loop — reaching bb is not remembered once an a arrives.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-contains-vs-ends",
+          "kind": "mcq",
+          "prompt": "The 'ends in bb' machine over {a, b} has start state q0, F = {q2}, and transitions `δ(q0,a)=q0`, `δ(q0,b)=q1`, `δ(q1,a)=q0`, `δ(q1,b)=q2`, `δ(q2,a)=q0`, `δ(q2,b)=q2`. What single change makes it accept all strings **containing** bb instead?",
+          "options": [
+            "Change δ(q1, a) from q0 to q1",
+            "Make q0 the accepting state instead of q2",
+            "Change δ(q2, a) from q0 to q2, so q2 becomes an accepting sink",
+            "Add q1 to the set of accepting states"
+          ],
+          "answerIndex": 2,
+          "explanation": "Once bb has been seen, 'contains bb' is settled forever, so q2 must never be left — make it an accepting sink. In the 'ends in bb' machine δ(q2, a) = q0 instead, because an a destroys the trailing run. That single cell is the whole difference between the two languages.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-bbabb-back",
+          "kind": "mcq",
+          "prompt": "Which language does this DFSA over {a, b} accept? It has start state q0, F = {q4}, and transitions `δ(q0,a)=q2`, `δ(q0,b)=q1`, `δ(q1,a)=q3`, `δ(q1,b)=q1`, `δ(q2,a)=q2`, `δ(q2,b)=q2`, `δ(q3,a)=q2`, `δ(q3,b)=q4`, `δ(q4,a)=q2`, `δ(q4,b)=q4`.",
+          "options": [
+            "(a + b)*ab(a + b)*",
+            "b*a*b*",
+            "b*ab*",
+            "bb*abb*"
+          ],
+          "answerIndex": 3,
+          "explanation": "Reading the good path: q0 needs a b to reach q1, q1 loops on b and needs an a to reach q3, q3 needs a b to reach the accepting q4, which loops on b. So: one mandatory b, any number more, one a, one mandatory b, any number more — bb*abb*. The distractor b*ab* is the classic slip: it would allow the a to come first, which q0's a-entry sends straight to the trap.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-trap-means",
+          "kind": "short",
+          "prompt": "You are handed a DFSA table and notice a non-accepting state whose row lists that same state for every letter. What have you found, and what does its presence tell you about the language?",
+          "answers": [
+            "a trap state, meaning some prefixes can never be extended to an accepted string",
+            "a trap state",
+            "a trap, so some strings are permanently rejected once they reach it",
+            "trap state - once entered no string can be accepted"
+          ],
+          "tier": 2,
+          "explanation": "A trap state. Its presence tells you the language has prefixes that are unrecoverable — once read, no continuation can be accepted. Languages like 'ends in bb' have no such prefix and hence no trap.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-lambda-check",
+          "kind": "mcq",
+          "prompt": "When describing L(M) for a DFSA, what is the quickest way to check whether λ ∈ L(M)?",
+          "options": [
+            "Check whether the start state is accepting",
+            "Check whether F is non-empty",
+            "Check whether there is a loop on the start state",
+            "Check whether any state is both start and accepting"
+          ],
+          "answerIndex": 0,
+          "explanation": "λ takes no transitions, so the run ends where it began. λ ∈ L(M) exactly when q0 ∈ F. It is a one-glance check and a good sanity test on any language description you have proposed — if your description excludes λ but q0 is accepting, one of them is wrong.",
+          "source": "fsa2 · §1.4"
+        },
+        {
+          "id": "df-read-many-machines",
+          "kind": "mcq",
+          "prompt": "Can two different DFSAs accept the same language?",
+          "options": [
+            "No — the machine is determined by the language",
+            "Yes, and among those accepting a given language some have fewer states than others",
+            "Only if they have the same number of states",
+            "Only if one is obtained from the other by renaming states"
+          ],
+          "answerIndex": 1,
+          "explanation": "Different DFSAs can accept the same language, and this is exactly the observation that opens the minimisation section: among all DFSAs accepting L, some have fewer states than others, and one with the fewest is called minimal for L.",
+          "source": "fsa2 · §1.4, fsa5 · §1.13"
+        },
+        {
+          "id": "df-read-parity-general",
+          "kind": "recall",
+          "prompt": "A DFSA over X = {0, 1} has start state q0, **F = {q1}**, and transitions `δ(q0,0)=q0`, `δ(q0,1)=q1`, `δ(q1,0)=q1`, `δ(q1,1)=q0`. What language does it accept, and how does it relate to the machine with F = {q0}?",
+          "answer": "**All binary strings containing an odd number of 1s.**\n\nThe states record parity exactly as before — q0 even, q1 odd — and only the choice of accepting states has changed.\n\nThis machine is the **complement** of the F = {q0} version: swapping accepting and non-accepting states turns L into L′, which is the construction FSA5 gives for complementing a regular language. And indeed 'odd number of 1s' is precisely the complement of 'even number of 1s' over {0, 1}*.\n\nNote λ is now rejected, since q0 is no longer accepting.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, fsa5 · §1.11"
+        },
+        {
+          "id": "df-read-unreachable",
+          "kind": "mcq",
+          "prompt": "A DFSA table contains a state q7 that appears in no other state's row and is not the start state. What can be said about it?",
+          "options": [
+            "It must be an accepting state",
+            "The machine is invalid, since every state must be reachable",
+            "It is unreachable from q0, so deleting it (and its row) does not change L(M)",
+            "It must be a trap state"
+          ],
+          "answerIndex": 2,
+          "explanation": "Unreachable states can never appear in any transition sequence, so they cannot affect which strings are accepted and may be deleted freely. Nothing in the definition forbids them — which is one reason a DFSA can fail to be minimal, and why the minimisation procedure of FSA5 is worth having.",
+          "source": "fsa2 · §1.4, fsa5 · §1.13"
+        },
+        {
+          "id": "df-read-strategy-recall",
+          "kind": "recall",
+          "prompt": "You are given an unfamiliar DFSA as a transition table and asked to describe L(M) in words. Give a checklist for attacking it.",
+          "answer": "1. **Check λ**: is q0 ∈ F? That settles whether the empty string is in the language and is a free sanity check on any answer you propose.\n2. **Find traps and sinks**: rows whose every entry is the row's own name. A non-accepting one is a trap (unrecoverable prefixes); an accepting one is a sink (once satisfied, always satisfied — typical of 'contains …').\n3. **Look for letters that never change state**: a column where many entries equal their own row means that letter is irrelevant to the condition.\n4. **Name what each state remembers** about the input so far — a count, a parity, the length of a trailing run, how much of a pattern has been matched.\n5. **Read off the accepting condition** from F, phrased in those terms.\n6. **Test two or three short strings** against your description, including one you expect to be rejected.\n\nIf naming the states defeats you, fall back on the mechanical route: state elimination (FSA4 §1.10) always produces a regular expression, without needing insight.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, fsa4 · §1.10"
+        }
+      ]
+    }
+  ]
+}

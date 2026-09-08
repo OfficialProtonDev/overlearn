@@ -13,6 +13,11 @@ public/packs/
     topics/
       foundations.json
       knn-and-trees.json
+  compx361-test1/
+    pack.json
+    topics/
+      dfsas.json
+      pumping-lemma.json
 ```
 
 `index.json` looks like this:
@@ -20,7 +25,8 @@ public/packs/
 ```json
 {
   "packs": [
-    { "id": "compx310-test1", "path": "compx310-test1" }
+    { "id": "compx310-test1", "path": "compx310-test1" },
+    { "id": "compx361-test1", "path": "compx361-test1" }
   ]
 }
 ```
@@ -30,8 +36,8 @@ and the app opens on the library screen instead.
 
 ## What ships, and what stays local
 
-`.gitignore` excludes everything here except this file, `index.json`, and
-`compx310-test1` — one pack committed as a worked example, so the deployed app
+`.gitignore` excludes everything here except this file, `index.json`, and the
+two committed packs `compx310-test1` and `compx361-test1`, so the deployed app
 has something to open on first load instead of an empty library.
 
 Packs you generate stay on your machine by default: they're derived from your

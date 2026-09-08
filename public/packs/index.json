@@ -1,3 +1,6 @@
 {
-  "packs": [{ "id": "compx310-test1", "path": "compx310-test1" }]
+  "packs": [
+    { "id": "compx310-test1", "path": "compx310-test1" },
+    { "id": "compx361-test1", "path": "compx361-test1" }
+  ]
 }

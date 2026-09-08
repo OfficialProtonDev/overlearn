@@ -1,0 +1,563 @@
+{
+  "id": "strings-languages",
+  "title": "Strings & Languages",
+  "summary": "The vocabulary everything else is built on: alphabets, strings, the empty string, and the three operations — sum, concatenation and Kleene closure — that turn single letters into regular languages.",
+  "subtopics": [
+    {
+      "id": "sl-strings",
+      "title": "Strings and concatenation",
+      "emphasis": "standard",
+      "summary": "An alphabet is a finite set of symbols; a string is a finite sequence of them. Concatenation is associative but not commutative, and λ is its identity.",
+      "keyFacts": [
+        {
+          "term": "Alphabet",
+          "definition": "Any **finite** set X of symbols (equivalently characters, or letters).",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "term": "String (word)",
+          "definition": "A **finite** sequence of symbols from a fixed alphabet X. Such a string is called *a string over X*.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "term": "Concatenation",
+          "definition": "Given strings w_1, w_2 over the same alphabet, their concatenation w_1w_2 is the string obtained by pasting w_1 and w_2 together, in that order.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "term": "λ (the empty string)",
+          "definition": "The string over X with no symbols in it. It acts as an identity for concatenation: wλ = λw = w for every string w over X.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "term": "Binary string",
+          "definition": "Any string over the alphabet X = {0, 1}.",
+          "source": "fsa1 · §1.2"
+        }
+      ],
+      "formulas": [
+        {
+          "name": "Associativity of concatenation",
+          "expression": "(w_1 w_2) w_3 = w_1 (w_2 w_3)",
+          "note": "Holds for all strings w_1, w_2, w_3 over an alphabet X. Note there is no commutative law to go with it.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "name": "Power notation for strings",
+          "expression": "w^n = ww · · · w  (n times),  w^0 = λ",
+          "note": "Defined for integers n > 0, with w^0 given the value λ separately.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "name": "Index law for strings",
+          "expression": "w^m w^n = w^(m+n)  for m, n ≥ 0",
+          "note": "The usual index law of algebra survives, because concatenation is associative.",
+          "source": "fsa1 · §1.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "sl-alphabet-finite",
+          "kind": "mcq",
+          "prompt": "In this course, what is required of an alphabet X?",
+          "options": [
+            "It must be a non-empty set of at most two symbols",
+            "It must be a set of symbols closed under concatenation",
+            "It must be a finite set of symbols",
+            "It must be a countable set of symbols"
+          ],
+          "answerIndex": 2,
+          "explanation": "Finiteness is the requirement, and it does real work later: the Pumping Lemma proof needs that only finitely many strings have length k or less, which fails for an infinite alphabet. Countable is too weak, and there is no restriction to two symbols — the notes use {a, …, z} throughout.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "id": "sl-string-finite",
+          "kind": "mcq",
+          "prompt": "A string over an alphabet X is defined as which of the following?",
+          "options": [
+            "Any subset of X",
+            "Any sequence, finite or infinite, of symbols from X",
+            "Any non-empty finite sequence of symbols from X",
+            "Any finite sequence of symbols from X"
+          ],
+          "answerIndex": 3,
+          "explanation": "Finite, and the empty sequence counts — that is λ, which the notes introduce precisely because it is a string. A subset of X would be a language of one-letter strings, not a string.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "id": "sl-concat-noncommutative",
+          "kind": "mcq",
+          "prompt": "With w_1 = bird and w_2 = fghi over the usual alphabet, which statement is correct?",
+          "options": [
+            "w_1w_2 = birdfghi and w_2w_1 = fghibird, and these are different strings",
+            "w_1w_2 = w_2w_1 = birdfghi, since concatenation is commutative",
+            "w_1w_2 = birdfghi and w_2w_1 is undefined",
+            "w_1w_2 = bfgihird, interleaving the two strings"
+          ],
+          "answerIndex": 0,
+          "explanation": "This is the notes' own example. Concatenation is associative but **not** commutative — order is the whole content of the operation.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "id": "sl-lambda-symbol",
+          "kind": "short",
+          "prompt": "What symbol do the notes use for the empty string — the string with no symbols in it?",
+          "answers": [
+            "λ",
+            "lambda"
+          ],
+          "explanation": "λ. Keep it distinct from Λ = {λ}, the *language* containing only the empty string, and from ∅, the empty language.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-lambda-identity",
+          "kind": "cloze",
+          "prompt": "λ acts as an identity element under concatenation: wλ = λw = {{1}} for all strings w over X.",
+          "blanks": [
+            [
+              "w"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Concatenating the empty string on either side changes nothing, which is exactly what an identity element does.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-index-law",
+          "kind": "cloze",
+          "prompt": "The index law for strings reads w^m w^n = w^{{1}}, valid for all m, n {{2}} 0.",
+          "blanks": [
+            [
+              "m+n",
+              "(m+n)",
+              "m + n"
+            ],
+            [
+              "≥",
+              ">=",
+              "greater than or equal to",
+              "at least"
+            ]
+          ],
+          "tier": 2,
+          "hint": "The bound has to include zero, because w^0 was given a definition of its own.",
+          "explanation": "w^m w^n = w^(m+n) for m, n ≥ 0. The bound is ≥ 0, not > 0, precisely because w^0 = λ was defined so the law keeps working at zero.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-w-zero",
+          "kind": "short",
+          "prompt": "For a string w over an alphabet X, what is w^0 defined to be?",
+          "answers": [
+            "λ",
+            "lambda",
+            "the empty string"
+          ],
+          "explanation": "w^0 = λ. It is a definition, not a consequence — but it is the definition that makes w^m w^n = w^(m+n) hold when m or n is zero.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-assoc-vs-comm",
+          "kind": "recall",
+          "prompt": "Which of associativity and commutativity does concatenation of strings satisfy? State the law it does satisfy, and give a two-string counterexample to the one it does not.",
+          "answer": "**Associative — yes.** (w_1w_2)w_3 = w_1(w_2w_3) for all strings over X.\n\n**Commutative — no.** Counterexample: w_1 = bird, w_2 = fghi give w_1w_2 = birdfghi but w_2w_1 = fghibird.\n\nAny two distinct strings work as a counterexample; the notes use this pair.",
+          "tier": 3,
+          "source": "fsa1 · §1.1–1.2"
+        },
+        {
+          "id": "sl-define-three",
+          "kind": "recall",
+          "prompt": "Define alphabet, string, and concatenation of two strings.",
+          "answer": "**Alphabet** — any *finite* set X of symbols (characters, letters).\n\n**String (word)** — a *finite* sequence of symbols from a fixed alphabet X; called a string *over X*.\n\n**Concatenation** — given two strings w_1, w_2 over the *same* alphabet, w_1w_2 is the string obtained by pasting together w_1 and w_2, in that order.\n\nBoth finiteness conditions are part of the definitions, and concatenation is only defined for strings over a common alphabet.",
+          "tier": 3,
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "id": "sl-binary-string",
+          "kind": "short",
+          "prompt": "What term do the notes use for a string over the alphabet X = {0, 1}?",
+          "answers": [
+            "binary string",
+            "a binary string",
+            "binary"
+          ],
+          "explanation": "A binary string. The parallel term for a set of them is a *binary language*.",
+          "source": "fsa1 · §1.2"
+        }
+      ]
+    },
+    {
+      "id": "sl-language-ops",
+      "title": "Languages and their operations",
+      "emphasis": "core",
+      "summary": "A formal language is any set of strings over a finite alphabet. Sum is union, concatenation multiplies out pairwise, and Kleene closure is the infinite union that always contains λ. Λ and ∅ are different languages.",
+      "keyFacts": [
+        {
+          "term": "Formal language",
+          "definition": "Any set of strings over a finite alphabet X. The set may be finite or infinite, and there may be no way at all of telling whether a given string is in it.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "term": "Λ versus ∅",
+          "definition": "Λ = {λ} is the language whose only member is the empty string, so it contains one string. ∅ is the empty language, which contains no strings at all. They are different languages.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "term": "Sum of languages",
+          "definition": "A + B is the **union** of the sets A and B — every string that is in A, in B, or in both.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "term": "X*",
+          "definition": "Viewing each element of an alphabet X as a string of length 1 makes X a language over itself; X* is then the set of **all** strings over X.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "term": "Operator precedence",
+          "definition": "Kleene closure binds most tightly, then concatenation, then union. So A + BC* reads as A + (B(C*)).",
+          "source": "fsa1 · §1.2"
+        }
+      ],
+      "formulas": [
+        {
+          "name": "Concatenation of languages",
+          "expression": "AB = { w_1w_2 | w_1 ∈ A, w_2 ∈ B }",
+          "note": "All possible concatenations of a string from A with a string from B, in that order. Order matters: AB and BA differ in general.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "name": "Kleene closure",
+          "expression": "A* = Λ + A + AA + AAA + · · · = Σ_(n≥0) A^n",
+          "note": "All strings made of any number of strings from A concatenated together, including zero of them — so λ ∈ A* always, whatever A is.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "name": "Power notation for languages",
+          "expression": "A^n = AAA · · · A  (n times),  A^0 = Λ",
+          "note": "Well defined because concatenation of languages over a fixed alphabet is associative: (AB)C = A(BC).",
+          "source": "fsa1 · §1.2"
+        }
+      ],
+      "questions": [
+        {
+          "id": "sl-language-def",
+          "kind": "mcq",
+          "prompt": "What is a formal language over a finite alphabet X?",
+          "options": [
+            "Any set of strings over X for which membership is decidable",
+            "Any set of strings over X",
+            "Any set of strings over X that can be described by a grammar",
+            "Any finite set of strings over X"
+          ],
+          "answerIndex": 1,
+          "explanation": "Any set of strings at all. The notes are explicit that it may be finite or infinite, that its description may be easy or very complicated, and that there may be no way of telling whether a string is in it — so the other three options each add a restriction the definition does not make.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-lambda-lang-vs-empty",
+          "kind": "mcq",
+          "prompt": "How do the languages Λ and ∅ differ?",
+          "options": [
+            "Λ contains no strings; ∅ contains exactly the empty string",
+            "Λ is the set of all strings over X; ∅ is its complement",
+            "Λ contains exactly one string, the empty string; ∅ contains no strings",
+            "They are two notations for the same language"
+          ],
+          "answerIndex": 2,
+          "explanation": "Λ = {λ} has one member. ∅ has none. Confusing them matters: A* always contains λ so A* is never ∅, whereas a machine with no accepting states accepts exactly ∅.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-sum-is-union",
+          "kind": "short",
+          "prompt": "The sum A + B of two languages over the same alphabet is which set-theoretic operation applied to A and B?",
+          "answers": [
+            "union",
+            "the union",
+            "set union",
+            "A union B"
+          ],
+          "explanation": "Union. The '+' notation suggests addition, but nothing is added — a string in both A and B appears once in A + B, as in any union.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-concat-langs",
+          "kind": "cloze",
+          "prompt": "The concatenation of languages A and B is AB = { {{1}} | w_1 ∈ A, w_2 ∈ B }.",
+          "blanks": [
+            [
+              "w_1w_2",
+              "w1w2",
+              "w_1 w_2",
+              "w1 w2"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Every string of A pasted in front of every string of B. Note the fixed order — AB is not BA.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-kleene-contains-lambda",
+          "kind": "mcq",
+          "prompt": "For which languages A does the Kleene closure A* contain the empty string λ?",
+          "options": [
+            "Only those A that are non-empty",
+            "Only those A that already contain λ",
+            "Only those A that are infinite",
+            "Every A, including A = ∅"
+          ],
+          "answerIndex": 3,
+          "explanation": "A* = Λ + A + AA + · · · has Λ as its first term unconditionally, so λ ∈ A* always — even ∅* = Λ. This is exactly why the Kleene-closure NFSA construction must add a new start-and-accepting state: the machine has to accept λ whether or not the original did.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-precedence",
+          "kind": "mcq",
+          "prompt": "In the absence of brackets, how should the expression A + BC* be read?",
+          "options": [
+            "A + (B(C*))",
+            "(A + B)(C*)",
+            "(A + B)C, with * applied to the whole result",
+            "((A + B)C)*"
+          ],
+          "answerIndex": 0,
+          "explanation": "Kleene closure binds most tightly, then concatenation, then union: first C*, then B(C*), then the sum with A. It matches the usual algebraic convention where powers beat multiplication beats addition.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-precedence-order",
+          "kind": "recall",
+          "prompt": "List the three language operations in order from most tightly binding to least.",
+          "answer": "1. **Kleene closure** (*) — most tightly bound\n2. **Concatenation**\n3. **Union / sum** (+) — least tightly bound\n\nSo A + BC* means A + (B(C*)).",
+          "tier": 3,
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-worked-ab",
+          "kind": "short",
+          "prompt": "Over X = {0, 1}, let A = {0}* = {λ, 0, 00, 000, …} and B = {1}. Describe in words the language AB.",
+          "answers": [
+            "any number of 0s followed by a single 1",
+            "all strings consisting of any number of 0s followed by a single 1",
+            "0^n 1 for n >= 0",
+            "strings of 0s ending in one 1"
+          ],
+          "tier": 2,
+          "hint": "Every string of A gets exactly one string of B pasted after it, and B has only one member.",
+          "explanation": "AB = {0^n 1 | n ≥ 0}: any number of 0s (possibly none) followed by a single 1.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-worked-abb",
+          "kind": "mcq",
+          "prompt": "Over X = {0, 1}, with A = {0}* and B = {1}, which language is A(BB)*?",
+          "options": [
+            "{0^n 1^m | n, m ≥ 0} — any number of 0s then any number of 1s",
+            "{0^n 1^(2m) | n, m ≥ 0} — any number of 0s followed by an even number of 1s",
+            "{0^(2n) 1^m | n, m ≥ 0} — an even number of 0s then any number of 1s",
+            "{0^n 1^n | n ≥ 0} — equally many 0s and 1s"
+          ],
+          "answerIndex": 1,
+          "explanation": "BB = {11}, so (BB)* is any number of copies of 11 — an even number of 1s, including none. The option {0^n 1^n | n ≥ 0} is the non-regular language of FSA6, which this is not: here n and m are independent.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-xstar",
+          "kind": "short",
+          "prompt": "Regarding an alphabet X as a language of one-letter strings, what does X* denote?",
+          "answers": [
+            "the set of all strings over X",
+            "all strings over X",
+            "every string over X",
+            "all words over X"
+          ],
+          "tier": 2,
+          "explanation": "X* is the set of all strings over X — every finite sequence of letters, including λ.",
+          "source": "fsa1 · §1.2"
+        },
+        {
+          "id": "sl-lang-laws",
+          "kind": "recall",
+          "prompt": "State four laws the notes give for the language operations +, concatenation and *. Then say which familiar law is conspicuously absent.",
+          "answer": "**A + B = B + A** — union is commutative.\n**(A + B) + C = A + (B + C)** — union is associative.\n**A(BC) = (AB)C** — concatenation is associative.\n**A\\*\\* = A\\*** — closing an already-closed language changes nothing.\n\nAbsent: **AB = BA**. Concatenation is associative but not commutative, for languages just as for strings.",
+          "tier": 3,
+          "source": "fsa1 · §1.2"
+        }
+      ]
+    },
+    {
+      "id": "sl-regular",
+      "title": "Regular languages and regular expressions",
+      "emphasis": "core",
+      "summary": "The regular languages are defined recursively from ∅, Λ and single letters using the three operations. A regular expression is the written form; every finite language is regular.",
+      "keyFacts": [
+        {
+          "term": "Regular languages (recursive definition)",
+          "definition": "1. ∅ and Λ are regular. 2. Every set consisting of a single element of X is regular. 3. If E and F are regular, so are EF, E + F and E*.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "term": "Regular expression",
+          "definition": "An expression built from the letters of X and the language operations +, concatenation and *, which defines a regular language. For example (0 + 11)*.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "term": "Every finite language is regular",
+          "definition": "Write it as the sum of its members, each member being a concatenation of single letters. For example {0, 101, 1100} = 0 + 101 + 1100.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "term": "The x versus {x} abbreviation",
+          "definition": "For x ∈ X the language {x} is abbreviated to x, and context decides whether a written symbol means the letter or the one-string language. So {1}{1} is written 11.",
+          "source": "fsa1 · §1.3"
+        }
+      ],
+      "questions": [
+        {
+          "id": "sl-reg-base-cases",
+          "kind": "multi",
+          "prompt": "Which of these are **base cases** in the recursive definition of the regular languages over X? (Select all that apply.)",
+          "options": [
+            "∅, the empty language",
+            "Λ = {λ}",
+            "X*, the set of all strings over X",
+            "{x} for each single element x of X"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            3
+          ],
+          "explanation": "The base cases are ∅, Λ, and each single-element set {x}. X* is regular, but as a *consequence* of the closure clause, not as a base case.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-closure-ops",
+          "kind": "mcq",
+          "prompt": "The recursive definition says that if E and F are regular languages then so are which three languages?",
+          "options": [
+            "EF, E + F and E ∩ F",
+            "EF, E + F and E*",
+            "EF, E ∩ F and E′",
+            "E + F, E* and E′"
+          ],
+          "answerIndex": 1,
+          "explanation": "Concatenation, sum and Kleene closure. Intersection and complement are *not* in the definition — regular languages turn out to be closed under both, but that is a theorem proved later in FSA5, and neither is a regular-expression operation.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-01-pairs",
+          "kind": "mcq",
+          "prompt": "Over X = {0, 1}, which description matches the regular language R = (0 + 11)*?",
+          "options": [
+            "All strings with an even number of 0s",
+            "All strings that alternate 0s and 1s",
+            "All strings in which any 1s occur in pairs",
+            "All strings containing exactly two 1s"
+          ],
+          "answerIndex": 2,
+          "explanation": "R = {0, 11}*, built from blocks that are either a single 0 or a doubled 11, so any 1s come in pairs. The notes list λ, 0, 00, 11, 011, 110, 000, 0011, 0110, … as members. Note that 'an even number of 1s' is a *different* language: 101 has two 1s but is not in R.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-finite-is-regular",
+          "kind": "short",
+          "prompt": "Give a regular expression for the finite binary language A = {0, 101, 1100}.",
+          "answers": [
+            "0 + 101 + 1100",
+            "0+101+1100",
+            "0 + 1100 + 101",
+            "101 + 0 + 1100"
+          ],
+          "tier": 2,
+          "hint": "A sum is a union, and each individual string is a concatenation of single letters.",
+          "explanation": "A = 0 + 101 + 1100. The same trick works for any finite language: sum its members. This is why every finite language is regular.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-finite-general",
+          "kind": "recall",
+          "prompt": "Why is every finite language regular? Give the argument, and say which step would fail for an infinite language.",
+          "answer": "Each individual string is a **concatenation of single letters**, and each single letter is a base case — so each string on its own is a regular language.\n\nA finite language is the **sum (union) of finitely many** such strings, and the definition is closed under +. So the whole language is regular.\n\nThe notes' example: {0, 101, 1100} = 0 + 101 + 1100.\n\nThe step that fails for an infinite language is the second: the definition only closes under *finitely many* applications of +. An infinite union of regular languages need not be regular, which is exactly how {0^n 1^n | n ≥ 0} escapes in FSA6.",
+          "tier": 3,
+          "source": "fsa1 · §1.3, fsa6 · §1.14"
+        },
+        {
+          "id": "sl-reg-expr-vs-lang",
+          "kind": "mcq",
+          "prompt": "What is the relationship between a regular expression and a regular language?",
+          "options": [
+            "Every regular language is defined by exactly one regular expression",
+            "They are the same thing under two names",
+            "A regular language is a piece of notation; the regular expression is the set of strings it denotes",
+            "A regular expression is notation built from letters and the operations +, · and *; the regular language is the set of strings it defines"
+          ],
+          "answerIndex": 3,
+          "explanation": "The expression is syntax, the language is the set. And the correspondence is many-to-one: FSA4 makes the point that eliminating states in a different order yields a different regular expression for the same language, so answers are not unique.",
+          "source": "fsa1 · §1.3, fsa4 · §1.10"
+        },
+        {
+          "id": "sl-reg-abbreviation",
+          "kind": "cloze",
+          "prompt": "For x ∈ X the notes abbreviate the one-string language {x} to simply {{1}}, so the concatenation {1}{1} is written more simply as {{2}}.",
+          "blanks": [
+            [
+              "x"
+            ],
+            [
+              "11"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "{x} is abbreviated to x, and context tells you whether a written symbol means the letter or the one-string language. So {1}{1} becomes 11.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-recursive-recall",
+          "kind": "recall",
+          "prompt": "State the recursive definition of the regular languages over an alphabet X, in full.",
+          "answer": "1. **∅ and Λ are regular languages.**\n2. **Every set consisting of a single element of X is a regular language** — that is, {x} for each x ∈ X.\n3. **If E and F are regular languages, so are EF, E + F and E*.**\n\nAnd nothing else is regular — the three clauses generate all of them.",
+          "tier": 3,
+          "hint": "Two base clauses and one closure clause; the closure clause names exactly three operations.",
+          "source": "fsa1 · §1.3"
+        },
+        {
+          "id": "sl-reg-why-study",
+          "kind": "recall",
+          "prompt": "The notes give three applications of formal languages, plus one reason that matters most for this course. Name them.",
+          "answer": "The three applications:\n**Construction and theory of compilers.**\n**Pattern matching** — for example within a document; regular expressions are used this way in Unix.\n**Beginning to understand natural languages.**\n\nAnd the one that matters here: **the link with abstract machines**, which are used to formalise the idea of a computation.",
+          "tier": 3,
+          "source": "fsa1 · §1.1, §1.3"
+        },
+        {
+          "id": "sl-reg-why-abstract-models",
+          "kind": "short",
+          "prompt": "According to the opening of the notes, why study abstract models of computation at all?",
+          "answers": [
+            "to obtain general information about what can and can't be computed",
+            "to find out what can and cannot be computed",
+            "general information about what is computable",
+            "to know what can and can't be computed"
+          ],
+          "tier": 2,
+          "explanation": "To obtain general information about what can and can't be computed — with the secondary reason that they are very useful in their own right, finite state automata having many applications.",
+          "source": "fsa1 · §1.1"
+        },
+        {
+          "id": "sl-reg-not-regular-ops",
+          "kind": "mcq",
+          "prompt": "Which of these is **not** an operation available when writing a regular expression?",
+          "options": [
+            "Complement, R′",
+            "Sum, R + S",
+            "Kleene closure, R*",
+            "Concatenation, RS"
+          ],
+          "answerIndex": 0,
+          "explanation": "Complement is not a regular-expression operation, and neither is intersection. Regular languages are nonetheless *closed* under both — FSA5 finds a regular expression for R′ by routing through a DFSA — but you cannot write the complement down directly using +, · and * alone.",
+          "source": "fsa1 · §1.3, fsa5 · §1.11"
+        }
+      ]
+    }
+  ]
+}

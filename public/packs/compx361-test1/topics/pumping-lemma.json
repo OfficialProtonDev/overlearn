@@ -1,0 +1,405 @@
+{
+  "id": "pumping-lemma",
+  "title": "Limitations & the Pumping Lemma",
+  "summary": "Not every language is regular. The Pumping Lemma says any infinite language accepted by a DFSA contains a loop that can be repeated freely — and contradicting that is how a language is shown not to be regular.",
+  "subtopics": [
+    {
+      "id": "pl-statement",
+      "title": "The Pumping Lemma and its proof",
+      "emphasis": "core",
+      "summary": "If M accepts infinitely many strings there are x, y, z with y ≠ λ and xy^m z ∈ L(M) for all m ≥ 0. The proof is a pigeonhole argument: a long enough accepted string must revisit a state.",
+      "keyFacts": [
+        {
+          "term": "Pumping Lemma",
+          "definition": "Suppose the DFSA M with input alphabet X accepts a language with **infinitely many strings**. Then there are strings x, y, z over X, with **y ≠ λ**, such that **xy^m z ∈ L(M) for all m ≥ 0**.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "term": "The counting step",
+          "definition": "If M has k states, only finitely many strings have length k or less (since X is finite), so L(M) — being infinite — contains a string w = α_1α_2 · · · α_n with n > k.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "term": "The repeated state",
+          "definition": "Fix an accepting path P for w. Since w has more than k letters and M has only k states, one of the states, say q, must be visited **more than once** by P.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "term": "The decomposition",
+          "definition": "Write w = xyz where x is read moving along P_1 from the start state to the first encounter with q; y is read moving from q back to q using at least one edge, along the circuit P_2 (so y ≠ λ); and z is read traversing the remainder P_3 through to an accepting state.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "term": "Consequence of the limitation",
+          "definition": "There are languages — hence patterns — no DFSA can recognise. In particular DFSAs can't compare two numbers and decide if they are equal.",
+          "source": "fsa6 · §1.14"
+        }
+      ],
+      "questions": [
+        {
+          "id": "pl-hypothesis",
+          "kind": "mcq",
+          "prompt": "What is the hypothesis of the Pumping Lemma as the notes state it?",
+          "options": [
+            "That the DFSA M accepts a language with infinitely many strings",
+            "That the language of M is not regular",
+            "That M has no trap states",
+            "That M is a DFSA with at least two states"
+          ],
+          "answerIndex": 0,
+          "explanation": "Infiniteness of L(M) is the hypothesis, and it is what forces the existence of an arbitrarily long accepted string. A DFSA accepting a *finite* language has no such string, and indeed cannot be pumped — every finite language is regular precisely because it needs no loops.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-conclusion",
+          "kind": "cloze",
+          "prompt": "Pumping Lemma conclusion: there are strings x, y, z over X with y {{1}} λ, such that xy^m z ∈ L(M) for all m {{2}} 0.",
+          "blanks": [
+            [
+              "≠",
+              "!=",
+              "not equal to",
+              "≠ λ"
+            ],
+            [
+              "≥",
+              ">=",
+              "greater than or equal to",
+              "at least"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "y ≠ λ and m ≥ 0. Both bounds carry weight: without y ≠ λ the statement is vacuous, since pumping the empty string changes nothing; and m ≥ 0 rather than m ≥ 1 means **xz** — the m = 0 case, with the loop skipped entirely — is also in the language, which is often the case that yields the contradiction.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-why-y-nonempty",
+          "kind": "mcq",
+          "prompt": "Why does the Pumping Lemma insist that y ≠ λ?",
+          "options": [
+            "Because otherwise the string w could not be decomposed",
+            "Because if y were λ then xy^m z = xz for every m, so the conclusion would say nothing at all",
+            "Because λ is not a string over X",
+            "Because a DFSA cannot read λ"
+          ],
+          "answerIndex": 1,
+          "explanation": "With y = λ the family xy^m z collapses to the single string xz and the lemma becomes vacuous. y is read along a **circuit** from q back to q using at least one edge, so it consumes at least one letter — that is where y ≠ λ comes from.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-m-zero",
+          "kind": "short",
+          "prompt": "In the conclusion xy^m z ∈ L(M) for all m ≥ 0, which string does the case m = 0 give?",
+          "answers": [
+            "xz",
+            "x z",
+            "the string xz"
+          ],
+          "tier": 2,
+          "explanation": "xz — the loop skipped entirely. As the notes put it, xz is accepted by travelling along P_1 reading x and then P_3 using z. It is frequently the most useful case in a non-regularity proof, because it is the one that removes material rather than adding it.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-counting-step",
+          "kind": "mcq",
+          "prompt": "M has k states and accepts an infinite language. Why must L(M) contain a string of length greater than k?",
+          "options": [
+            "Because the language contains λ",
+            "Because every DFSA accepts strings of every length",
+            "Because only finitely many strings have length k or less, since X is finite — so an infinite language cannot consist solely of them",
+            "Because k states means k letters must be read"
+          ],
+          "answerIndex": 2,
+          "explanation": "Finiteness of the alphabet bounds the number of short strings, so an infinite language must contain arbitrarily long ones. This is exactly where the definition of an alphabet as a **finite** set of symbols earns its keep — with an infinite alphabet the argument collapses.",
+          "source": "fsa1 · §1.1, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-pigeonhole",
+          "kind": "mcq",
+          "prompt": "An accepting path P for a string w of length n > k runs through a machine with k states. What does the proof conclude, and on what grounds?",
+          "options": [
+            "That w must contain a repeated letter",
+            "That M has a trap state",
+            "That P visits every state, since the string is long",
+            "That some state q is visited more than once by P, because the path has more than k steps but only k states are available"
+          ],
+          "answerIndex": 3,
+          "explanation": "A pigeonhole argument: more visits than available states forces a repeat. It need not visit every state, and nothing follows about repeated *letters* — the repetition is in the states, not the input.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-decomposition",
+          "kind": "recall",
+          "prompt": "The proof writes w = xyz relative to a repeated state q. Say precisely what each of x, y and z is read along.",
+          "answer": "Fix an accepting path P for w, and let q be a state visited more than once by P. Then P splits into three parts:\n\n- **x** is read by M in moving along the portion **P_1** of the path, from the **start state to the first encounter with q**.\n- **y** is read in moving from **q back to q** using **at least one edge**, along the circuit **P_2**. This is why y ≠ λ.\n- **z** is read traversing the **remainder P_3** of the path, from q **through to an accepting state**.\n\nSo P = P_1 P_2 P_3, and since P_2 is a circuit at q it can be traversed any number of times — including none — without disturbing P_1 or P_3.",
+          "tier": 3,
+          "hint": "Three portions of one path: up to the first visit, the circuit, and the tail to acceptance.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-why-pumping-works",
+          "kind": "recall",
+          "prompt": "Given the decomposition w = xyz around a repeated state q, explain why xz, xyyz and in general xy^m z are all accepted.",
+          "answer": "Because **P_2 is a circuit starting and ending at q**, so it can be traversed any number of times and the machine is still at q afterwards. P_1 always brings the machine to q, and P_3 always takes it from q to an accepting state.\n\n- **xz** (m = 0): travel along P_1 reading x, then immediately along P_3 reading z. The circuit is simply skipped, and the path still ends in an accepting state.\n- **xyyz** (m = 2): travel P_1 − P_2 − P_2 − P_3, going round the circuit twice.\n- **xy^m z** in general: traverse P_2 as many times as needed.\n\nIn every case the path starts at the start state and ends in an accepting state, so every one of these strings is accepted.\n\nThe underlying reason is that a DFSA has **no memory beyond its current state** — it cannot tell the first arrival at q from the second, so it cannot object to the loop being taken a different number of times.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-finite-family",
+          "kind": "mcq",
+          "prompt": "The notes list L_0 = {λ}, L_1 = {λ, 01}, L_2 = {λ, 01, 0011}, … and note each is regular. What is the point being made?",
+          "options": [
+            "That the union of them all, {0^n 1^n | n ≥ 0}, must therefore also be regular",
+            "That each is finite and hence regular, but their infinite union need not be — regularity survives finite unions, not infinite ones",
+            "That every regular language is finite",
+            "That the Pumping Lemma applies to each L_i"
+          ],
+          "answerIndex": 1,
+          "explanation": "Each L_i is finite and so regular, but the closure clause only permits **finitely many** applications of +. The infinite union L = {0^n 1^n | n ≥ 0} escapes, and the notes then prove it is genuinely not regular. Concluding that the union of them all must therefore be regular is precisely the tempting false inference this passage is set up to block.",
+          "source": "fsa1 · §1.3, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-infinite-not-automatic",
+          "kind": "mcq",
+          "prompt": "The notes observe of L = {0^n 1^n | n ≥ 0}: 'Of course L is infinite, so it does not have to be regular.' What is the logical status of being infinite?",
+          "options": [
+            "Being infinite is necessary but not sufficient for non-regularity: every finite language is regular, but infinite languages may be regular or not",
+            "Being infinite is sufficient for non-regularity",
+            "Regularity has nothing to do with cardinality",
+            "Infinite languages are never regular"
+          ],
+          "answerIndex": 0,
+          "explanation": "Infiniteness merely removes the automatic guarantee. Plenty of infinite languages are regular — 0*, (0 + 1)*, 'ends in bb'. Being infinite is what makes the *question* live, and it is also the hypothesis the Pumping Lemma needs before it can be applied.",
+          "source": "fsa1 · §1.3, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-statement-recall",
+          "kind": "recall",
+          "prompt": "State the Pumping Lemma exactly, then give its proof.",
+          "answer": "**Pumping Lemma.** Suppose the DFSA M with input alphabet X accepts a language with **infinitely many strings**. Then there are strings x, y, z over X, with **y ≠ λ**, such that **xy^m z ∈ L(M) for all m ≥ 0**.\n\n**Proof.** Suppose M has k states.\n\nOnly finitely many strings have length k or less, since X is finite. As L(M) is infinite it must therefore contain a string w = α_1α_2 · · · α_n with all α_i ∈ X and **n > k**.\n\nFix a path P through M which accepts w: it starts in the start state and ends in an accepting state. Since the path takes more than k steps but M has only k states, **one of the states, say q, must be visited more than once** by P.\n\nWrite w = xyz where:\n- **x** is read moving along the portion P_1 of P from the start state to the first encounter with q;\n- **y** is read moving from q back to q using at least one edge, along the circuit P_2 — so y ≠ λ;\n- **z** is read traversing the remainder P_3, through to an accepting state.\n\nThen **xz** is accepted: travel along P_1 reading x and then P_3 using z. Similarly **xyyz** is accepted: travel P_1 − P_2 − P_2 − P_3. In the same way **xy^m z** is accepted for every m: traverse P_2 as many times as needed. □",
+          "tier": 3,
+          "hint": "Hypothesis, conclusion with two side conditions; then counting, pigeonhole, decomposition, and pumping in both directions.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-what-limitation-means",
+          "kind": "mcq",
+          "prompt": "What concrete limitation do the notes draw from the existence of non-regular languages?",
+          "options": [
+            "That DFSAs cannot process infinite strings",
+            "That DFSAs can't compare two numbers and decide if they are equal",
+            "That DFSAs cannot accept the empty string",
+            "That DFSAs require unbounded memory"
+          ],
+          "answerIndex": 1,
+          "explanation": "Recognising 0^n 1^n means checking that two counts match, and no DFSA can do it. That is the specific inability motivating Turing machines in Section 2 — the notes open TM1 by saying DFSAs have no memory and no output beyond yes/no.",
+          "source": "fsa6 · §1.14, tm1 · §2.1"
+        },
+        {
+          "id": "pl-dfsas-accept-exactly",
+          "kind": "cloze",
+          "prompt": "The existence of non-regular languages means DFSAs are limited: they accept exactly the {{1}} languages. So there are languages — hence patterns — no DFSA can {{2}}.",
+          "blanks": [
+            [
+              "regular"
+            ],
+            [
+              "recognise",
+              "recognize",
+              "accept"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Exactly the regular languages — which is Kleene's Theorem read as a limitation rather than a characterisation. The Pumping Lemma is what shows the class is a *proper* restriction by exhibiting something outside it.",
+          "source": "fsa4 · §1.8, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-k-states-role",
+          "kind": "short",
+          "prompt": "In the proof, what role does the number k — the number of states of M — play?",
+          "answers": [
+            "it bounds the length below which only finitely many strings exist, so a longer accepted string must exist and its path must repeat a state",
+            "it is the bound on string length that forces a repeated state",
+            "it forces a state to repeat on any accepted string longer than k",
+            "it gives the length threshold n > k that forces a repeat"
+          ],
+          "tier": 2,
+          "hint": "It appears twice: once to find a long enough string, once to force the repeat.",
+          "explanation": "k does double duty. First it bounds the finite set of short strings, guaranteeing that an infinite L(M) contains some w with n > k. Then it is the pigeonhole count: a path of more than k steps through only k states must revisit one.",
+          "source": "fsa6 · §1.14"
+        }
+      ]
+    },
+    {
+      "id": "pl-proofs",
+      "title": "Proving a language is not regular",
+      "emphasis": "core",
+      "summary": "Assume regular, invoke the lemma to get x, y, z, then reason case by case that no such decomposition can exist. The worked case is {0^n 1^n}.",
+      "keyFacts": [
+        {
+          "term": "The basic strategy",
+          "definition": "Assume the language is regular and invoke the Pumping Lemma to deduce the existence of strings x, y, z with y ≠ λ for which xz, xyz, xyyz, … are all in L; then reason that this cannot be possible, on a case-by-case basis.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "term": "The standard non-regular language",
+          "definition": "L = {0^n 1^n | n ≥ 0} = {λ, 01, 0011, …} is not regular, though every one of the finite languages L_0 ⊆ L_1 ⊆ L_2 ⊆ … whose union it is, is regular.",
+          "source": "fsa6 · §1.14"
+        }
+      ],
+      "questions": [
+        {
+          "id": "pl-strategy",
+          "kind": "mcq",
+          "prompt": "What is the shape of a Pumping Lemma non-regularity proof?",
+          "options": [
+            "Construct a DFSA and show it has too many states",
+            "Show directly that no DFSA accepts the language",
+            "Assume the language is regular, invoke the lemma to obtain x, y, z with y ≠ λ, and derive a contradiction case by case",
+            "Show the language is infinite"
+          ],
+          "answerIndex": 2,
+          "explanation": "Proof by contradiction. The lemma is a statement about what *must* exist if the language is regular, so refuting the existence refutes regularity. Showing the language is infinite is only a precondition for applying the lemma, never a conclusion.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-infinite-first",
+          "kind": "mcq",
+          "prompt": "Before the Pumping Lemma can be invoked on a language L, what must be checked?",
+          "options": [
+            "That L is finite",
+            "That L contains λ",
+            "That L is over a binary alphabet",
+            "That L is infinite"
+          ],
+          "answerIndex": 3,
+          "explanation": "Infiniteness is the lemma's hypothesis. The notes' proof opens 'Assume that L is regular. **Since L is infinite**, from the Pumping Lemma we deduce…'. A finite language cannot be attacked this way — and would be pointless to attack, since every finite language is regular.",
+          "source": "fsa1 · §1.3, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-0n1n-step1",
+          "kind": "short",
+          "prompt": "In the proof that L = {0^n 1^n | n ≥ 0} is not regular, the lemma yields x, y, z with y ≠ λ and xy^m z ∈ L for all m ≥ 0. The argument then considers **xz** first. What does xz ∈ L tell you about it?",
+          "answers": [
+            "the number of 0s in xz is the same as the number of 1s",
+            "xz has equal numbers of 0s and 1s",
+            "it has as many 0s as 1s",
+            "equal numbers of 0s and 1s in xz"
+          ],
+          "tier": 2,
+          "explanation": "Every string of L has equal counts, so xz does. Combined with the same fact for xyz, this forces y itself to contain equally many 0s as 1s — which is the step that makes the contradiction possible.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-0n1n-step2",
+          "kind": "mcq",
+          "prompt": "Continuing that proof: xz ∈ L and xyz ∈ L, both with equal numbers of 0s and 1s. What follows about y?",
+          "options": [
+            "y contains equally many 0s as 1s, since otherwise xyz would not have equal counts",
+            "y is a single letter",
+            "y contains no 1s",
+            "y consists entirely of 0s"
+          ],
+          "answerIndex": 0,
+          "explanation": "xyz is xz with y inserted. If the counts are equal both before and after the insertion, y must itself contribute equally many of each. Together with y ≠ λ this means y contains **at least one 0 and at least one 1** — which is what the next step exploits.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-0n1n-step3",
+          "kind": "mcq",
+          "prompt": "The proof establishes that y is non-empty and contains both 0s and 1s, and that all the 0s in y come before all the 1s. How is the contradiction reached?",
+          "options": [
+            "L is finite, contradicting the hypothesis",
+            "xyyz is in L, but yy has some 0s occurring after some 1s, so xyyz is not of the form 0^n 1^n",
+            "xz is not in L, contradicting the lemma",
+            "y cannot contain both 0s and 1s"
+          ],
+          "answerIndex": 1,
+          "explanation": "Doubling y is what breaks it. If y = 0^i 1^j with i, j ≥ 1, then yy = 0^i 1^j 0^i 1^j has 0s after 1s, so xyyz has a 1 before a 0 and cannot be of the form 0^n 1^n — yet the lemma says xyyz ∈ L. That is the impossibility, so the assumption that L is regular was wrong.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-0n1n-full",
+          "kind": "recall",
+          "prompt": "Prove that the binary language L = {0^n 1^n | n ≥ 0} is not regular.",
+          "answer": "**Proof.** Assume that L is regular.\n\nSince L is infinite, the Pumping Lemma gives binary strings x, y, z with **y ≠ λ** for which **xy^m z ∈ L for all m ≥ 0**.\n\n**Step 1.** Taking m = 0: **xz ∈ L**, so the number of 0s in xz is the same as the number of 1s.\n\n**Step 2.** Taking m = 1: **xyz ∈ L**, so it too has equal numbers of 0s and 1s. Since xyz is xz with y inserted, **the number of 0s in y equals the number of 1s in y** — otherwise the counts in xyz could not balance.\n\n**Step 3.** Because of the form of strings in L, all 0s in y must come before all 1s. And y ≠ λ, so by Step 2 there are **both 0s and 1s in y**.\n\n**Step 4.** Taking m = 2: **xyyz ∈ L** also. But yy has some 0s occurring after some 1s — the 0s beginning the second copy of y follow the 1s ending the first — and hence so does xyyz.\n\nThis is impossible for a string of the form 0^n 1^n. So our assumption that L is regular was wrong. □\n\n**The moral:** a DFSA would have to remember how many 0s it had seen in order to match them against the 1s, and it has only finitely many states to remember with.",
+          "tier": 3,
+          "hint": "Use m = 0 and m = 1 to pin down what y must contain, then m = 2 to break it.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-what-you-cannot-choose",
+          "kind": "mcq",
+          "prompt": "In a Pumping Lemma proof, which of x, y, z and m are you free to choose?",
+          "options": [
+            "All of them",
+            "x, y and z, but not m",
+            "Only m — the lemma supplies x, y, z and merely asserts they exist, so the argument must work for every possible decomposition",
+            "None of them"
+          ],
+          "answerIndex": 2,
+          "explanation": "The lemma is an existence claim: it hands you *some* x, y, z with y ≠ λ, and you do not get to say which. The conclusion, however, is universally quantified over m — so you may pick whichever m is most convenient, which is why proofs reach for m = 0 and m = 2. Assuming a particular convenient shape for y is the standard invalid move.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-cannot-prove-regular",
+          "kind": "mcq",
+          "prompt": "Can the Pumping Lemma be used to prove that a language **is** regular?",
+          "options": [
+            "Yes, provided the language is infinite",
+            "Yes, but only for binary languages",
+            "Yes — if a decomposition x, y, z exists then the language is regular",
+            "No — it is stated as a one-way implication, from 'accepted by a DFSA and infinite' to the existence of a pumpable decomposition; to prove regularity you exhibit a machine or a regular expression"
+          ],
+          "answerIndex": 3,
+          "explanation": "The implication runs one way only. Finding a pumpable decomposition tells you nothing, since non-regular languages can have them too. To prove a language regular, build a DFSA, an NFSA, or a regular expression — Kleene's Theorem makes any of the three sufficient.",
+          "source": "fsa4 · §1.8, fsa6 · §1.14"
+        },
+        {
+          "id": "pl-why-dfsa-fails-intuition",
+          "kind": "recall",
+          "prompt": "Give the intuitive reason, in terms of what a DFSA can remember, that {0^n 1^n | n ≥ 0} cannot be recognised by one.",
+          "answer": "To accept 0^n 1^n the machine must **compare two unbounded counts** — how many 0s it read against how many 1s follow.\n\nBut a DFSA has **no capacity for memory, only internal architecture**: its entire memory is which of its **finitely many** states it currently occupies. With k states it can distinguish at most k situations, so for n large enough it cannot tell 0^n from 0^n′ for some n ≠ n′ — it must be in the same state after both. Whatever it does with the 1s that follow, it does identically in both cases, so it accepts one string it should reject.\n\nThat is exactly the Pumping Lemma's pigeonhole argument in informal dress, and it is why the notes conclude **DFSAs can't compare two numbers and decide if they are equal** — the limitation Turing machines are introduced to remove, by adding a tape.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, fsa6 · §1.14, tm1 · §2.1"
+        },
+        {
+          "id": "pl-strategy-recall",
+          "kind": "recall",
+          "prompt": "Set out the general strategy for a Pumping Lemma non-regularity proof as a template.",
+          "answer": "1. **Assume** the language L is regular.\n2. **Check L is infinite** — the lemma's hypothesis. Say so explicitly.\n3. **Invoke the lemma** to deduce the existence of strings x, y, z with **y ≠ λ** such that **xy^m z ∈ L for all m ≥ 0** — so xz, xyz, xyyz, … are all in L. You do **not** get to choose x, y or z.\n4. **Reason case by case** about what membership of L forces on the decomposition. Typically:\n   - use **m = 0** (giving xz) and **m = 1** (giving xyz) to pin down what y must contain;\n   - then use **m = 2** (giving xyyz) or a larger m to break it.\n5. **Derive the impossibility** and conclude the assumption was wrong, so L is not regular. □\n\nThe argument must cover **every** decomposition the lemma might have handed you, since it only asserts that some x, y, z exist.",
+          "tier": 3,
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-order-matters",
+          "kind": "mcq",
+          "prompt": "In the {0^n 1^n} proof, the claim 'all 0s in y must come before all 1s' is justified by what?",
+          "options": [
+            "The form of strings in L: every member is a block of 0s followed by a block of 1s, so any substring inherits that shape",
+            "The assumption that y ≠ λ",
+            "The fact that L is infinite",
+            "The Pumping Lemma's conclusion"
+          ],
+          "answerIndex": 0,
+          "explanation": "It comes from the structure of L, not from the lemma. y is a substring of a string 0^n 1^n, and any substring of such a string has all its 0s before all its 1s. That structural fact is what makes yy ill-formed and delivers the contradiction.",
+          "source": "fsa6 · §1.14"
+        },
+        {
+          "id": "pl-which-m",
+          "kind": "mcq",
+          "prompt": "A student's non-regularity proof uses only the case m = 1 of the Pumping Lemma. What is wrong with it?",
+          "options": [
+            "m = 1 is not permitted by the lemma",
+            "m = 1 gives xyz, which is just the original string w — known to be in L already, so it yields no new information",
+            "m must be at least 2",
+            "Nothing is wrong; m = 1 is the standard case"
+          ],
+          "answerIndex": 1,
+          "explanation": "xy^1 z = xyz = w, and w ∈ L was where the argument started, so no contradiction can come from it alone. It is useful only in combination — comparing xyz with xz is what pins down y's contents. The contradiction itself has to come from m = 0 or from m ≥ 2.",
+          "source": "fsa6 · §1.14"
+        }
+      ]
+    }
+  ]
+}

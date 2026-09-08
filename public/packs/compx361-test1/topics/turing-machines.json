@@ -1,0 +1,775 @@
+{
+  "id": "turing-machines",
+  "title": "Turing Machines",
+  "summary": "Adding a tape and a read/write head to a finite state machine gives memory and real output. Configurations track state, tape and head position, and there are three separate hurdles a computation must clear: halting, parking, and completing.",
+  "subtopics": [
+    {
+      "id": "tm-definition",
+      "title": "The Turing machine definition",
+      "emphasis": "core",
+      "summary": "M = (Q, δ, q0, qf) with input alphabet X and tape alphabet Y ⊇ X. δ is a partial function into Q × (Y ∪ {L, R}), so each step either overwrites a cell or moves the head.",
+      "keyFacts": [
+        {
+          "term": "Turing machine",
+          "definition": "M = (Q, δ, q0, qf) with finite input alphabet X and tape alphabet Y containing X, consisting of a finite set Q of states, a **partial** function δ : Q × Y → Q × (Y ∪ {L, R}), a start state q0 ∈ Q, and a halt state qf ∈ Q, where δ(qf, y) is undefined for all y ∈ Y, and there is a symbol b ∈ Y with b ∉ X, called **blank**.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "The tape",
+          "definition": "A tape which can be read and over-written, consisting of individual cells, **finite to the left and infinite to the right**. Initially the input string over X sits on it and the read/write head is over the left-most cell.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "What one step does",
+          "definition": "If M is in state q reading y and δ(q, y) = (q′, y′), then M moves to q′ and: **overwrites y with y′** if y′ ∈ Y; **moves the head one cell left** if y′ = L; **moves the head one cell right** if y′ = R.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "δ undefined",
+          "definition": "If δ(q, y) is not defined, the computation **ceases at that point, uncompleted**.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "The difference from a DFSA",
+          "definition": "δ not only says what state to move to, but also what to do with the tape. DFSAs have no memory and no ability to give an output other than yes or no; most arithmetic operations need both.",
+          "source": "tm1 · §2.1"
+        }
+      ],
+      "questions": [
+        {
+          "id": "tm-tuple",
+          "kind": "mcq",
+          "prompt": "In M = (Q, δ, q0, qf), what is the fourth component?",
+          "options": [
+            "The tape alphabet",
+            "The halt state",
+            "The blank symbol",
+            "The set of accepting states"
+          ],
+          "answerIndex": 1,
+          "explanation": "A single **halt state** qf, not a set of accepting states. A Turing machine does not accept or reject — it computes an output on the tape — so there is nothing for a set F to do. The tape alphabet Y and blank b are given alongside the tuple, as X is for a DFSA.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-delta-signature",
+          "kind": "cloze",
+          "prompt": "A Turing machine's transition function is a **partial** function δ : Q × {{1}} → Q × ({{2}} ∪ {{{3}}, {{4}}}).",
+          "blanks": [
+            [
+              "Y"
+            ],
+            [
+              "Y"
+            ],
+            [
+              "L"
+            ],
+            [
+              "R"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "δ : Q × Y → Q × (Y ∪ {L, R}). Note the domain uses the **tape** alphabet Y, not the input alphabet X — the machine must be able to react to blanks and to any flag symbols it has written.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-partial-vs-total",
+          "kind": "mcq",
+          "prompt": "A DFSA's δ is total; a Turing machine's δ is partial. What happens when a TM reaches a state and symbol for which δ is undefined?",
+          "options": [
+            "The head moves right by default",
+            "It moves to the halt state qf",
+            "The computation ceases at that point, uncompleted",
+            "It is treated as a rejection"
+          ],
+          "answerIndex": 2,
+          "explanation": "The computation simply ceases, **uncompleted** — which is different from halting. The notes' 101 example stops this way and they are explicit: 'This does not even count as halting, since M is not in state qf.'",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-one-or-the-other",
+          "kind": "mcq",
+          "prompt": "In a single step, can a Turing machine both overwrite the current cell and move the head?",
+          "options": [
+            "Yes, but only when moving right",
+            "No — a step can only move, never write",
+            "Yes — every step writes and then moves",
+            "No — the second component of δ's output is either a symbol of Y or one of L, R, so a step does exactly one of the two"
+          ],
+          "answerIndex": 3,
+          "explanation": "Y ∪ {L, R} is a union, so the instruction is *either* a tape symbol *or* a direction. This is a genuine difference from the more common textbook formulation where every step writes, moves and changes state together — and it is why these machines need extra states to do simple things.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-tape-shape",
+          "kind": "mcq",
+          "prompt": "What shape is the tape?",
+          "options": [
+            "Finite to the left and infinite to the right",
+            "Circular",
+            "Infinite in both directions",
+            "Finite, of length fixed by the input"
+          ],
+          "answerIndex": 0,
+          "explanation": "A left end and no right end. This is why running off the left edge is a real hazard — the notion of an **admissible** configuration exists precisely to forbid it, and the notes describe going off the left edge as 'like breaking the TM'.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-head-start",
+          "kind": "short",
+          "prompt": "At the start of a computation, which state is the machine in and where is the read/write head?",
+          "answers": [
+            "state q0 with the head over the left-most cell",
+            "q0, head on the leftmost cell",
+            "in q0 with the head at the left-most cell of the tape",
+            "q0 and the head over the left-most cell"
+          ],
+          "tier": 2,
+          "explanation": "State q0, head over the left-most cell, with the input string over X written on the tape. The initial configuration is therefore C0 = (λ, q0, v), the empty u recording that nothing lies to the left of the head.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-blank-not-in-x",
+          "kind": "mcq",
+          "prompt": "The definition requires a symbol b ∈ Y with b ∉ X. Why must the blank be excluded from the input alphabet?",
+          "options": [
+            "Because otherwise the tape would be finite",
+            "Because b is used to mark the end of a string, so it must be distinguishable from any symbol that can legitimately occur in one",
+            "Because δ cannot be defined on b",
+            "Because b is not a symbol"
+          ],
+          "answerIndex": 1,
+          "explanation": "Generally b denotes 'end of string'. If it were also an input symbol the machine could not tell a blank marking the end from a blank that is part of the data. The notes press the same point about output: 'be sure the output is a string over whatever input alphabet X you are given: there should not even be b's within the string'.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-qf-no-exit",
+          "kind": "mcq",
+          "prompt": "The definition states that δ(qf, y) is undefined for all y ∈ Y. What does this mean for the state diagram?",
+          "options": [
+            "qf can have loops but no other outgoing edges",
+            "qf must be unreachable",
+            "There are never any edges coming out of qf, and the transition table has no row for qf",
+            "qf must be drawn with a double circle"
+          ],
+          "answerIndex": 2,
+          "explanation": "No outgoing edges at all, and hence no row in the table — the notes say exactly this. Once qf is entered nothing further can happen, which is what makes it a *halt* state rather than merely a distinguished one.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-read-edge-label",
+          "kind": "short",
+          "prompt": "In a TM state diagram, an edge from q0 to q1 is labelled **1/A**. What does it mean?",
+          "answers": [
+            "if in q0 reading 1, move to q1 and overwrite the cell with A",
+            "in state q0 reading 1, go to q1 and write A",
+            "delta(q0,1) = (q1,A): move to q1 and overwrite with A",
+            "reading 1 in q0, write A and move to state q1"
+          ],
+          "tier": 2,
+          "explanation": "δ(q0, 1) = (q1, A): if in state q0 and reading '1', move to state q1 and overwrite the cell with 'A'. The label is read as *symbol read* / *action*, where the action is a symbol to write or one of L, R.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-read-loop-label",
+          "kind": "short",
+          "prompt": "A loop on state q4 is labelled **0/L**. What does it mean?",
+          "answers": [
+            "if in q4 reading 0, remain in q4 and move the head left one cell",
+            "delta(q4,0) = (q4,L): stay in q4 and move left",
+            "in q4 reading 0, stay in q4 and move the head one cell left",
+            "remain in q4 and move left one cell"
+          ],
+          "tier": 2,
+          "explanation": "δ(q4, 0) = (q4, L): remain in state q4 and move the read/write head left one cell. Nothing is written — the action is a direction, not a symbol.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-table-multiple-entries",
+          "kind": "mcq",
+          "prompt": "What can be said about the number of entries in one position of a TM's transition table?",
+          "options": [
+            "Any number, since TMs are non-deterministic",
+            "At least one, since the machine must always be able to proceed",
+            "Exactly one, since δ is a function",
+            "There will never be more than one, but there may be none"
+          ],
+          "answerIndex": 3,
+          "explanation": "Never more than one (δ is a function, so Turing machines here are deterministic), but possibly none (δ is **partial**). An empty cell is written '-' in the notes' tables and means the computation would cease there.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-why-introduced",
+          "kind": "recall",
+          "prompt": "Why are Turing machines introduced immediately after the Pumping Lemma? What two capabilities do they add, and to what end?",
+          "answer": "**The motivation.** DFSAs have **no memory**, and **no ability to give an output other than 'yes' or 'no'**. But most arithmetic operations need both. The Pumping Lemma has just shown this is a real restriction rather than a stylistic one — DFSAs can't compare two numbers and decide if they are equal.\n\n**The two additions:**\n1. **A tape** which can be read and over-written, giving unbounded memory that the finite state set could never provide.\n2. **A read/write head** that can move along the tape or overwrite the cell under it, so the machine can leave a result behind — the output is whatever is on the tape when the computation completes.\n\nSo δ now says not only which state to move to, but also what to do with the tape.\n\n**To what end:** they were developed in the first half of last century and were thought to define the notion of computability — and, as §2.2 argues via the Church–Turing thesis, they are still used that way.",
+          "tier": 3,
+          "source": "fsa6 · §1.14, tm1 · §2.1"
+        },
+        {
+          "id": "tm-define-recall",
+          "kind": "recall",
+          "prompt": "State the full definition of a Turing machine, including everything it is assumed to come equipped with.",
+          "answer": "A **Turing machine** M = (Q, δ, q0, qf), with finite input alphabet X and **tape alphabet Y containing X**, consists of:\n\n- a **finite set Q of states**;\n- a **partial function δ : Q × Y → Q × (Y ∪ {L, R})**, the transition function;\n- a **start state q0 ∈ Q**;\n- a **halt state qf ∈ Q**;\n- with **δ(qf, y) undefined for all y ∈ Y**;\n- and a symbol **b ∈ Y with b ∉ X**, called *blank*.\n\nAdditionally M is assumed to come equipped with:\n\n- a **tape** which can be read and over-written, consisting of individual cells, **finite to the left and infinite to the right**;\n- a **read/write head** which can either move along the tape or over-write on the cell under it.\n\nInitially M is in state q0, the head is over the left-most cell, and the tape holds the input, a string over X.",
+          "tier": 3,
+          "hint": "Four tuple components plus two side conditions, then the alphabets, then the two pieces of hardware.",
+          "source": "tm1 · §2.1"
+        }
+      ]
+    },
+    {
+      "id": "tm-configurations",
+      "title": "Configurations and the ⊢ relation",
+      "emphasis": "core",
+      "summary": "A configuration (u, q, v) records the whole situation: tape uv, state q, head on the first letter of v. ⊢ is one valid step, and admissibility forbids falling off the left end.",
+      "keyFacts": [
+        {
+          "term": "Configuration",
+          "definition": "A triple (u, q, v) with u ∈ Y*, and v ∈ Y*·(Y − {b}) — a string over Y not ending in b — or else v = λ. It means: the tape content is **uv**, the state is **q**, and the head sits above the **first letter of v**.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "The ⊢ relation",
+          "definition": "(u, q, v) ⊢ (u′, q′, v′) if δ(q, y) = (q′, z), where y is the first letter of v — or b if v = λ — and z either replaces y in uv if z ∈ Y, or moves left/right along uv giving the new split u′v′ if z = L/R.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Admissible configuration",
+          "definition": "One which does not send the read/write head off the left edge of the tape, which is 'like breaking the TM'.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Initial configuration",
+          "definition": "If the string on the tape at the start is v, the initial configuration is C_0 = (λ, q0, v) — nothing to the left of the head.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Configuration sequence",
+          "definition": "C_0 ⊢ C_1 ⊢ · · · ⊢ C_n. Even if a computation does not complete, the (possibly infinite) sequence C_0 ⊢ C_1 ⊢ · · · is still called the configuration sequence for the input.",
+          "source": "tm1 · §2.1"
+        }
+      ],
+      "questions": [
+        {
+          "id": "tm-config-meaning",
+          "kind": "mcq",
+          "prompt": "A TM is in configuration (u, q, v). Where is the read/write head?",
+          "options": [
+            "Above the first letter of v",
+            "Above the left-most cell of the tape",
+            "Between u and v, not over any cell",
+            "Above the last letter of u"
+          ],
+          "answerIndex": 0,
+          "explanation": "Above the **first letter of v**. So u is everything strictly to the left of the head and v is everything from the head rightwards — the head position is encoded by where the tape string is split.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-config-tape",
+          "kind": "cloze",
+          "prompt": "If a TM is in configuration (u, q, v), the current tape content is {{1}}, the current state is {{2}}, and the head sits above the first letter of {{3}}.",
+          "blanks": [
+            [
+              "uv",
+              "u v"
+            ],
+            [
+              "q"
+            ],
+            [
+              "v"
+            ]
+          ],
+          "tier": 2,
+          "explanation": "Tape uv, state q, head on the first letter of v. The tape is the concatenation — the split into u and v carries no information beyond where the head is.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-config-v-condition",
+          "kind": "mcq",
+          "prompt": "The definition requires v ∈ Y*·(Y − {b}), or v = λ. What does this condition say?",
+          "options": [
+            "That v may not contain the blank symbol anywhere",
+            "That v may not **end** in a blank — trailing blanks are trimmed, since the tape is infinite to the right and blank thereafter",
+            "That v must be non-empty",
+            "That v must be a string over the input alphabet X"
+          ],
+          "answerIndex": 1,
+          "explanation": "No trailing blank. The tape is blank from some point rightwards forever, so a configuration would otherwise have infinitely many spellings; trimming trailing blanks makes the representation canonical. Blanks *within* v are permitted by the definition, and v = λ is allowed as the case where the head is out in the blank region.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-config-v-lambda",
+          "kind": "mcq",
+          "prompt": "A TM is in configuration (u, q, λ) — that is, v is empty. What symbol is the machine reading?",
+          "options": [
+            "The first letter of u",
+            "Nothing; the computation ceases",
+            "The blank symbol b",
+            "The last letter of u"
+          ],
+          "answerIndex": 2,
+          "explanation": "b. The ⊢ definition covers this explicitly: y is the first letter of v, 'or else is b if v = λ'. The head has walked off the written part of the tape into the infinite blank region to the right, which is perfectly legal — unlike walking off the left end.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-initial-config",
+          "kind": "short",
+          "prompt": "The string v is written on the tape at the start of a computation. What is the initial configuration C_0?",
+          "answers": [
+            "(λ, q0, v)",
+            "(lambda, q0, v)",
+            "(λ,q0,v)",
+            "( λ, q0, v )"
+          ],
+          "tier": 2,
+          "explanation": "C_0 = (λ, q0, v). The empty first component records that the head is at the left-most cell with nothing to its left.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-admissible",
+          "kind": "mcq",
+          "prompt": "What is an admissible configuration?",
+          "options": [
+            "One in which the tape contains only symbols of X",
+            "One reachable from the initial configuration",
+            "One in which the machine is not in the halt state",
+            "One which does not send the read/write head off the left edge of the tape"
+          ],
+          "answerIndex": 3,
+          "explanation": "It is about the left edge. The tape is finite to the left, so moving left from the left-most cell is 'like breaking the TM' — the notes' λ-input example fails on exactly this, since δ(q0, b) = (qf, L) tries to move left from the start.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-lambda-inadmissible",
+          "kind": "mcq",
+          "prompt": "A TM has δ(q0, b) = (qf, L). Why is the empty input λ a problem for it?",
+          "options": [
+            "Because (λ, q0, λ) is not admissible: with an empty tape the machine reads b and tries to move left from the left end",
+            "Because q0 has no entry for λ",
+            "Because it enters qf too early",
+            "Because λ is not a string over X"
+          ],
+          "answerIndex": 0,
+          "explanation": "With the tape empty, v = λ so the machine reads b, and δ(q0, b) = (qf, L) demands a move left from the left-most cell. That configuration is inadmissible, so the computation is broken rather than merely unfinished. Reaching qf does not save it.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-step-write",
+          "kind": "short",
+          "prompt": "A TM in configuration (A, q2, 10) has δ(q2, 1) = (q3, 0). What is the next configuration?",
+          "answers": [
+            "(A, q3, 00)",
+            "(A,q3,00)",
+            "( A, q3, 00 )"
+          ],
+          "tier": 2,
+          "hint": "The action is a symbol, so the cell under the head is overwritten and the head does not move.",
+          "explanation": "(A, q3, 00). The head is on the first letter of v = 10, which is 1; that cell is overwritten with 0, giving v = 00. Because the action was a write rather than L or R, the split — and so the head position — is unchanged.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-step-right",
+          "kind": "short",
+          "prompt": "A TM in configuration (A, q3, 00) has δ(q3, 0) = (q2, R). What is the next configuration?",
+          "answers": [
+            "(A0, q2, 0)",
+            "(A0,q2,0)",
+            "( A0, q2, 0 )"
+          ],
+          "tier": 2,
+          "hint": "Moving right shifts one symbol from the front of v onto the end of u.",
+          "explanation": "(A0, q2, 0). The tape content A00 is unchanged; only the split moves. The first letter of v transfers to the end of u, which is exactly what moving the head one cell right does.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-step-left",
+          "kind": "short",
+          "prompt": "A TM in configuration (A0, q4, 1) has δ(q4, 1) = (q4, L). What is the next configuration?",
+          "answers": [
+            "(A, q4, 01)",
+            "(A,q4,01)",
+            "( A, q4, 01 )"
+          ],
+          "tier": 2,
+          "hint": "Moving left shifts one symbol from the end of u onto the front of v.",
+          "explanation": "(A, q4, 01). Tape content A01 unchanged; the last letter of u moves to the front of v. Note that had u been λ, this step would have been inadmissible.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-config-sequence-still-named",
+          "kind": "mcq",
+          "prompt": "A TM's computation on some input never terminates. Do the notes still speak of a configuration sequence?",
+          "options": [
+            "No — a configuration sequence must be finite",
+            "Yes — even if a computation does not complete, the possibly infinite sequence C_0 ⊢ C_1 ⊢ · · · is called the configuration sequence for the input",
+            "Only if the machine eventually reaches qf",
+            "Only for inputs over X"
+          ],
+          "answerIndex": 1,
+          "explanation": "The notes say so explicitly. The term names the trace, not a successful outcome — which matters, because §2.2 needs to talk about machines that deliberately fail to terminate when a partial function is undefined.",
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "tm-config-vs-transition-sequence",
+          "kind": "recall",
+          "prompt": "Compare a DFSA's transition sequence with a TM's configuration sequence. Why does the TM need to record more?",
+          "answer": "**DFSA — a transition sequence** records only the states visited: q0 →a q0 →b q1 →b q2. With a DFSA, knowledge of the current state, the letter being read and the rest of the input string determines everything that happens subsequently, so the state alone is enough at each point.\n\n**TM — a configuration sequence** records triples (u, q, v): the **state**, the **head position**, and the **entire tape contents in both directions**.\n\nThe extra information is needed because a TM can **move in both directions** and can **overwrite** what it has already read. So there is no fixed 'rest of the input' to consult: what lies to the left matters, and what lies to the right may have been changed since it was last seen. As the notes put it, for a TM we need to know the state, what's being read, and what's on the rest of the tape *in both directions*.",
+          "tier": 3,
+          "source": "fsa2 · §1.4, tm1 · §2.1"
+        }
+      ]
+    },
+    {
+      "id": "tm-halting",
+      "title": "Halting, parking and completing",
+      "emphasis": "core",
+      "summary": "Three separate conditions, each strictly stronger than the last: reaching qf, doing so with the head at the left-most cell, and leaving only symbols of X on the tape.",
+      "keyFacts": [
+        {
+          "term": "Halts with input v",
+          "definition": "If C_0 = (λ, q0, v) ⊢ C_1 ⊢ · · · ⊢ C_n = (u′, qf, v′), where v ∈ X*, all C_i are admissible, and u′, v′ ∈ Y*, then M **halts** with input v.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Halts with the head parked",
+          "definition": "M halts **and** u′ = λ — that is, the head is back at the left-most cell.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Completes a computation",
+          "definition": "M halts, u′ = λ, **and** v′ ∈ X*. Then M completes a computation with input v and **output v′**. Just halting, or just parking the head, is not enough: these must happen and we must have v′ ∈ X*.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Output requirement",
+          "definition": "The output must be a string over the input alphabet X — there should not even be b's within the string. There will be an infinite number of blanks after it finishes, but none in the middle.",
+          "source": "tm1 · §2.1"
+        }
+      ],
+      "questions": [
+        {
+          "id": "tm-halt-definition",
+          "kind": "mcq",
+          "prompt": "What exactly must happen for M to **halt** with input v?",
+          "options": [
+            "The tape must contain only symbols of X",
+            "The head must reach the left-most cell",
+            "The configuration sequence must reach a configuration whose state is qf, with all configurations admissible and v ∈ X*",
+            "δ must become undefined"
+          ],
+          "answerIndex": 2,
+          "explanation": "Reaching qf, admissibly. Running out of transitions is *not* halting — the notes' 101 example stops because δ is undefined and they say 'this does not even count as halting, since M is not in state qf'. Parking and the output condition are the two further hurdles.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-parked-definition",
+          "kind": "short",
+          "prompt": "In terms of a final configuration (u′, qf, v′), what does it mean for the head to be **parked**?",
+          "answers": [
+            "u' = λ",
+            "u prime is lambda",
+            "u' = lambda",
+            "the first component is empty",
+            "u′ = λ"
+          ],
+          "tier": 2,
+          "explanation": "u′ = λ — nothing to the left of the head, so the head is pointing at the left-most cell of the tape. The notes describe the computation as complete only if M enters qf 'just as the head becomes parked'.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-complete-three-conditions",
+          "kind": "multi",
+          "prompt": "Which conditions must **all** hold for M to complete a computation on input v? (Select all that apply.)",
+          "options": [
+            "The configuration sequence reaches state qf",
+            "The final configuration has u′ = λ, so the head is parked",
+            "The final v′ lies in X*, containing no blanks or flag symbols",
+            "The input v is accepted"
+          ],
+          "answerIndices": [
+            0,
+            1,
+            2
+          ],
+          "explanation": "All three of the first ones — the notes stress that 'just halting or just parking the head is not enough: these must happen and we must have v′ ∈ X*'. Acceptance is not a TM notion at all; TMs compute outputs rather than accepting or rejecting.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-output-is",
+          "kind": "short",
+          "prompt": "When M completes a computation with input v and final configuration (λ, qf, v′), what is the output?",
+          "answers": [
+            "v'",
+            "v prime",
+            "v′",
+            "the string v'",
+            "whatever is on the tape, v'"
+          ],
+          "tier": 2,
+          "explanation": "v′ — whatever is on the tape at the moment the computation completes. Since u′ = λ and v′ ∈ X*, the whole tape content is v′, a clean string over the input alphabet.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-halt-not-parked",
+          "kind": "mcq",
+          "prompt": "A TM's configuration sequence on input 011 ends at (10, qf, 0). What is the status of the computation?",
+          "options": [
+            "It does not halt, since v′ ≠ λ",
+            "It is inadmissible",
+            "It completes, with output 100",
+            "It halts, but the head is not parked, so the computation has not completed"
+          ],
+          "answerIndex": 3,
+          "explanation": "State qf is reached, so it **halts**. But u′ = 10 ≠ λ, so the head is not parked and the computation has not completed. This is the notes' worked case for input 011 — and no output is defined, however tidy the tape looks.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-not-halting",
+          "kind": "mcq",
+          "prompt": "A TM's configuration sequence on input 101 reaches (bb, q5, 1), and δ(q5, 1) is undefined. What is the status?",
+          "options": [
+            "It does not even count as halting, since M is not in state qf",
+            "It completes, with output 1",
+            "It runs forever",
+            "It halts without completing"
+          ],
+          "answerIndex": 0,
+          "explanation": "The computation cannot proceed, but this is **not** halting — halting requires reaching qf. The notes are explicit on exactly this configuration. It is a third kind of failure, distinct from halting-without-parking and from looping forever.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-nonterminating",
+          "kind": "mcq",
+          "prompt": "On input 11, a TM gives (λ, q0, 11) ⊢ (λ, q2, b1) ⊢ (b, q3, 1) ⊢ (b, q3, 1) ⊢ · · ·. What has gone wrong?",
+          "options": [
+            "δ is undefined so the computation ceases",
+            "The computation does not terminate in any sense — it repeats the same configuration forever",
+            "It halts but does not complete",
+            "The configuration is inadmissible"
+          ],
+          "answerIndex": 1,
+          "explanation": "(b, q3, 1) ⊢ (b, q3, 1) is a fixed point: δ(q3, 1) = (q3, 1) rewrites the cell with the symbol already there and changes nothing else, so the machine is stuck in an infinite loop. Nothing is inadmissible and δ is perfectly well defined — it just never gets anywhere.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-four-failure-modes",
+          "kind": "recall",
+          "prompt": "The notes illustrate one TM with four inputs, each failing differently. Name the four outcomes and what distinguishes them.",
+          "answer": "**1. Halts, but not parked — input 011.** The sequence ends (10, qf, 0). State qf is reached, so M **halts**, but u′ = 10 ≠ λ, so the head is not parked and the computation has **not completed**.\n\n**2. Ceases without halting — input 101.** The sequence reaches (bb, q5, 1) and δ(q5, 1) is undefined, so the computation cannot proceed. This **does not even count as halting**, since M is not in state qf.\n\n**3. Does not terminate — input 11.** The sequence reaches (b, q3, 1) ⊢ (b, q3, 1) ⊢ · · · and loops forever. It does not terminate **in any sense**.\n\n**4. Inadmissible — input λ.** The configuration (λ, q0, λ) is **not admissible**, because δ(q0, b) = (qf, L) makes M try to go left from the left end of the tape.\n\nOnly a run that reaches qf, with the head parked and only symbols of X on the tape, counts as completing a computation.",
+          "tier": 3,
+          "hint": "One reaches qf but in the wrong place; one runs out of instructions; one loops; one breaks the tape.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-output-no-blanks",
+          "kind": "mcq",
+          "prompt": "The notes warn that when designing a TM the output must be a string over X with 'not even b's within the string'. What is the qualification?",
+          "options": [
+            "Blanks are permitted if the output is empty",
+            "Blanks are permitted at the start of the output",
+            "There will be an infinite number of blanks after the output finishes, but none in the middle",
+            "One trailing blank is permitted as an end marker"
+          ],
+          "answerIndex": 2,
+          "explanation": "The tape is blank forever to the right, so trailing blanks are unavoidable and harmless — indeed b generally denotes 'end of string'. What is forbidden is a blank *inside* the output, which would make v′ ∉ X* and so stop the computation completing.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-flags-must-go",
+          "kind": "mcq",
+          "prompt": "A TM uses flag symbols A and B during its computation. What must be true of them at the end?",
+          "options": [
+            "They may remain, provided they are to the right of the output",
+            "They must be replaced by blanks",
+            "They must be added to X",
+            "They must have been overwritten, since v′ must lie in X* and A, B ∉ X"
+          ],
+          "answerIndex": 3,
+          "explanation": "Flags are working symbols of Y only — 'like b, these are only used during a computation: they should play no role in input or output'. If any survives, v′ ∉ X* and the computation does not complete. In the notes' swapper this is what the final q4 → qf step is for: A/0 and B/1 restore the first cell.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-three-hurdles-recall",
+          "kind": "recall",
+          "prompt": "Define halting, parking and completing precisely, in terms of the configuration sequence, and say how they are related.",
+          "answer": "Let C_0 = (λ, q0, v) ⊢ C_1 ⊢ · · · ⊢ C_n = (u′, qf, v′) with v ∈ X*, all C_i admissible, and u′, v′ ∈ Y*.\n\n**Halts with input v** — the sequence above exists at all: the machine reaches **state qf** by admissible steps.\n\n**Halts with the head parked** — additionally **u′ = λ**, so the head is at the left-most cell.\n\n**Completes a computation** — additionally **v′ ∈ X\\***. Then the **input is v and the output is v′**.\n\n**Relationship:** each condition strictly contains the next, so they form a chain — completing ⟹ parked ⟹ halts. The notes stress that the weaker ones are not enough on their own: 'Just halting or just parking the head is not enough: these must happen and we must have v′ ∈ X*.'\n\n**Two ways to fail before even halting:** δ becomes undefined, so the computation ceases uncompleted without reaching qf; or the sequence never terminates.\n\n**Why parking matters:** §2.2 composes machines by making the halt state of one the start state of the next, and that only works because the head is guaranteed to be back at the left-most cell when a computation completes.",
+          "tier": 3,
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        }
+      ]
+    },
+    {
+      "id": "tm-designing",
+      "title": "Designing and tracing Turing machines",
+      "emphasis": "standard",
+      "summary": "The worked 0/1 swapper, why it needs flag symbols to mark the left edge, and the fact that flags can always be traded for extra states.",
+      "keyFacts": [
+        {
+          "term": "The swapper's flags",
+          "definition": "The 0↔1 swapping TM uses two additional flag symbols A and B beside 0, 1, b. Like b they are used only during a computation and play no role in input or output. A marks 'a 1 was here', B marks 'a 0 was here', so the left edge can be found again and then restored correctly.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "term": "Flags are never necessary",
+          "definition": "It is always possible to choose Y = X ∪ {b}, as small as possible. Instead of two flags marking the left edge, make the first cell blank and create **two paths** in the TM — one for the case in which the first bit was 1, the other for 0.",
+          "source": "tm1 · §2.1"
+        }
+      ],
+      "questions": [
+        {
+          "id": "tm-swapper-trace-first",
+          "kind": "short",
+          "prompt": "This TM swaps 0s and 1s in a binary string. X = {0, 1}, Y = {0, 1, A, B, b}, start q0, halt qf, with transitions `δ(q0,0)=(q1,B)`, `δ(q0,1)=(q1,A)`, `δ(q1,A)=(q2,R)`, `δ(q1,B)=(q2,R)`, `δ(q2,0)=(q3,1)`, `δ(q2,1)=(q3,0)`, `δ(q2,b)=(q4,L)`, `δ(q3,0)=(q2,R)`, `δ(q3,1)=(q2,R)`, `δ(q4,0)=(q4,L)`, `δ(q4,1)=(q4,L)`, `δ(q4,A)=(qf,0)`, `δ(q4,B)=(qf,1)`, and every other value of δ undefined. Starting from C_0 = (λ, q0, 110), what is C_1?",
+          "answers": [
+            "(λ, q1, A10)",
+            "(lambda, q1, A10)",
+            "(λ,q1,A10)",
+            "( λ, q1, A10 )"
+          ],
+          "tier": 2,
+          "hint": "The head is on the first letter of v. Look up that symbol in the q0 row.",
+          "explanation": "(λ, q1, A10). The head reads 1, and δ(q0, 1) = (q1, A) writes A over it and moves to q1. The head does not move, since the action was a write — so u stays λ.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-trace-second",
+          "kind": "short",
+          "prompt": "The same swapper TM has transitions `δ(q0,0)=(q1,B)`, `δ(q0,1)=(q1,A)`, `δ(q1,A)=(q2,R)`, `δ(q1,B)=(q2,R)`, `δ(q2,0)=(q3,1)`, `δ(q2,1)=(q3,0)`, `δ(q2,b)=(q4,L)`, `δ(q3,0)=(q2,R)`, `δ(q3,1)=(q2,R)`, `δ(q4,0)=(q4,L)`, `δ(q4,1)=(q4,L)`, `δ(q4,A)=(qf,0)`, `δ(q4,B)=(qf,1)`, and every other value of δ undefined. From C_1 = (λ, q1, A10), what is C_2?",
+          "answers": [
+            "(A, q2, 10)",
+            "(A,q2,10)",
+            "( A, q2, 10 )"
+          ],
+          "tier": 2,
+          "explanation": "(A, q2, 10). δ(q1, A) = (q2, R), so the head moves right — shifting the A from the front of v onto the end of u — and the state becomes q2.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-output",
+          "kind": "short",
+          "prompt": "The 0↔1 swapping TM is run on input 110 and its configuration sequence ends at C_10 = (λ, qf, 001). What is the output, and does the computation complete?",
+          "answers": [
+            "output 001, and yes it completes",
+            "001, computation completes",
+            "001 - it completes",
+            "the output is 001 and the computation completes"
+          ],
+          "tier": 2,
+          "explanation": "Output 001, and it completes. All three conditions hold: state qf is reached, u′ = λ so the head is parked, and v′ = 001 ∈ X* with no blanks or flags left. And 001 is indeed 110 with its bits swapped.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-steps",
+          "kind": "computation",
+          "prompt": "The 0↔1 swapping TM is run on input 110. Its configuration sequence runs from C_0 = (λ, q0, 110) to the final configuration C_10 = (λ, qf, 001). How many applications of ⊢ — that is, how many steps — does the computation take?",
+          "steps": [
+            {
+              "text": "The configurations are indexed from C_0, the initial configuration, up to C_10, the final one."
+            },
+            {
+              "text": "Each ⊢ takes one configuration to the next, so the number of steps is the number of *gaps* between configurations, not the number of configurations."
+            },
+            {
+              "text": "From index 0 to index 10 there are 10 gaps, so the computation takes 10 steps. (There are 11 configurations in total.)"
+            }
+          ],
+          "answer": {
+            "expr": "10",
+            "tolerance": 0.001,
+            "decimals": 0
+          },
+          "hint": "Count the arrows, not the configurations — and remember the indexing starts at zero.",
+          "explanation": "10. The off-by-one is the point: C_0 through C_10 is eleven configurations joined by ten ⊢ steps. Note how much work it is for a three-bit input — the write-or-move restriction means each bit costs several steps.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-why-flags",
+          "kind": "mcq",
+          "prompt": "Why does the swapper TM write a flag (A or B) over the first cell before doing anything else?",
+          "options": [
+            "To record what the first bit was, so that the left edge can be found again on the return sweep and then restored correctly",
+            "Because δ(q0, 0) and δ(q0, 1) must differ",
+            "To mark the end of the input",
+            "Because the tape alphabet must be larger than the input alphabet"
+          ],
+          "answerIndex": 0,
+          "explanation": "It solves two problems at once. The machine sweeps right swapping bits, then sweeps left to park the head — but with a tape that is blank only to the *right*, there is no marker for the left end. The flag is that marker, and choosing A versus B remembers whether the first bit was 1 or 0, so the last step can write the correct swapped value.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-final-step",
+          "kind": "mcq",
+          "prompt": "In the swapper, δ(q4, A) = (qf, 0) and δ(q4, B) = (qf, 1). Why is A replaced by 0 and B by 1?",
+          "options": [
+            "Because A comes before B alphabetically, matching 0 before 1",
+            "Because A was written over a 1 and B over a 0, so restoring the swapped value means writing 0 for A and 1 for B",
+            "Because the flags must be replaced by blanks",
+            "Because q4 sweeps left and must reverse its direction"
+          ],
+          "answerIndex": 1,
+          "explanation": "δ(q0, 1) = (q1, A) and δ(q0, 0) = (q1, B), so A means 'the first bit was 1' and B means 'it was 0'. Swapping turns 1 into 0 and 0 into 1, so A → 0 and B → 1. This step also clears the flag, which is required for v′ ∈ X*.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-q2q3",
+          "kind": "mcq",
+          "prompt": "In the swapper, q2 does the swapping — δ(q2, 0) = (q3, 1) and δ(q2, 1) = (q3, 0) — while q3 does nothing but δ(q3, 0) = δ(q3, 1) = (q2, R). Why is the separate state q3 needed?",
+          "options": [
+            "To handle the flag symbols A and B",
+            "To detect the blank at the end of the input",
+            "Because a single step can either write or move, never both — so writing the swapped bit and advancing the head take two states",
+            "Because q2 must remember which bit it wrote"
+          ],
+          "answerIndex": 2,
+          "explanation": "δ maps into Q × (Y ∪ {L, R}) — a union, so each step does exactly one of writing and moving. q2 writes the swapped bit; q3 exists purely to advance the head and hand control back. This restriction is why these machines need more states than the more familiar write-and-move formulation.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-swapper-blank-role",
+          "kind": "short",
+          "prompt": "In the swapper, δ(q2, b) = (q4, L). What has the machine discovered at this moment, and what does it start doing?",
+          "answers": [
+            "it has reached the end of the input and starts sweeping left",
+            "the end of the string, so it begins moving left to park the head",
+            "it found the blank marking the end of the string and turns left",
+            "reached the end of the input; begins the leftward sweep"
+          ],
+          "tier": 2,
+          "explanation": "The blank marks the end of the string, so every bit has now been swapped. The machine switches to q4, which loops left over 0s and 1s until it meets the flag — the leftward sweep that gets the head parked.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-flags-unnecessary",
+          "kind": "mcq",
+          "prompt": "The notes state that flag symbols are never actually necessary — one can always take Y = X ∪ {b}. How is the swapper rebuilt without A and B?",
+          "options": [
+            "By reading the input twice",
+            "By moving the head right instead of left",
+            "By adding the flags to X instead of Y",
+            "By marking the left edge with a blank and creating two paths through the machine, one for a first bit of 1 and one for a first bit of 0"
+          ],
+          "answerIndex": 3,
+          "explanation": "Blank the first cell to mark the left edge, and let the **state** remember what was there by splitting the machine into two parallel paths. The information the flag carried moves from the tape into the finite control — the nine-state version in the notes is the cost.",
+          "source": "tm1 · §2.1"
+        },
+        {
+          "id": "tm-flags-tradeoff",
+          "kind": "recall",
+          "prompt": "Explain the trade-off between flag symbols and states, and say why it matters later in the course.",
+          "answer": "**The trade-off.** A flag symbol stores one piece of information **on the tape**; extra states store it **in the finite control**. The swapper illustrates both: the flag version uses Y = {0, 1, A, B, b} with six states, while the flag-free version takes Y = {0, 1, b} and needs about ten states, splitting into two parallel paths — one for the case where the first bit was 1, one for 0.\n\nSince the machine has only finitely many states, this trade only works for a **bounded** amount of information — one bit here. Anything unbounded must live on the tape.\n\n**Why it matters.** It means the tape alphabet can always be taken **as small as possible**, Y = X ∪ {b}, without losing any computing power. §2.2 pushes this further with a theorem: any partial function computed by a TM whose input alphabet contains {0, 1} can, after a suitable re-coding, be computed by a TM with input alphabet just {0, 1} and tape alphabet {0, 1, b} — a **binary Turing machine**. So a partial function is Turing computable if and only if some binary TM computes it, and the alphabet can be dropped from the definition of computability entirely.",
+          "tier": 3,
+          "source": "tm1 · §2.1, tm2 · §2.2"
+        },
+        {
+          "id": "tm-design-checklist",
+          "kind": "recall",
+          "prompt": "What should you check about the output when designing a TM?",
+          "answer": "**The output must be a string over the input alphabet X you were given.**\n\n- **No b's within the string.** There will be an infinite number of blanks after it finishes, but none in the middle — generally b is used to denote 'end of string'.\n- **No flag symbols left behind.** Anything in Y − X used as working space must be overwritten before the machine reaches qf, or v′ ∉ X* and the computation does not complete.\n- **The head must be parked** — back at the left-most cell, u′ = λ — at the moment qf is entered.\n\nAll three are needed together: just halting, or just parking the head, is not enough.",
+          "tier": 3,
+          "source": "tm1 · §2.1"
+        }
+      ]
+    }
+  ]
+}

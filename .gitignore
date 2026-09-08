@@ -24,10 +24,11 @@ dist-ssr
 *.sw?
 
 # Study packs.
-# Packs are generated from your own course material. The COMPX310 pack ships as
-# a worked example, so the deployed app has something to open on first load;
-# anything else you generate stays local. To ship another, add a negation line.
+# Packs are generated from your own course material. The COMPX310 and COMPX361
+# packs ship, so the deployed app has something to open on first load; anything
+# else you generate stays local. To ship another, add a negation line.
 public/packs/*
 !public/packs/README.md
 !public/packs/index.json
 !public/packs/compx310-test1/
+!public/packs/compx361-test1/
