@@ -1,7 +1,7 @@
 {
   "source": "C:/Users/billy/OneDrive - The University of Waikato/Study Material/COMPX361/Test 1",
   "generatedAt": "2026-09-08",
-  "notes": "Test format: in person, pen on paper, no cheat sheet, no calculator. Duration not confirmed at generation time — if it turns out to matter, add it to the description in pack.json. Because no calculator is allowed, every computation drill is integer-valued and hand-doable; the largest answer any range can produce is 625.",
+  "notes": "Test format, from the official notice: Wednesday 9 September 2026, 6.15pm, 1 hour, in person on supplied paper, worth 15% of the final mark. Calculators not permitted; no cheat sheet. Scope per the notice is all material to the end of Week 4 — the whole Finite State Automata section, and Turing machines up to and including Turing Computability — i.e. exactly FSA1-FSA6 and TM1-TM2, which is what this pack covers. Because no calculator is allowed, every computation drill is integer-valued and hand-doable; the largest answer any range can produce is 625. The app's Mock test timer is hardcoded to 30 minutes in src/views/SessionView.tsx (MOCK_MINUTES) and is not a per-pack setting, so a mock run is half the length of the real test.",
   "emphasis": "balanced — drills, definitions/theorem statements, and conceptual questions roughly evenly",
   "longExamples": "staged — multi-step procedures (state elimination, subset construction) are asked one stage at a time so a wrong answer localises which step of the method broke",
   "topics": {
